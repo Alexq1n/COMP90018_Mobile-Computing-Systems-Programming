@@ -6,7 +6,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.group5.roammate.ui.screens.CreateAccountScreen
 import com.group5.roammate.ui.screens.LoginScreen
 import com.group5.roammate.ui.theme.RoamMateTheme
 
@@ -21,31 +26,73 @@ class MainActivity : ComponentActivity() {
         setContent {
             // RoamMateTheme controls the app colors, fonts, and overall visual style.
             RoamMateTheme(dynamicColor = false) {
-                // LoginScreen is currently the first screen users see.
-                // Later, this area can be replaced by a navigation host.
-                LoginScreen(
-                    modifier = Modifier.fillMaxSize(),
+                // This is a tiny temporary navigation state.
+                // Later, we can replace it with a real NavHost when more pages are ready.
+                var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.Login) }
 
-                    // This callback runs when the user taps the Log in button.
-                    // TODO: Connect this to Yuxiang's Firebase login function later.
-                    onLoginClick = { email, password ->
-                        val message = if (email.isBlank() || password.isBlank()) {
-                            "Please enter email and password"
-                        } else {
-                            "Log in clicked"
-                        }
+                when (currentScreen) {
+                    AuthScreen.Login -> {
+                        // LoginScreen is currently the first screen users see.
+                        LoginScreen(
+                            modifier = Modifier.fillMaxSize(),
 
-                        // Toast is a small temporary message shown at the bottom of the screen.
-                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                    },
+                            // This callback runs when the user taps the Log in button.
+                            // TODO: Connect this to Yuxiang's Firebase login function later.
+                            onLoginClick = { email, password ->
+                                val message = if (email.isBlank() || password.isBlank()) {
+                                    "Please enter email and password"
+                                } else {
+                                    "Log in clicked"
+                                }
 
-                    // This callback runs when the user taps Create account.
-                    // TODO: Navigate to the Create Account screen later.
-                    onCreateAccountClick = {
-                        Toast.makeText(this, "Create account clicked", Toast.LENGTH_SHORT).show()
-                    },
-                )
+                                // Toast is a small temporary message shown at the bottom of the screen.
+                                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                            },
+
+                            // This callback opens the Create Account page.
+                            onCreateAccountClick = {
+                                currentScreen = AuthScreen.CreateAccount
+                            },
+                        )
+                    }
+
+                    AuthScreen.CreateAccount -> {
+                        CreateAccountScreen(
+                            modifier = Modifier.fillMaxSize(),
+
+                            // This callback goes back to Login when the user taps the arrow.
+                            onBackClick = {
+                                currentScreen = AuthScreen.Login
+                            },
+
+                            // This callback goes back to Login when the user taps the Log in link.
+                            onLoginClick = {
+                                currentScreen = AuthScreen.Login
+                            },
+
+                            // This callback receives validated account input from the UI.
+                            // TODO: Send fullName/email/password to Yuxiang's Firebase register function.
+                            onCreateAccountClick = { fullName, _, _ ->
+                                Toast.makeText(
+                                    this,
+                                    "Create account clicked for $fullName",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            },
+
+                            // The UI sends simple validation messages here.
+                            onValidationError = { message ->
+                                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                            },
+                        )
+                    }
+                }
             }
         }
     }
+}
+
+private enum class AuthScreen {
+    Login,
+    CreateAccount,
 }

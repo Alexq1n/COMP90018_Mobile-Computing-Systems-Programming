@@ -1,5 +1,7 @@
 package com.group5.roammate.ui.screens
 
+// LoginScreen —— 登录页（纯 UI）。只负责显示和收集输入，通过两个回调把事件抛出去
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -50,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.group5.roammate.ui.theme.RoamMateTheme
 
+// RoamMate color
 private val RoamMateTeal = Color(0xFF008B8F)
 private val RoamMateCoral = Color(0xFFFF6F61)
 private val RoamMateText = Color(0xFF17212B)
@@ -58,16 +61,19 @@ private val RoamMateFieldBorder = Color(0xFFE3E8EF)
 private val RoamMatePetBrown = Color(0xFF9B6A55)
 private val RoamMatePetTan = Color(0xFFFFB98F)
 
+// The main body of the login page
 @Composable
 fun LoginScreen(
     onLoginClick: (email: String, password: String) -> Unit,
     onCreateAccountClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Local status of the page: context + password
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
+    // Full-page layout
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -85,6 +91,7 @@ fun LoginScreen(
         ) {
             Spacer(modifier = Modifier.height(64.dp))
 
+            // Mascot + Brand Name + Slogan
             TravelPetLogo(modifier = Modifier.size(88.dp))
 
             Spacer(modifier = Modifier.height(22.dp))
@@ -108,6 +115,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(44.dp))
 
+            // email text
             LoginTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -121,6 +129,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // password text
             LoginTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -148,6 +157,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(26.dp))
 
+            // Log in button
             Button(
                 onClick = { onLoginClick(email, password) },
                 modifier = Modifier
@@ -168,6 +178,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // “or” split line
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -195,6 +206,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // Create account：Navigate to Registration Page
             TextButton(onClick = onCreateAccountClick) {
                 Text(
                     text = "Create account",
@@ -209,6 +221,7 @@ fun LoginScreen(
     }
 }
 
+// text
 @Composable
 private fun LoginTextField(
     value: String,
@@ -258,6 +271,8 @@ private fun LoginTextField(
     )
 }
 
+// The graphic of Canvas (mascot + email/lock/eye icon)
+
 @Composable
 private fun TravelPetLogo(modifier: Modifier = Modifier) {
     Canvas(modifier = modifier) {
@@ -265,6 +280,7 @@ private fun TravelPetLogo(modifier: Modifier = Modifier) {
     }
 }
 
+// The icon to be drawn
 @Composable
 private fun LoginFieldIcon(
     icon: LoginIcon,
@@ -281,6 +297,7 @@ private fun LoginFieldIcon(
     }
 }
 
+// type of icon
 private enum class LoginIcon {
     Email,
     Lock,
@@ -288,6 +305,7 @@ private enum class LoginIcon {
     EyeOff,
 }
 
+// mascot icon
 private fun DrawScope.drawPetLogo() {
     val center = Offset(size.width / 2f, size.height / 2f)
     val headRadius = size.minDimension * 0.27f
@@ -336,6 +354,7 @@ private fun DrawScope.drawPetLogo() {
     )
 }
 
+// email icon
 private fun DrawScope.drawEmailIcon(tint: Color) {
     val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
     drawRoundRect(
@@ -360,6 +379,7 @@ private fun DrawScope.drawEmailIcon(tint: Color) {
     )
 }
 
+// lock icon
 private fun DrawScope.drawLockIcon(tint: Color) {
     val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
     drawRoundRect(
@@ -384,6 +404,7 @@ private fun DrawScope.drawLockIcon(tint: Color) {
     )
 }
 
+// eye icon
 private fun DrawScope.drawEyeIcon(tint: Color, showSlash: Boolean) {
     val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
     val eye = Path().apply {
@@ -409,6 +430,7 @@ private fun DrawScope.drawEyeIcon(tint: Color, showSlash: Boolean) {
         )
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

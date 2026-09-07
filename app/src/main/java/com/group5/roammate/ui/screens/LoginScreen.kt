@@ -1,6 +1,6 @@
 package com.group5.roammate.ui.screens
 
-// LoginScreen —— 登录页（纯 UI）。只负责显示和收集输入，通过两个回调把事件抛出去
+// LoginScreen 
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image

@@ -1,3 +1,102 @@
-.idea/
+# ===========================
+# Gradle
+# ===========================
+.gradle/
+build/
+*/build/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
 
+# ===========================
+# Android Studio / IntelliJ IDEA
+# ===========================
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries
+.idea/libraries
+.idea/caches
+.idea/modules.xml
+.idea/navEditor.xml
+.DS_Store
+
+# ===========================
+# Kotlin
+# ===========================
+*.class
+*.log
+*.ctxt
+.mtj.tmp/
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# ===========================
+# Build Outputs
+# ===========================
+out/
+target/
+bin/
+gen/
+captures/
+*.apk
+*.ap_
+*.aab
+*.dex
+
+# ===========================
+# Local Configuration
+# ===========================
+local.properties
+.externalNativeBuild
+.cxx
+
+# ===========================
+# Backup Files
+# ===========================
 *~
+*.swp
+*.bak
+*.tmp
+*.orig
+
+# ===========================
+# OS Files
+# ===========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ===========================
+# Claude Worktrees (optional - keep if you want)
+# ===========================
+.claude/worktrees/
+
+# ===========================
+# Test Reports
+# ===========================
+*.log
+test-results/
+*.hprof
+
+# ===========================
+# Others
+# ===========================
+/PROJECT_SUMMARY.md
+/QUICK_VERIFICATION.md
+/docs/VERIFICATION_REPORT.md
+/COMMIT_MESSAGE.txt

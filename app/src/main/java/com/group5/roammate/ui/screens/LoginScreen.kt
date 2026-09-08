@@ -1,6 +1,6 @@
 package com.group5.roammate.ui.screens
 
-// LoginScreen 
+// LoginScreen
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -94,7 +94,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(64.dp))
 
             // Mascot + Brand Name + Slogan
-            TravelPetLogo(modifier = Modifier.size(88.dp))
+            TravelPetLogo(modifier = Modifier.size(150.dp))
 
             Spacer(modifier = Modifier.height(22.dp))
 

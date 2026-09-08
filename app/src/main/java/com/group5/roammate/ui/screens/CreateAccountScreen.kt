@@ -117,7 +117,7 @@ fun CreateAccountScreen(
             Spacer(modifier = Modifier.height(22.dp))
 
             // Mascot image drawn with Canvas to match the Login page.
-            CreateAccountPetLogo(modifier = Modifier.size(84.dp))
+            CreateAccountPetLogo(modifier = Modifier.size(150.dp))
 
             Spacer(modifier = Modifier.height(14.dp))
 

@@ -76,7 +76,6 @@ class MainActivity : ComponentActivity() {
         locationSensor = LocationSensor(this)
 
         setContent {
-
             if (showCamera) {
 
                 CameraScreen(

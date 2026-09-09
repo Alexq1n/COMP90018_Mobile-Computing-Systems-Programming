@@ -31,7 +31,6 @@ class MainActivity : ComponentActivity() {
             RoamMateTheme(dynamicColor = false) {
                 // This is a temporary page status.
                 var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.Login) }
-                var weatherUpdatesEnabled by rememberSaveable { mutableStateOf(true) }
 
                 when (currentScreen) {
                     AuthScreen.Login -> {
@@ -102,17 +101,10 @@ class MainActivity : ComponentActivity() {
 
                             // TODO: 这里之后换成 Yuxiang 从 Firebase 读到的真实用户姓名。
                             userName = "Yufei",
-                            userInitial = "Y",
-                            weatherUpdatesEnabled = weatherUpdatesEnabled,
 
-                            // TODO: 这里之后让 Yuxiang 保存通知开关状态到用户资料里。
-                            onWeatherUpdatesChanged = { isEnabled ->
-                                weatherUpdatesEnabled = isEnabled
-                            },
-
-                            // TODO: 这里之后跳转到 Travel Preferences 页面。
+                            // TODO: 这里之后跳转到共用的 Interests 页面，并保存为用户默认长期偏好。
                             onTravelPreferencesClick = {
-                                Toast.makeText(this, "Travel preferences clicked", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this, "Interests page is not ready yet", Toast.LENGTH_SHORT).show()
                             },
 
                             // TODO: 这里之后跳转到 Saved Trips 页面，数据由 Yuxiang 提供。

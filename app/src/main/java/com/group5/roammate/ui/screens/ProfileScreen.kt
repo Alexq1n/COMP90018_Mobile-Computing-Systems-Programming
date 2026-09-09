@@ -25,8 +25,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -44,21 +43,17 @@ import androidx.compose.ui.unit.sp
 import com.group5.roammate.R
 import com.group5.roammate.ui.theme.RoamMateTheme
 
-// Profile color
+// The uniform color used on the Profile page.
 private val RoamMateTeal = Color(0xFF008B8F)
 private val RoamMateLightTeal = Color(0xFFE6F5F3)
 private val RoamMateCoral = Color(0xFFFF6F61)
 private val RoamMateText = Color(0xFF17212B)
-private val RoamMateMutedText = Color(0xFF8A949E)
 private val RoamMateFieldBorder = Color(0xFFE3E8EF)
 private val RoamMateNavGrey = Color(0xFF9AA6A8)
 
 @Composable
 fun ProfileScreen(
     userName: String,
-    userInitial: String,
-    weatherUpdatesEnabled: Boolean,
-    onWeatherUpdatesChanged: (Boolean) -> Unit,
     onTravelPreferencesClick: () -> Unit,
     onSavedTripsClick: () -> Unit,
     onEditProfileClick: () -> Unit,
@@ -99,12 +94,11 @@ fun ProfileScreen(
 
             ProfileHeader(
                 userName = userName,
-                userInitial = userInitial,
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // TODO: 这里之后跳转到 Travel Preferences 页面。
+            // TODO: 这里之后跳转到共用的 Interests 页面，并保存为用户默认长期偏好。
             ProfileActionRow(
                 title = "Travel preferences",
                 onClick = onTravelPreferencesClick,
@@ -116,14 +110,6 @@ fun ProfileScreen(
             ProfileActionRow(
                 title = "Saved trips",
                 onClick = onSavedTripsClick,
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // 天气通知开关：现在只改本地状态，之后可以让 Yuxiang 保存到用户资料。
-            WeatherUpdatesRow(
-                checked = weatherUpdatesEnabled,
-                onCheckedChange = onWeatherUpdatesChanged,
             )
 
             Spacer(modifier = Modifier.height(28.dp))
@@ -168,13 +154,12 @@ fun ProfileScreen(
 @Composable
 private fun ProfileHeader(
     userName: String,
-    userInitial: String,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 头像先用首字母占位；之后可以换成 Yuxiang 提供的用户头像 URL。
+        // All user avatars should uniformly use the RoamMate mascot
         Box(
             modifier = Modifier
                 .size(96.dp)
@@ -184,11 +169,11 @@ private fun ProfileHeader(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = userInitial.take(1),
-                color = RoamMateTeal,
-                fontSize = 40.sp,
-                fontWeight = FontWeight.ExtraBold,
+            Image(
+                painter = painterResource(id = R.drawable.roammate_wombat),
+                contentDescription = "RoamMate mascot avatar",
+                modifier = Modifier.size(72.dp),
+                contentScale = ContentScale.Fit,
             )
         }
 
@@ -236,48 +221,6 @@ private fun ProfileActionRow(
                 color = RoamMateTeal,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-            )
-        }
-    }
-}
-
-@Composable
-private fun WeatherUpdatesRow(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = Color.White,
-        border = BorderStroke(1.dp, RoamMateFieldBorder),
-        shadowElevation = 1.dp,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(72.dp)
-                .padding(horizontal = 22.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "Weather updates",
-                modifier = Modifier.weight(1f),
-                color = RoamMateText,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-            )
-
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = RoamMateTeal,
-                    uncheckedThumbColor = Color.White,
-                    uncheckedTrackColor = RoamMateMutedText.copy(alpha = 0.36f),
-                    uncheckedBorderColor = Color.Transparent,
-                ),
             )
         }
     }
@@ -343,8 +286,8 @@ private fun BottomNavigationItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        // The selected tab has a light cyan background color.
-        // All ICONS are fixed at 24.dp.
+        // The currently selected tab will display a light cyan background color.
+        // All bottom navigation ICONS are fixed at 24.dp
         Box(
             modifier = Modifier
                 .width(44.dp)
@@ -384,9 +327,6 @@ private fun ProfileScreenPreview() {
     RoamMateTheme(dynamicColor = false) {
         ProfileScreen(
             userName = "Yufei",
-            userInitial = "Y",
-            weatherUpdatesEnabled = true,
-            onWeatherUpdatesChanged = {},
             onTravelPreferencesClick = {},
             onSavedTripsClick = {},
             onEditProfileClick = {},

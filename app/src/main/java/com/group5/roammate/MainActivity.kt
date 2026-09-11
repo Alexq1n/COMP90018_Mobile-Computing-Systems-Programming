@@ -16,7 +16,10 @@ import com.group5.roammate.ui.screens.HomePetStatus
 import com.group5.roammate.ui.screens.HomeScreen
 import com.group5.roammate.ui.screens.HomeTripStop
 import com.group5.roammate.ui.screens.HomeTripStopStatus
+import com.group5.roammate.ui.screens.InterestsSaveTarget
+import com.group5.roammate.ui.screens.InterestsScreen
 import com.group5.roammate.ui.screens.LoginScreen
+import com.group5.roammate.ui.screens.PlanMyTripScreen
 import com.group5.roammate.ui.screens.ProfileScreen
 import com.group5.roammate.ui.screens.RoamMateMainTab
 import com.group5.roammate.ui.theme.RoamMateTheme
@@ -35,6 +38,18 @@ class MainActivity : ComponentActivity() {
             RoamMateTheme(dynamicColor = false) {
                 // This is a temporary page status.
                 var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.Login) }
+
+                // Profile 入口使用：长期默认兴趣偏好。
+                // TODO: 之后这里接 Yuxiang 的 Firebase 用户偏好数据库，永久保存。
+                var profileDefaultInterests by rememberSaveable {
+                    mutableStateOf(listOf("Museums", "Parks", "Food"))
+                }
+
+                // Plan My Trip 入口使用：只属于当前这次行程的兴趣。
+                // TODO: 之后这里交给 Zewen 的本次行程规划 request，不写入长期默认偏好。
+                var tripInterests by rememberSaveable {
+                    mutableStateOf(listOf("Museums", "Parks", "Food"))
+                }
 
                 when (currentScreen) {
                     AuthScreen.Login -> {
@@ -156,9 +171,9 @@ class MainActivity : ComponentActivity() {
                                 Toast.makeText(this, "Pet page is not ready yet", Toast.LENGTH_SHORT).show()
                             },
 
-                            // TODO: 之后这里跳转到 Plan My Trip 页面。
+                            // 点击 Home 页底部按钮，进入 Plan My Trip 页面。
                             onPlanMyTripClick = {
-                                Toast.makeText(this, "Plan My Trip page is not ready yet", Toast.LENGTH_SHORT).show()
+                                currentScreen = AuthScreen.PlanMyTrip
                             },
 
                             // TODO: 之后这里跳转到 Explore 页面。
@@ -186,6 +201,61 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    AuthScreen.PlanMyTrip -> {
+                        PlanMyTripScreen(
+                            modifier = Modifier.fillMaxSize(),
+
+                            // 这里是本次行程兴趣，不是 Profile 的长期默认兴趣。
+                            selectedInterests = tripInterests,
+                            onInterestsChanged = { updatedInterests ->
+                                tripInterests = updatedInterests
+                            },
+
+                            // 返回 Home 页面。
+                            onBackClick = {
+                                currentScreen = AuthScreen.Home
+                            },
+
+                            // 从 Plan My Trip 进入 Interests，只保存本次行程兴趣。
+                            onMoreInterestsClick = {
+                                currentScreen = AuthScreen.PlanTripInterests
+                            },
+
+                            // TODO: 之后这里跳转到 Add a stop 搜索页面，复用搜索景点的界面。
+                            onSearchPlacesClick = {
+                                Toast.makeText(this, "Add a stop search is not ready yet", Toast.LENGTH_SHORT).show()
+                            },
+
+                            // TODO: 之后这里把 request 交给 Zewen 的规划算法，再跳转到 Trip 页面。
+                            onGenerateItineraryClick = { request ->
+                                Toast.makeText(
+                                    this,
+                                    "Generate itinerary for ${request.destination}",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            },
+                        )
+                    }
+
+                    AuthScreen.PlanTripInterests -> {
+                        InterestsScreen(
+                            modifier = Modifier.fillMaxSize(),
+                            saveTarget = InterestsSaveTarget.TripOnly,
+                            initialSelectedInterests = tripInterests,
+
+                            // 从 Plan 进来，返回就回到 Plan My Trip。
+                            onBackClick = {
+                                currentScreen = AuthScreen.PlanMyTrip
+                            },
+
+                            // Done 后只更新本次行程兴趣，再返回 Plan My Trip。
+                            onDoneClick = { updatedInterests ->
+                                tripInterests = updatedInterests
+                                currentScreen = AuthScreen.PlanMyTrip
+                            },
+                        )
+                    }
+
                     AuthScreen.Profile -> {
                         ProfileScreen(
                             modifier = Modifier.fillMaxSize(),
@@ -193,9 +263,9 @@ class MainActivity : ComponentActivity() {
                             // TODO: 这里之后换成 Yuxiang 从 Firebase 读到的真实用户姓名。
                             userName = "Yufei",
 
-                            // TODO: 这里之后跳转到共用的 Interests 页面，并保存为用户默认长期偏好。
+                            // 从 Profile 进入 Interests，保存为用户长期默认偏好。
                             onTravelPreferencesClick = {
-                                Toast.makeText(this, "Interests page is not ready yet", Toast.LENGTH_SHORT).show()
+                                currentScreen = AuthScreen.ProfileInterests
                             },
 
                             // TODO: 这里之后跳转到 Saved Trips 页面，数据由 Yuxiang 提供。
@@ -227,6 +297,25 @@ class MainActivity : ComponentActivity() {
                             },
                         )
                     }
+
+                    AuthScreen.ProfileInterests -> {
+                        InterestsScreen(
+                            modifier = Modifier.fillMaxSize(),
+                            saveTarget = InterestsSaveTarget.ProfileDefault,
+                            initialSelectedInterests = profileDefaultInterests,
+
+                            // 从 Profile 进来，返回就回到 Profile。
+                            onBackClick = {
+                                currentScreen = AuthScreen.Profile
+                            },
+
+                            // Done 后更新长期默认兴趣；之后接 Yuxiang 的 Firebase 永久保存。
+                            onDoneClick = { updatedInterests ->
+                                profileDefaultInterests = updatedInterests
+                                currentScreen = AuthScreen.Profile
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -237,5 +326,8 @@ private enum class AuthScreen {
     Login,
     CreateAccount,
     Home,
+    PlanMyTrip,
+    PlanTripInterests,
     Profile,
+    ProfileInterests,
 }

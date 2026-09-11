@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.group5.roammate.R
 import com.group5.roammate.ui.theme.RoamMateTheme
 
-// 底部导航统一使用的颜色，保证每个主页面的导航栏长得一样。
+// Bottom navigation uniform colour
 private val RoamMateNavTeal = Color(0xFF008B8F)
 private val RoamMateNavLightTeal = Color(0xFFE6F5F3)
 private val RoamMateNavGrey = Color(0xFF9AA6A8)
@@ -97,8 +97,8 @@ private fun BottomNavigationItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        // 当前选中的 tab 会显示浅青色底色。
-        // 所有底部导航图标都固定为 24.dp，避免图片原始大小不一致。
+        // The currently selected tab will display a light cyan color
+
         Box(
             modifier = Modifier
                 .width(44.dp)

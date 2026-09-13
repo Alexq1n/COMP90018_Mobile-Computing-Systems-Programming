@@ -78,6 +78,7 @@ data class PlanMyTripRequest(
     val startTime: String,
     val interests: List<String>,
     val transportMode: String,
+    val specificPlaces: List<String>,
 )
 
 // data: interest option
@@ -101,6 +102,7 @@ private data class PlanCalendarMonth(
 private data class PlanCalendarDay(
     val dayNumber: String,
     val displayDate: String,
+    val dateKey: Long,
     val enabled: Boolean,
 )
 
@@ -108,6 +110,7 @@ private data class PlanCalendarDay(
 @Composable
 fun PlanMyTripScreen(
     selectedInterests: List<String>,
+    specificPlaces: List<String>,
     onInterestsChanged: (List<String>) -> Unit,
     onBackClick: () -> Unit,
     onMoreInterestsClick: () -> Unit,
@@ -119,7 +122,8 @@ fun PlanMyTripScreen(
     var selectedDestination by rememberSaveable { mutableStateOf("Melbourne") }
     var showCityPicker by rememberSaveable { mutableStateOf(false) }
     var selectedTransport by rememberSaveable { mutableStateOf("Transit") }
-    var selectedDate by rememberSaveable { mutableStateOf("12 Sep 2026") }
+    var selectedStartDate by rememberSaveable { mutableStateOf("12 Sep 2026") }
+    var selectedEndDate by rememberSaveable { mutableStateOf("13 Sep 2026") }
     var selectedStartTime by rememberSaveable { mutableStateOf("10:00") }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showStartTimePicker by rememberSaveable { mutableStateOf(false) }
@@ -134,10 +138,11 @@ fun PlanMyTripScreen(
                     onGenerateItineraryClick(
                         PlanMyTripRequest(
                             destination = selectedDestination,
-                            date = selectedDate,
+                            date = formatDateRange(selectedStartDate, selectedEndDate),
                             startTime = selectedStartTime,
                             interests = selectedInterests,
                             transportMode = selectedTransport,
+                            specificPlaces = specificPlaces,
                         ),
                     )
                 },
@@ -181,29 +186,23 @@ fun PlanMyTripScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Date + Start time (tap = pickers)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    SectionTitle(text = "Date")
-                    InfoField(
-                        icon = "□",
-                        text = selectedDate,
-                        onClick = { showDatePicker = true },
-                    )
-                }
+            // Date range uses full width, because it has start + end dates.
+            SectionTitle(text = "Date")
+            DateRangeField(
+                startDate = selectedStartDate,
+                endDate = selectedEndDate,
+                onClick = { showDatePicker = true },
+            )
 
-                Column(modifier = Modifier.weight(1f)) {
-                    SectionTitle(text = "Start time")
-                    InfoField(
-                        icon = "◷",
-                        text = selectedStartTime,
-                        onClick = { showStartTimePicker = true },
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Start time (tap = time picker)
+            SectionTitle(text = "Start time")
+            InfoField(
+                icon = "◷",
+                text = selectedStartTime,
+                onClick = { showStartTimePicker = true },
+            )
 
             Spacer(modifier = Modifier.height(22.dp))
 
@@ -237,6 +236,13 @@ fun PlanMyTripScreen(
             SectionTitle(text = "Add specific places (optional)")
             SearchPlacesField(onClick = onSearchPlacesClick)
 
+            if (specificPlaces.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // TODO: 之后这些必去地点会一起传给 Zewen 的规划算法。
+                SpecificPlacesPreview(places = specificPlaces)
+            }
+
             Spacer(modifier = Modifier.height(34.dp))
         }
     }
@@ -255,9 +261,11 @@ fun PlanMyTripScreen(
 
     if (showDatePicker) {
         PlanDatePickerDialog(
-            selectedDate = selectedDate,
-            onDateSelected = { date ->
-                selectedDate = date
+            selectedStartDate = selectedStartDate,
+            selectedEndDate = selectedEndDate,
+            onDateRangeSelected = { startDate, endDate ->
+                selectedStartDate = startDate
+                selectedEndDate = endDate
                 showDatePicker = false
             },
             onDismiss = { showDatePicker = false },
@@ -402,6 +410,97 @@ private fun InfoField(
                 fontWeight = FontWeight.ExtraBold,
             )
         }
+    }
+}
+
+// ---- date range field (tap = date range picker) ----
+@Composable
+private fun DateRangeField(
+    startDate: String,
+    endDate: String,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(74.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, RoamMateFieldBorder),
+        shadowElevation = 1.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "□",
+                color = RoamMateMutedText,
+                fontSize = 21.sp,
+                fontWeight = FontWeight.Bold,
+            )
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            // start date
+            DateRangePart(
+                label = "Start",
+                date = startDate,
+                modifier = Modifier.weight(1f),
+            )
+
+            Text(
+                text = "→",
+                modifier = Modifier.padding(horizontal = 10.dp),
+                color = RoamMateTeal,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+
+            // end date
+            DateRangePart(
+                label = "End",
+                date = endDate.ifBlank { startDate },
+                modifier = Modifier.weight(1f),
+            )
+
+            Text(
+                text = "▾",
+                color = RoamMateTeal,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+        }
+    }
+}
+
+// ---- one side of date range field ----
+@Composable
+private fun DateRangePart(
+    label: String,
+    date: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = label,
+            color = RoamMateMutedText,
+            fontSize = 12.sp,
+            lineHeight = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+
+        Spacer(modifier = Modifier.height(3.dp))
+
+        Text(
+            text = date,
+            color = RoamMateText,
+            fontSize = 16.sp,
+            lineHeight = 19.sp,
+            fontWeight = FontWeight.ExtraBold,
+            maxLines = 1,
+        )
     }
 }
 
@@ -582,6 +681,57 @@ private fun SearchPlacesField(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
             )
+        }
+    }
+}
+
+// ---- selected specific places from Add a stop ----
+@Composable
+private fun SpecificPlacesPreview(
+    places: List<String>,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        places.forEach { place ->
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                color = RoamMateLightTeal.copy(alpha = 0.62f),
+                border = BorderStroke(1.dp, RoamMateTeal.copy(alpha = 0.12f)),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "+",
+                        color = RoamMateTeal,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Text(
+                        text = place,
+                        modifier = Modifier.weight(1f),
+                        color = RoamMateText,
+                        fontSize = 15.sp,
+                        lineHeight = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+
+                    Text(
+                        text = "Must visit",
+                        color = RoamMateTeal,
+                        fontSize = 12.sp,
+                        lineHeight = 15.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                }
+            }
         }
     }
 }
@@ -827,16 +977,18 @@ private fun AustralianCityPickerDialog(
 // ---- date picker dialog ----
 @Composable
 private fun PlanDatePickerDialog(
-    selectedDate: String,
-    onDateSelected: (String) -> Unit,
+    selectedStartDate: String,
+    selectedEndDate: String,
+    onDateRangeSelected: (String, String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     // date range: 12 Sep 2026 - 12 Sep 2031
     val monthOptions = rememberPlanCalendarMonths()
-    var pendingDate by rememberSaveable { mutableStateOf(selectedDate) }
+    var pendingStartDate by rememberSaveable { mutableStateOf(selectedStartDate) }
+    var pendingEndDate by rememberSaveable { mutableStateOf(selectedEndDate) }
 
     BottomPickerDialog(
-        title = "Choose date",
+        title = "Choose dates",
         subtitle = "12 Sep 2026 - 12 Sep 2031",
         onDismiss = onDismiss,
     ) {
@@ -846,6 +998,19 @@ private fun PlanDatePickerDialog(
             fontSize = 14.sp,
             lineHeight = 18.sp,
             fontWeight = FontWeight.SemiBold,
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // selected range preview
+        Text(
+            text = "Selected: ${formatDateRange(pendingStartDate, pendingEndDate)}",
+            modifier = Modifier.fillMaxWidth(),
+            color = RoamMateTeal,
+            fontSize = 16.sp,
+            lineHeight = 20.sp,
+            fontWeight = FontWeight.ExtraBold,
+            textAlign = TextAlign.Center,
         )
 
         Spacer(modifier = Modifier.height(14.dp))
@@ -860,8 +1025,17 @@ private fun PlanDatePickerDialog(
             items(monthOptions) { month ->
                 CalendarMonthView(
                     month = month,
-                    selectedDate = pendingDate,
-                    onDateClick = { pendingDate = it },
+                    selectedStartDate = pendingStartDate,
+                    selectedEndDate = pendingEndDate,
+                    onDateClick = { clickedDay ->
+                        val updatedRange = updatePendingDateRange(
+                            currentStartDate = pendingStartDate,
+                            currentEndDate = pendingEndDate,
+                            clickedDay = clickedDay,
+                        )
+                        pendingStartDate = updatedRange.first
+                        pendingEndDate = updatedRange.second
+                    },
                 )
             }
         }
@@ -871,7 +1045,12 @@ private fun PlanDatePickerDialog(
         // confirm button
         ConfirmPickerButton(
             text = "Confirm",
-            onClick = { onDateSelected(pendingDate) },
+            onClick = {
+                onDateRangeSelected(
+                    pendingStartDate,
+                    pendingEndDate.ifBlank { pendingStartDate },
+                )
+            },
         )
     }
 }
@@ -949,9 +1128,17 @@ private fun StartTimePickerDialog(
 @Composable
 private fun CalendarMonthView(
     month: PlanCalendarMonth,
-    selectedDate: String,
-    onDateClick: (String) -> Unit,
+    selectedStartDate: String,
+    selectedEndDate: String,
+    onDateClick: (PlanCalendarDay) -> Unit,
 ) {
+    val selectedStartKey = parseDisplayDateKey(selectedStartDate)
+    val selectedEndKey = if (selectedEndDate.isBlank()) {
+        selectedStartKey
+    } else {
+        parseDisplayDateKey(selectedEndDate)
+    }
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = month.title,
@@ -973,9 +1160,15 @@ private fun CalendarMonthView(
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
             ) {
                 week.forEach { day ->
+                    val isSelectedEndpoint = day?.dateKey == selectedStartKey || day?.dateKey == selectedEndKey
+                    val isInsideSelectedRange = day != null &&
+                        selectedEndDate.isNotBlank() &&
+                        day.dateKey in selectedStartKey..selectedEndKey
+
                     CalendarDayCell(
                         day = day,
-                        selected = day?.displayDate == selectedDate,
+                        selected = isSelectedEndpoint,
+                        inSelectedRange = isInsideSelectedRange,
                         onDateClick = onDateClick,
                         modifier = Modifier.weight(1f),
                     )
@@ -1012,11 +1205,17 @@ private fun WeekdayHeader() {
 private fun CalendarDayCell(
     day: PlanCalendarDay?,
     selected: Boolean,
-    onDateClick: (String) -> Unit,
+    inSelectedRange: Boolean,
+    onDateClick: (PlanCalendarDay) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier.height(44.dp),
+        modifier = modifier
+            .height(44.dp)
+            .background(
+                color = if (inSelectedRange) RoamMateLightTeal else Color.Transparent,
+                shape = RoundedCornerShape(22.dp),
+            ),
         contentAlignment = Alignment.Center,
     ) {
         if (day != null) {
@@ -1029,7 +1228,7 @@ private fun CalendarDayCell(
                     )
                     .clickable(
                         enabled = day.enabled,
-                        onClick = { onDateClick(day.displayDate) },
+                        onClick = { onDateClick(day) },
                     ),
                 contentAlignment = Alignment.Center,
             ) {
@@ -1349,6 +1548,35 @@ private fun rememberPlanCalendarMonths(): List<PlanCalendarMonth> {
     }
 }
 
+// format: show date as a start-to-end range
+private fun formatDateRange(startDate: String, endDate: String): String {
+    val safeEndDate = endDate.ifBlank { startDate }
+    return "$startDate - $safeEndDate"
+}
+
+// parse: date text -> number for range comparison
+private fun parseDisplayDateKey(date: String): Long {
+    return runCatching {
+        SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH).parse(date)?.time ?: 0L
+    }.getOrDefault(0L)
+}
+
+// picker logic: first tap sets start, second tap sets end
+private fun updatePendingDateRange(
+    currentStartDate: String,
+    currentEndDate: String,
+    clickedDay: PlanCalendarDay,
+): Pair<String, String> {
+    val clickedDateKey = clickedDay.dateKey
+    val currentStartDateKey = parseDisplayDateKey(currentStartDate)
+
+    return if (currentEndDate.isNotBlank() || clickedDateKey < currentStartDateKey) {
+        clickedDay.displayDate to ""
+    } else {
+        currentStartDate to clickedDay.displayDate
+    }
+}
+
 // remember: date options
 @Composable
 private fun rememberPlanDateOptions(): List<String> {
@@ -1439,6 +1667,7 @@ private fun generatePlanCalendarMonths(): List<PlanCalendarMonth> {
                 PlanCalendarDay(
                     dayNumber = dayNumber.toString(),
                     displayDate = displayFormat.format(dayCalendar.time),
+                    dateKey = dayCalendar.timeInMillis,
                     enabled = enabled,
                 ),
             )
@@ -1482,6 +1711,7 @@ private fun PlanMyTripScreenPreview() {
 
         PlanMyTripScreen(
             selectedInterests = previewInterests,
+            specificPlaces = listOf("Melbourne Museum"),
             onInterestsChanged = { previewInterests = it },
             onBackClick = {},
             onMoreInterestsClick = {},

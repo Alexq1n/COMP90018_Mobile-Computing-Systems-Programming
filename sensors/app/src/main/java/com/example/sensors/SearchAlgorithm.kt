@@ -26,6 +26,7 @@ fun searchPlaces(
 
     // 2. Tokenization
     val queryTokens = tokenize(normalizedQuery)
+    println("queryTokens : $queryTokens")
 
     // 3–6. Matching + Scoring
     val results = places.mapNotNull { place ->

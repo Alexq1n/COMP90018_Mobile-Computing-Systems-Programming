@@ -37,13 +37,13 @@ android {
 
 dependencies {
 
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:...")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
     val cameraxVersion = "1.6.2"
     implementation("androidx.camera:camera-core:$cameraxVersion")
     implementation("androidx.camera:camera-camera2:$cameraxVersion")
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
     implementation("androidx.camera:camera-view:$cameraxVersion")
-
+    implementation("com.google.mlkit:face-detection:16.1.7")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)

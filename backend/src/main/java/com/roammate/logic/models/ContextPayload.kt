@@ -9,8 +9,10 @@ import kotlinx.serialization.Serializable
 data class ContextPayload(
     val currentLocation: Coordinates,
     val currentTime: String, // Format: "yyyy-MM-dd'T'HH:mm:ss"
-    val weatherStatus: WeatherStatus,
-    val itineraryProgress: ItineraryProgress
+    val weatherStatus: WeatherStatus, // Historical/planned weather
+    val currentWeather: WeatherStatus? = null, // Real-time weather when app opens
+    val itineraryProgress: ItineraryProgress,
+    val recentStepCount: Int? = null // Steps in last 1 hour
 )
 
 @Serializable

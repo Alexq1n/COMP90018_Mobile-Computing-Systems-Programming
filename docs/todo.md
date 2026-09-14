@@ -124,3 +124,98 @@
   - **Subtasks:**
     - [x] 17.1 Write JUnit tests for the EV Engine (ensure rainy weather zeros out outdoor POIs).
     - [x] 17.2 Write integration tests for `adjustItinerary` simulating a 2-hour delay, asserting Option A and B differ as expected.
+
+### Phase 7: Enhanced Travel Cost & User Preferences
+
+- [x] **Task 18: Update Travel Cost Algorithm with Real Data**
+  - **Context:** Replace Haversine-based estimation with actual walking/driving durations from upstream services.
+  - **Dependencies:** Task 7
+  - **Subtasks:**
+    - [x] 18.1 Define data models for `TravelDuration` (walking_minutes, driving_minutes) between POI pairs.
+    - [x] 18.2 Update `ITravelCostService` interface to accept real duration data instead of calculating from distance.
+    - [x] 18.3 Implement user preference logic: apply multiplier to walking/driving costs based on `UserProfile.transport_preference`.
+    - [x] 18.4 Refactor routing engine (Task 9) to use preference-adjusted travel costs in EV/Cost ratio calculations.
+
+### Phase 8: User-Editable Itinerary
+
+- [x] **Task 19: Implement Add POI to Itinerary**
+  - **Context:** Allow users to manually add specific POIs to their itinerary.
+  - **Dependencies:** Task 16
+  - **Subtasks:**
+    - [x] 19.1 Create `addPoiToItinerary(itinerary, poi, targetDayIndex, insertPosition)` function.
+    - [x] 19.2 Validate the POI can fit within the day's time budget (check operating hours and available time).
+    - [x] 19.3 Insert POI at the specified position and recalculate travel costs for adjacent POIs.
+- [x] **Task 20: Implement Remove POI from Itinerary**
+  - **Context:** Allow users to remove specific POIs from their planned itinerary.
+  - **Dependencies:** Task 16
+  - **Subtasks:**
+    - [x] 20.1 Create `removePoiFromItinerary(itinerary, poiId, dayIndex)` function.
+    - [x] 20.2 Remove the specified POI and recalculate travel costs for the remaining route.
+    - [x] 20.3 Return the freed time budget for that day.
+- [x] **Task 21: Implement Itinerary Reoptimization After Edits**
+  - **Context:** After manual add/remove operations, rebalance the itinerary to utilize freed time or accommodate new constraints.
+  - **Dependencies:** Task 19, Task 20
+  - **Subtasks:**
+    - [x] 21.1 Create `reoptimizeDay(dayItinerary, availableTime, contextPayload)` function.
+    - [x] 21.2 Apply the greedy heuristic routing (Task 9) to the modified day with remaining time budget.
+    - [x] 21.3 Preserve user-added POIs as "pinned" items that cannot be removed during reoptimization.
+    - [x] 21.4 Expose unified `editItinerary(action, params)` interface combining add/remove/reoptimize operations.
+
+### Phase 9: Weather-Triggered Replanning
+
+- [x] **Task 22: Implement Current Weather Context Parser**
+  - **Context:** Process real-time weather data received when user opens the app.
+  - **Dependencies:** Task 5
+  - **Subtasks:**
+    - [x] 22.1 Extend `ContextPayload` to include `current_weather` field (e.g., "rainy", "sunny", "cloudy").
+    - [x] 22.2 Create `parseWeatherContext(contextPayload)` function to extract weather status and timestamp.
+- [x] **Task 23: Detect Outdoor Activities on Rainy Days**
+  - **Context:** Check if today's itinerary contains outdoor POIs when weather is rainy.
+  - **Dependencies:** Task 22
+  - **Subtasks:**
+    - [x] 23.1 Create `hasOutdoorActivities(dayItinerary)` function checking POI `category` or `is_outdoor` flag.
+    - [x] 23.2 Trigger replanning flow only if both conditions met: rainy weather AND outdoor activities present.
+- [x] **Task 24: Generate Three Rainy Day Options**
+  - **Context:** Provide user with three choices when rainy day outdoor conflict detected.
+  - **Dependencies:** Task 23, Task 11, Task 12
+  - **Subtasks:**
+    - [x] 24.1 **Option 1:** Return original itinerary unchanged ("Continue with current plan").
+    - [x] 24.2 **Option 2:** Apply "Experience First" strategy (Task 11) with strong outdoor penalty to generate indoor-focused alternative.
+    - [x] 24.3 **Option 3:** Apply "Efficiency First" strategy (Task 12) with strong outdoor penalty to generate nearby-indoor alternative.
+    - [x] 24.4 Create `RainyDayOptions` data class containing all three options with descriptive labels.
+    - [x] 24.5 Expose `handleRainyDayScenario(currentItinerary, contextPayload)` function returning `RainyDayOptions`.
+
+### Phase 10: Fatigue Detection & Response
+
+- [x] **Task 25: Implement Fatigue Detection Algorithm**
+  - **Context:** Determine if user is fatigued based on recent step count data.
+  - **Dependencies:** Task 2
+  - **Subtasks:**
+    - [x] 25.1 Extend `ContextPayload` to include `recent_step_count` (steps in the last 1 hour).
+    - [x] 25.2 Define fatigue threshold (e.g., < 500 steps/hour = low activity, > 5000 steps/hour = high fatigue).
+    - [x] 25.3 Create `detectFatigue(stepCount)` function returning fatigue level enum (LOW, MEDIUM, HIGH).
+- [x] **Task 26: Adjust Itinerary Based on Fatigue Level**
+  - **Context:** Modify remaining itinerary when high fatigue is detected.
+  - **Dependencies:** Task 25
+  - **Subtasks:**
+    - [x] 26.1 Apply penalty to POIs with high `visit_duration` when fatigue is HIGH.
+    - [x] 26.2 Boost EV of nearby, low-intensity POIs (e.g., cafes, parks with short visit times).
+    - [x] 26.3 Suggest rest periods or reduce total POI count for remaining day.
+    - [x] 26.4 Integrate fatigue adjustment into `adjustItinerary` function (Task 13) as an additional context factor.
+
+### Phase 11: Data Interface Specification
+
+- [x] **Task 27: Define Upstream Input Data Contract**
+  - **Context:** Document all data required from upstream services for the trip planning engine.
+  - **Dependencies:** All previous tasks
+  - **Subtasks:**
+    - [x] 27.1 Create `UPSTREAM_DATA_CONTRACT.md` listing all input data fields.
+    - [x] 27.2 For each field, specify: name, description, data type, example value, and required/optional status.
+    - [x] 27.3 Include: POI master data, travel duration matrices, real-time weather, user step count, user profile, current location/time.
+- [x] **Task 28: Define Downstream Output Data Contract**
+  - **Context:** Document all data outputs provided by the trip planning engine to downstream consumers (UI/ViewModel).
+  - **Dependencies:** All previous tasks
+  - **Subtasks:**
+    - [x] 28.1 Create `DOWNSTREAM_DATA_CONTRACT.md` listing all output data structures.
+    - [x] 28.2 For each output function, specify: function name, return type, data fields, and usage scenario.
+    - [x] 28.3 Include outputs from: initial trip generation, adjustment options, rainy day options, fatigue warnings, edit results.

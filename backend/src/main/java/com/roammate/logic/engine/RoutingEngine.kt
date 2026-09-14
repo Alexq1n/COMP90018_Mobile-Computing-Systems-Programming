@@ -9,7 +9,8 @@ import java.time.format.DateTimeFormatter
  * Uses greedy heuristic to maximize EV within time constraints
  */
 class RoutingEngine(
-    private val userProfile: UserProfile
+    private val userProfile: UserProfile,
+    private val travelDurationMatrix: TravelDurationMatrix? = null
 ) {
 
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -139,7 +140,7 @@ class RoutingEngine(
     }
 
     /**
-     * Select optimal route using greedy heuristic
+     * Select optimal route using greedy heuristic with preference-adjusted costs
      */
     private fun selectOptimalRoute(
         poisWithEV: List<Pair<POI, Double>>,
@@ -151,13 +152,25 @@ class RoutingEngine(
         val selected = mutableListOf<ItineraryPOI>()
         val remaining = poisWithEV.toMutableList()
         var currentLocation = startLocation
+        var currentLocationPoiId: String? = null
         var currentTimeObj = currentTime
         var remainingTime = availableMinutes
 
         while (remaining.isNotEmpty() && remainingTime > 0) {
             // Calculate travel time and EV/Cost ratio for each remaining POI
             val candidates = remaining.map { (poi, ev) ->
-                val travelTime = TravelCostService.calculateTravelTime(
+                // Try to use real duration data with preference adjustment first
+                val travelTime = if (currentLocationPoiId != null && travelDurationMatrix != null) {
+                    TravelCostService.calculateAdjustedTravelTime(
+                        fromPoiId = currentLocationPoiId!!,
+                        toPoiId = poi.id,
+                        transportMode = userProfile.transportMode,
+                        transportPreference = userProfile.transportPreference,
+                        durationMatrix = travelDurationMatrix
+                    )
+                } else {
+                    null
+                } ?: TravelCostService.calculateTravelTime(
                     fromLat = currentLocation.latitude,
                     fromLon = currentLocation.longitude,
                     toLat = poi.coordinates.latitude,
@@ -201,6 +214,7 @@ class RoutingEngine(
 
             // Update state
             currentLocation = bestPOI.coordinates
+            currentLocationPoiId = bestPOI.id
             remainingTime -= (travelTime + bestPOI.recommendedVisitDuration)
             remaining.removeIf { it.first.id == bestPOI.id }
         }

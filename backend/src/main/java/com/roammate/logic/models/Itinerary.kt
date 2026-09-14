@@ -30,7 +30,8 @@ data class ItineraryPOI(
     val endTime: String, // Format: "HH:mm"
     val travelTimeFromPrevious: Int, // minutes
     val expectedValue: Double,
-    val isFiller: Boolean = false
+    val isFiller: Boolean = false,
+    val isUserPinned: Boolean = false // True if manually added by user
 )
 
 /**

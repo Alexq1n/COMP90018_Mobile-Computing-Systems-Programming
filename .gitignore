@@ -82,11 +82,6 @@ ehthumbs.db
 Thumbs.db
 
 # ===========================
-# Claude Worktrees (optional - keep if you want)
-# ===========================
-.claude/worktrees/
-
-# ===========================
 # Test Reports
 # ===========================
 *.log
@@ -96,7 +91,19 @@ test-results/
 # ===========================
 # Others
 # ===========================
-/PROJECT_SUMMARY.md
-/QUICK_VERIFICATION.md
+/docs/PROJECT_SUMMARY.md
+/docs/QUICK_VERIFICATION.md
 /docs/VERIFICATION_REPORT.md
+/docs/DOWNSTREAM_DATA_CONTRACT.md
 /COMMIT_MESSAGE.txt
+/docs/PRESENTATION.md
+/backend/ManualTestRunner.kts
+/backend/README.md
+.claude/
+docs/specs_zh.md
+*_zh.md
+
+# ===========================
+# Temporary files
+# ===========================
+docs/*.txt

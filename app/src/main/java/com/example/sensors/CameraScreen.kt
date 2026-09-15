@@ -1,13 +1,13 @@
 package com.example.sensors
 
-
-import android.graphics.Rect
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -32,7 +33,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
-import kotlin.math.roundToInt
+
 
 @Composable
 fun CameraScreen(
@@ -45,8 +46,18 @@ fun CameraScreen(
         PreviewView(context)
     }
 
+    // Track the position of the person in the camera view
     var personPosition by remember {
         mutableStateOf<IntOffset?>(null)
+    }
+
+    // Track the offset of the virtual pet
+    var calibrationOffset by remember {
+        mutableStateOf(IntOffset.Zero)
+    }
+    // Track the last time a face was detected
+    var lastFaceDetectedTime by remember {
+        mutableStateOf(System.currentTimeMillis())
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -109,6 +120,9 @@ fun CameraScreen(
 
                             if (face != null) {
 
+                                lastFaceDetectedTime =
+                                    System.currentTimeMillis()
+
                                 val box =
                                     face.boundingBox
 
@@ -125,6 +139,11 @@ fun CameraScreen(
                                     )
                             } else {
                                 personPosition = null
+                                val currentTime =
+                                    System.currentTimeMillis()
+                                if (currentTime - lastFaceDetectedTime > 1500){
+                                    calibrationOffset = IntOffset.Zero}
+
                             }
                         }
                         .addOnCompleteListener {
@@ -172,17 +191,30 @@ fun CameraScreen(
 
         // Virtual pet
         personPosition?.let { position ->
+            val petPosition =
+                IntOffset(
+                    position.x + calibrationOffset.x,
+                    position.y + calibrationOffset.y
+                )
+            
 
             Text(
                 text = "🐕",
                 modifier = Modifier
                     .offset {
-                        IntOffset(
-                            position.x,
-                            position.y
-                        )
-                    }
+                        petPosition
+                        }
                     .background(Color.Transparent)
+                    .pointerInput(Unit){
+                        detectDragGestures { change, dragAmount ->
+                            change.consume()
+                            calibrationOffset =
+                                IntOffset(
+                                    calibrationOffset.x + dragAmount.x.toInt(),
+                                    calibrationOffset.y + dragAmount.y.toInt()
+                                )
+                        }
+                    }
             )
         }
 

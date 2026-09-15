@@ -2,6 +2,7 @@ package com.example.sensors
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -24,7 +25,8 @@ fun CameraPreview(
     petEnabled: Boolean,
     trackEnabled: Boolean,
     onPersonPositionChanged: (IntOffset) -> Unit,
-    onCalibrationOffsetZero: () -> Unit
+    onCalibrationOffsetZero: () -> Unit,
+    onImageCaptureReady: (ImageCapture) -> Unit
 ) {
 
     val context = LocalContext.current
@@ -39,6 +41,7 @@ fun CameraPreview(
         val cameraProviderFuture =
             ProcessCameraProvider.getInstance(context)
 
+        // ML Kit
         val detectorOptions =
             FaceDetectorOptions.Builder()
                 .setPerformanceMode(
@@ -46,11 +49,12 @@ fun CameraPreview(
                 )
                 .setMinFaceSize(0.1f)
                 .build()
-
         val faceDetector =
             FaceDetection.getClient(detectorOptions)
 
+        // Track first person shown in the camera
         var trackedFacePosition: IntOffset? = null
+        // Track time that uses to reset the CalibrationOffset
         var lastFaceDetectedTime =
             System.currentTimeMillis()
 
@@ -62,9 +66,9 @@ fun CameraPreview(
             val preview =
                 Preview.Builder().build()
 
+            // Display camera
             preview.surfaceProvider =
                 previewView.surfaceProvider
-
             val cameraSelector =
                 CameraSelector.DEFAULT_BACK_CAMERA
 
@@ -75,8 +79,17 @@ fun CameraPreview(
                     )
                     .build()
 
+            val imageCapture =
+                ImageCapture.Builder()
+                    .setCaptureMode(
+                        ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+                    )
+                    .build()
+
             // Run ImageAnalysis only if Pet on + Track on
             if (petEnabled && trackEnabled) {
+                // Apply ML kit on this frame
+                // imageProxy: one frame of camera image per time.
                 imageAnalysis.setAnalyzer(
                     ContextCompat.getMainExecutor(context)
                 ) { imageProxy ->
@@ -85,7 +98,7 @@ fun CameraPreview(
                         imageProxy.image
 
                     if (mediaImage != null) {
-
+                        //Convert to ML Kit InputImage
                         val image =
                             InputImage.fromMediaImage(
                                 mediaImage,
@@ -96,11 +109,10 @@ fun CameraPreview(
                             .process(image)
                             .addOnSuccessListener { faces ->
 
+                                // Only track first person shown in the camera
                                 val face =
                                     if (trackedFacePosition == null) {
-
                                         faces.firstOrNull()
-
                                     } else {
 
                                         faces.minByOrNull { face ->
@@ -125,8 +137,8 @@ fun CameraPreview(
                                             dx * dx + dy * dy
                                         }
                                     }
-                                // Track on, find face
-                                if (face != null) {
+                                // Pass face location to other file if face found.
+                                 if (face != null) {
 
                                     lastFaceDetectedTime =
                                         System.currentTimeMillis()
@@ -149,13 +161,14 @@ fun CameraPreview(
                                     trackedFacePosition =
                                         position
 
+                                     // Pass the face location to other file
                                     onPersonPositionChanged(
                                         position
                                     )
 
                                 } else {
-                                    // Face disappears for short time
-                                    // Keep offset
+                                     // Reset the offset only if a new face is detected
+                                     // longer than 1.5s of the previous detection.
                                     val currentTime =
                                         System.currentTimeMillis()
 
@@ -187,21 +200,24 @@ fun CameraPreview(
             imageAnalysis.clearAnalyzer()
         }
 
-            cameraProvider.unbindAll()
 
+            // Bind camera, preview and image analysis together to the camera screen.
+            cameraProvider.unbindAll()
             cameraProvider.bindToLifecycle(
                 lifecycleOwner,
                 cameraSelector,
                 preview,
-                imageAnalysis
+                imageAnalysis,
+                imageCapture
             )
+            // Pass image to camera screen
+            onImageCaptureReady(imageCapture)
 
         }, ContextCompat.getMainExecutor(context))
 
+        // If the camera provider is already closed, also close ML Kit
         onDispose {
-
             faceDetector.close()
-
             if (cameraProviderFuture.isDone) {
 
                 cameraProviderFuture

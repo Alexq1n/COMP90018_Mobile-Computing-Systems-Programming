@@ -42,7 +42,7 @@ fun PetOverlay(
         trackEnabled
     )
 
-    //Track on / Track off + manul offset
+    //For Both track on / track off, user can drag pet to the location they want.
     val petPosition =
         if (trackEnabled) {
             personPosition?.let { position ->
@@ -89,15 +89,15 @@ fun PetOverlay(
                                 newOffset
                             )
                         } else{
-                            // Track off
-                                val newPosition =
-                                    IntOffset(
-                                        currentManualPosition.x +
-                                                dragAmount.x.toInt(),
-                                        currentManualPosition.y +
-                                                dragAmount.y.toInt()
-                                    )
-                                    currentManualCallback(newPosition)
+                        // Track off
+                        val newPosition =
+                            IntOffset(
+                                currentManualPosition.x +
+                                        dragAmount.x.toInt(),
+                                currentManualPosition.y +
+                                        dragAmount.y.toInt()
+                            )
+                            currentManualCallback(newPosition)
                             }
                         }
                     }

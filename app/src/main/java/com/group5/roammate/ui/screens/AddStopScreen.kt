@@ -61,15 +61,18 @@ fun AddStopScreen(
     currentCity: String,
     places: List<AddStopPlace>,
     onBackClick: () -> Unit,
+    onSearchConfirmClick: (String) -> Unit,
     onAddPlaceClick: (AddStopPlace) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var searchText by rememberSaveable { mutableStateOf("") }
-    val filteredPlaces = if (searchText.isBlank()) {
+    var confirmedSearchText by rememberSaveable { mutableStateOf("") }
+
+    val filteredPlaces = if (confirmedSearchText.isBlank()) {
         places
     } else {
         places.filter { place ->
-            place.name.contains(searchText, ignoreCase = true)
+            place.name.contains(confirmedSearchText, ignoreCase = true)
         }
     }
 
@@ -105,13 +108,26 @@ fun AddStopScreen(
             AddStopSearchField(
                 searchText = searchText,
                 onSearchTextChange = { searchText = it },
-                onClearClick = { searchText = "" },
+                onClearClick = {
+                    searchText = ""
+                    confirmedSearchText = ""
+                },
+                onSearchConfirmClick = {
+                    val query = searchText.trim()
+                    confirmedSearchText = query
+
+                    // Only this confirm click sends the query to the future search logic.
+                    // Typing in the field should not call Alex's search.
+                    if (query.isNotBlank()) {
+                        onSearchConfirmClick(query)
+                    }
+                },
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = if (searchText.isBlank()) {
+                text = if (confirmedSearchText.isBlank()) {
                     "Popular in $currentCity"
                 } else {
                     "Search results"
@@ -124,9 +140,9 @@ fun AddStopScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // TODO: 之后这里接 Yan 的景点搜索 / 室内室外数据，Sitao 的距离定位数据。
+            // TODO: 之后这里接 Alex 的搜索结果，Yan 的景点/室内室外数据，Sitao 的距离定位数据。
             if (filteredPlaces.isEmpty()) {
-                NotFoundCard(searchText = searchText)
+                NotFoundCard(searchText = confirmedSearchText)
             } else {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -172,55 +188,94 @@ private fun AddStopSearchField(
     searchText: String,
     onSearchTextChange: (String) -> Unit,
     onClearClick: () -> Unit,
+    onSearchConfirmClick: () -> Unit,
 ) {
-    OutlinedTextField(
-        value = searchText,
-        onValueChange = onSearchTextChange,
+    Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(62.dp),
-        singleLine = true,
-        shape = RoundedCornerShape(28.dp),
-        leadingIcon = {
-            Text(
-                text = "⌕",
-                color = RoamMateMutedText,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        },
-        trailingIcon = {
-            if (searchText.isNotBlank()) {
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        OutlinedTextField(
+            value = searchText,
+            onValueChange = onSearchTextChange,
+            modifier = Modifier
+                .weight(1f)
+                .height(62.dp),
+            singleLine = true,
+            shape = RoundedCornerShape(28.dp),
+            leadingIcon = {
                 Text(
-                    text = "×",
-                    modifier = Modifier.clickable(onClick = onClearClick),
+                    text = "⌕",
                     color = RoamMateMutedText,
-                    fontSize = 24.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                 )
-            }
-        },
-        placeholder = {
-            Text(
-                text = "Search places to add",
-                color = RoamMateMutedText,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
+            },
+            trailingIcon = {
+                if (searchText.isNotBlank()) {
+                    Text(
+                        text = "×",
+                        modifier = Modifier.clickable(onClick = onClearClick),
+                        color = RoamMateMutedText,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            placeholder = {
+                Text(
+                    text = "Search places to add",
+                    color = RoamMateMutedText,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            },
+            textStyle = androidx.compose.ui.text.TextStyle(
+                color = RoamMateText,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.ExtraBold,
+            ),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.Transparent,
+                unfocusedBorderColor = Color.Transparent,
+                focusedContainerColor = RoamMateSearchBackground,
+                unfocusedContainerColor = RoamMateSearchBackground,
+                cursorColor = RoamMateTeal,
+            ),
+        )
+
+        SearchConfirmButton(
+            enabled = searchText.isNotBlank(),
+            onClick = onSearchConfirmClick,
+        )
+    }
+}
+
+// ---- search confirm button ----
+@Composable
+private fun SearchConfirmButton(
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(52.dp)
+            .background(
+                color = if (enabled) RoamMateTeal else RoamMateFieldBorder,
+                shape = CircleShape,
             )
-        },
-        textStyle = androidx.compose.ui.text.TextStyle(
-            color = RoamMateText,
-            fontSize = 18.sp,
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "⌕",
+            color = Color.White,
+            fontSize = 24.sp,
             fontWeight = FontWeight.ExtraBold,
-        ),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Color.Transparent,
-            unfocusedBorderColor = Color.Transparent,
-            focusedContainerColor = RoamMateSearchBackground,
-            unfocusedContainerColor = RoamMateSearchBackground,
-            cursorColor = RoamMateTeal,
-        ),
-    )
+            textAlign = TextAlign.Center,
+        )
+    }
 }
 
 // ---- one result row ----
@@ -366,6 +421,7 @@ private fun AddStopScreenPreview() {
                 AddStopPlace("Royal Botanic Gardens", "2.4 km", "Outdoor"),
             ),
             onBackClick = {},
+            onSearchConfirmClick = {},
             onAddPlaceClick = {},
             modifier = Modifier.fillMaxSize(),
         )

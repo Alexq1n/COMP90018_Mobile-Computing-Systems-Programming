@@ -32,11 +32,17 @@ import androidx.compose.ui.unit.sp
 import com.group5.roammate.R
 import com.group5.roammate.ui.theme.RoamMateTheme
 
-// Bottom navigation uniform colour
-private val RoamMateNavTeal = Color(0xFF008B8F)
-private val RoamMateNavLightTeal = Color(0xFFE6F5F3)
-private val RoamMateNavGrey = Color(0xFF9AA6A8)
+// on-screen -> code:
+//   bottom bar (5 tabs)          -> RoamMateBottomNavigation
+//   one tab (icon + label)       -> BottomNavigationItem
+//   the 5 tabs + their icons     -> RoamMateMainTab enum
 
+// colors
+private val RoamMateNavTeal = Color(0xFF008B8F)       // selected
+private val RoamMateNavLightTeal = Color(0xFFE6F5F3)  // selected icon pill
+private val RoamMateNavGrey = Color(0xFF9AA6A8)       // unselected
+
+// the 5 tabs (label + icon)
 enum class RoamMateMainTab(
     val label: String,
     val iconRes: Int,
@@ -48,6 +54,7 @@ enum class RoamMateMainTab(
     Profile("Profile", R.drawable.nav_profile),
 }
 
+// ---- bottom bar (white bar, 5 tabs in a row) ----
 @Composable
 fun RoamMateBottomNavigation(
     selectedTab: RoamMateMainTab,
@@ -67,6 +74,7 @@ fun RoamMateBottomNavigation(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // one item per tab
             RoamMateMainTab.entries.forEach { tab ->
                 BottomNavigationItem(
                     tab = tab,
@@ -79,6 +87,7 @@ fun RoamMateBottomNavigation(
     }
 }
 
+// ---- one tab (icon pill + label) ; tap = switch tab ----
 @Composable
 private fun BottomNavigationItem(
     tab: RoamMateMainTab,
@@ -86,6 +95,7 @@ private fun BottomNavigationItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // teal if selected, grey if not
     val itemColor = if (selected) RoamMateNavTeal else RoamMateNavGrey
 
     Column(
@@ -97,8 +107,7 @@ private fun BottomNavigationItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        // The currently selected tab will display a light cyan color
-
+        // icon in a pill (pill is light-teal only when selected)
         Box(
             modifier = Modifier
                 .width(44.dp)
@@ -119,6 +128,7 @@ private fun BottomNavigationItem(
 
         Spacer(modifier = Modifier.height(3.dp))
 
+        // label under the icon
         Text(
             text = tab.label,
             modifier = Modifier.fillMaxWidth(),
@@ -132,6 +142,7 @@ private fun BottomNavigationItem(
     }
 }
 
+// preview
 @Preview(showBackground = true)
 @Composable
 fun RoamMateBottomNavigationPreview() {

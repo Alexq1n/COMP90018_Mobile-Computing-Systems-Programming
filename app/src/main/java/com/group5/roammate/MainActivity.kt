@@ -14,12 +14,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.group5.roammate.ui.screens.AdjustChangeTone
+import com.group5.roammate.ui.screens.AdjustItineraryPlan
+import com.group5.roammate.ui.screens.AdjustItineraryScreen
+import com.group5.roammate.ui.screens.AdjustItineraryStop
+import com.group5.roammate.ui.screens.AdjustRemovedStop
 import com.group5.roammate.ui.screens.AddStopPlace
 import com.group5.roammate.ui.screens.AddStopScreen
 import com.group5.roammate.ui.screens.CreateAccountScreen
 import com.group5.roammate.ui.screens.EditItineraryScreen
+import com.group5.roammate.ui.screens.ExplorePlace
+import com.group5.roammate.ui.screens.ExplorePlaceCategory
+import com.group5.roammate.ui.screens.ExploreScreen
+import com.group5.roammate.ui.screens.HomeLeaveNowReminder
 import com.group5.roammate.ui.screens.HomePetStatus
 import com.group5.roammate.ui.screens.HomeScreen
+import com.group5.roammate.ui.screens.HomeSmartSuggestion
 import com.group5.roammate.ui.screens.HomeTripStop
 import com.group5.roammate.ui.screens.HomeTripStopStatus
 import com.group5.roammate.ui.screens.InterestsSaveTarget
@@ -88,12 +98,28 @@ class MainActivity : ComponentActivity() {
                                 status = TripStopStatus.Upcoming,
                             ),
                             TripTimelineStop(
+                                time = "13:30",
+                                title = "Pidapipo Gelato",
+                                status = TripStopStatus.Upcoming,
+                                // TODO: 这是 hidden 小条的临时演示；之后由 Zewen 的 isFiller/hidden-gem 数据决定。
+                                hiddenTag = "Hidden gem · nearby",
+                            ),
+                            TripTimelineStop(
                                 time = "14:00",
                                 title = "Royal Botanic Gardens",
                                 status = TripStopStatus.Upcoming,
                             ),
                         ),
                     )
+                }
+
+                // Adjust itinerary 弹窗当前显示第几个候选方案。
+                // TODO: Zewen 现在只提供两个方案，所以这里最多切换 0 和 1。
+                var adjustPlanIndex by rememberSaveable { mutableStateOf(0) }
+
+                // TODO: 这是临时假数据；之后替换成 Zewen 根据天气重新生成的两个候选行程。
+                val adjustedItineraryPlans = remember {
+                    sampleAdjustedItineraryPlans()
                 }
 
                 when (currentScreen) {
@@ -160,6 +186,22 @@ class MainActivity : ComponentActivity() {
                     }
 
                     AuthScreen.Home -> {
+                        // TODO: 这是 Home 顶部 Leave now 提醒的临时假数据。
+                        // TODO: 之后由 Zewen 提供当前/下一站行程，Sitao 提供当前位置、路线时间和是否迟到。
+                        val homeLeaveNowReminder = HomeLeaveNowReminder(
+                            placeName = "Melbourne Museum",
+                            scheduledTime = "10:00",
+                            delayMinutes = 3,
+                            navigationQuery = "Melbourne Museum",
+                        )
+
+                        // TODO: 这是 Home 顶部 Smart suggestion 的临时假数据。
+                        // TODO: 之后由 Yan 提供天气变化，Zewen 根据建议触发行程调整。
+                        val homeSmartSuggestion = HomeSmartSuggestion(
+                            label = "Rain",
+                            message = "Smart suggestion · Rain 2-4 PM, tap to adjust your plan",
+                        )
+
                         HomeScreen(
                             modifier = Modifier.fillMaxSize(),
 
@@ -169,6 +211,14 @@ class MainActivity : ComponentActivity() {
                             // Home 的 Today's trip 跟 Trip/Edit itinerary 共用同一份 itinerary。
                             // TODO: 等 Zewen/Yuxiang 提供真实行程数据后，tripTimelineStops 改成后端/Firebase 数据。
                             todayTripStops = tripTimelineStops.toHomeTripStops(),
+
+                            // Home 顶部提醒现在从数据对象读取，不再在 HomeScreen 里写死文字。
+                            // 如果没有提醒，之后把这里传 null 即可隐藏卡片。
+                            leaveNowReminder = homeLeaveNowReminder,
+
+                            // Home 顶部天气建议现在从数据对象读取。
+                            // 如果没有建议，之后把这里传 null 即可隐藏卡片。
+                            smartSuggestion = homeSmartSuggestion,
 
                             // TODO: 这里现在先用吉祥物图片当 pet 占位。
                             // TODO: 等 Jie/后端做好真正宠物后，把这组 HomePetStatus 换成真实 pet 数据。
@@ -181,12 +231,13 @@ class MainActivity : ComponentActivity() {
 
                             // TODO: 之后这里用真实当前站点地址打开外部地图导航。
                             onNavigateReminderClick = {
-                                openExternalMap("Melbourne Museum")
+                                openExternalMap(homeLeaveNowReminder.navigationQuery)
                             },
 
                             // TODO: 之后这里跳转到 Adjust itinerary 页面。
                             onSmartSuggestionClick = {
-                                Toast.makeText(this, "Adjust itinerary page is not ready yet", Toast.LENGTH_SHORT).show()
+                                adjustPlanIndex = 0
+                                currentScreen = AuthScreen.AdjustItinerary
                             },
 
                             // TODO: 之后这里跳转到 Companions/Pet 页面。
@@ -199,9 +250,8 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.PlanMyTrip
                             },
 
-                            // TODO: 之后这里跳转到 Explore 页面。
                             onExploreClick = {
-                                Toast.makeText(this, "Explore page is not ready yet", Toast.LENGTH_SHORT).show()
+                                currentScreen = AuthScreen.Explore
                             },
 
                             // 点击 today's trip 卡片，进入 Trip 页面。
@@ -215,12 +265,50 @@ class MainActivity : ComponentActivity() {
                                     RoamMateMainTab.Home -> Unit
                                     RoamMateMainTab.Trip -> currentScreen = AuthScreen.Trip
                                     RoamMateMainTab.Profile -> currentScreen = AuthScreen.Profile
+                                    RoamMateMainTab.Explore -> currentScreen = AuthScreen.Explore
                                     else -> Toast.makeText(
                                         this,
                                         "${tab.label} page is not ready yet",
                                         Toast.LENGTH_SHORT,
                                     ).show()
                                 }
+                            },
+                        )
+                    }
+
+                    AuthScreen.AdjustItinerary -> {
+                        val selectedPlan = adjustedItineraryPlans[
+                            adjustPlanIndex.coerceIn(0, adjustedItineraryPlans.lastIndex)
+                        ]
+
+                        AdjustItineraryScreen(
+                            modifier = Modifier.fillMaxSize(),
+                            plan = selectedPlan,
+                            canRegenerateAnother = adjustPlanIndex < adjustedItineraryPlans.lastIndex,
+
+                            // Apply this plan:
+                            // 把 Zewen 给出的候选方案转换成 Trip/Home 共用的 tripTimelineStops。
+                            onApplyPlanClick = { plan ->
+                                tripTimelineStops = plan.toTripTimelineStops()
+                                Toast.makeText(this, "New itinerary applied", Toast.LENGTH_SHORT).show()
+                                currentScreen = AuthScreen.Trip
+                            },
+
+                            // Regenerate another:
+                            // Zewen 目前只做两个方案，所以这里只能从第一个切到第二个。
+                            onRegenerateAnotherClick = {
+                                adjustPlanIndex = (adjustPlanIndex + 1)
+                                    .coerceAtMost(adjustedItineraryPlans.lastIndex)
+                            },
+
+                            // 第二个方案没有第三个可生成，所以按钮变成 Back to previous plan。
+                            onBackToPreviousPlanClick = {
+                                adjustPlanIndex = (adjustPlanIndex - 1).coerceAtLeast(0)
+                            },
+
+                            // 不采用新方案，保留原本 tripTimelineStops。
+                            onKeepCurrentPlanClick = {
+                                currentScreen = AuthScreen.Trip
                             },
                         )
                     }
@@ -263,6 +351,45 @@ class MainActivity : ComponentActivity() {
                                 when (tab) {
                                     RoamMateMainTab.Home -> currentScreen = AuthScreen.Home
                                     RoamMateMainTab.Trip -> Unit
+                                    RoamMateMainTab.Explore -> currentScreen = AuthScreen.Explore
+                                    RoamMateMainTab.Profile -> currentScreen = AuthScreen.Profile
+                                    else -> Toast.makeText(
+                                        this,
+                                        "${tab.label} page is not ready yet",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                            },
+                        )
+                    }
+
+                    AuthScreen.Explore -> {
+                        // TODO: 这是 Explore 页的临时假数据。
+                        // TODO: 之后 currentArea/places 由 Alex/Sitao 的 GPS + Yan/Leyan 的景点数据共同生成。
+                        val nearbyExplorePlaces = remember {
+                            sampleNearbyExplorePlaces()
+                        }
+
+                        ExploreScreen(
+                            modifier = Modifier.fillMaxSize(),
+                            currentArea = "Carlton",
+                            places = nearbyExplorePlaces,
+
+                            // TODO: 之后这里跳转 Attraction detail 页面。
+                            onPlaceClick = { place ->
+                                Toast.makeText(
+                                    this,
+                                    "Attraction detail for ${place.name} is not ready yet",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            },
+
+                            // Explore 当前页点 Explore 不动，其余已完成页面正常切换。
+                            onTabClick = { tab ->
+                                when (tab) {
+                                    RoamMateMainTab.Home -> currentScreen = AuthScreen.Home
+                                    RoamMateMainTab.Trip -> currentScreen = AuthScreen.Trip
+                                    RoamMateMainTab.Explore -> Unit
                                     RoamMateMainTab.Profile -> currentScreen = AuthScreen.Profile
                                     else -> Toast.makeText(
                                         this,
@@ -361,6 +488,16 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.PlanMyTrip
                             },
 
+                            // TODO: 之后这里把 query 传给 Alex 的景点搜索接口。
+                            // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
+                            onSearchConfirmClick = { query ->
+                                Toast.makeText(
+                                    this,
+                                    "Search: $query",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            },
+
                             // TODO: 之后这里把 added place 放进 Zewen 的 itinerary request。
                             onAddPlaceClick = { place ->
                                 planRequiredPlaces = planRequiredPlaces.addUniquePlace(place)
@@ -383,6 +520,16 @@ class MainActivity : ComponentActivity() {
                             // 从 Edit itinerary 进来，返回 Edit itinerary。
                             onBackClick = {
                                 currentScreen = AuthScreen.EditItinerary
+                            },
+
+                            // TODO: 之后这里把 query 传给 Alex 的景点搜索接口。
+                            // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
+                            onSearchConfirmClick = { query ->
+                                Toast.makeText(
+                                    this,
+                                    "Search: $query",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
                             },
 
                             // TODO: 之后这里把新增地点交给 Zewen，让后端插入合适位置并重新生成行程。
@@ -452,6 +599,7 @@ class MainActivity : ComponentActivity() {
                                     RoamMateMainTab.Profile -> Unit
                                     RoamMateMainTab.Home -> currentScreen = AuthScreen.Home
                                     RoamMateMainTab.Trip -> currentScreen = AuthScreen.Trip
+                                    RoamMateMainTab.Explore -> currentScreen = AuthScreen.Explore
                                     else -> Toast.makeText(
                                         this,
                                         "${tab.label} page is not ready yet",
@@ -609,6 +757,193 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun sampleNearbyExplorePlaces(): List<ExplorePlace> {
+        // TODO: 之后这里替换为真实附近景点列表。
+        // Alex/Sitao 提供当前 GPS，Yan/Leyan 提供景点坐标/类型，再由前端或后端计算距离后显示。
+        return listOf(
+            ExplorePlace(
+                name = "Melbourne Museum",
+                distanceText = "0.8 km",
+                category = ExplorePlaceCategory.Indoor,
+                environmentLabel = "Indoor",
+                tagText = "Good for rain",
+                mapX = 0.26f,
+                mapY = 0.34f,
+            ),
+            ExplorePlace(
+                name = "State Library Victoria",
+                distanceText = "1.1 km",
+                category = ExplorePlaceCategory.Indoor,
+                environmentLabel = "Indoor",
+                tagText = "Popular nearby",
+                mapX = 0.62f,
+                mapY = 0.28f,
+            ),
+            ExplorePlace(
+                name = "ACMI",
+                distanceText = "1.0 km",
+                category = ExplorePlaceCategory.Indoor,
+                environmentLabel = "Indoor",
+                tagText = "Good for rain",
+                mapX = 0.58f,
+                mapY = 0.68f,
+            ),
+            ExplorePlace(
+                name = "Royal Botanic Gardens",
+                distanceText = "2.4 km",
+                category = ExplorePlaceCategory.Outdoor,
+                environmentLabel = "Outdoor",
+                tagText = "Best on sunny days",
+                mapX = 0.72f,
+                mapY = 0.64f,
+            ),
+            ExplorePlace(
+                name = "Carlton Gardens",
+                distanceText = "0.6 km",
+                category = ExplorePlaceCategory.Outdoor,
+                environmentLabel = "Outdoor",
+                tagText = "Close to you",
+                mapX = 0.38f,
+                mapY = 0.26f,
+            ),
+            ExplorePlace(
+                name = "Fitzroy Gardens",
+                distanceText = "1.7 km",
+                category = ExplorePlaceCategory.Outdoor,
+                environmentLabel = "Outdoor",
+                tagText = "Nice walking route",
+                mapX = 0.76f,
+                mapY = 0.40f,
+            ),
+            ExplorePlace(
+                name = "Lune Croissanterie",
+                distanceText = "0.9 km",
+                category = ExplorePlaceCategory.Cafes,
+                environmentLabel = "Indoor",
+                tagText = "Popular cafe",
+                mapX = 0.42f,
+                mapY = 0.72f,
+            ),
+            ExplorePlace(
+                name = "Market Lane Coffee",
+                distanceText = "0.5 km",
+                category = ExplorePlaceCategory.Cafes,
+                environmentLabel = "Indoor",
+                tagText = "Coffee nearby",
+                mapX = 0.32f,
+                mapY = 0.58f,
+            ),
+            ExplorePlace(
+                name = "Operator25",
+                distanceText = "1.2 km",
+                category = ExplorePlaceCategory.Food,
+                environmentLabel = "Indoor",
+                tagText = "Brunch spot",
+                mapX = 0.50f,
+                mapY = 0.78f,
+            ),
+            ExplorePlace(
+                name = "Queen Victoria Market",
+                distanceText = "1.6 km",
+                category = ExplorePlaceCategory.Food,
+                environmentLabel = "Covered",
+                tagText = "Local food",
+                mapX = 0.66f,
+                mapY = 0.58f,
+            ),
+        )
+    }
+
+    private fun sampleAdjustedItineraryPlans(): List<AdjustItineraryPlan> {
+        // TODO: 之后这里由 Zewen 后端返回。
+        // UI 只需要拿到两个 AdjustItineraryPlan：第一个方案和 regenerate 后的第二个方案。
+        return listOf(
+            AdjustItineraryPlan(
+                reasonLabel = "rain",
+                reasonDescription = "Heavy rain 2-4 PM - here's a rewritten plan for today:",
+                stops = listOf(
+                    AdjustItineraryStop(
+                        time = "10:00",
+                        title = "Melbourne Museum",
+                        changeLabel = "Kept",
+                        changeTone = AdjustChangeTone.Neutral,
+                    ),
+                    AdjustItineraryStop(
+                        time = "12:30",
+                        title = "State Library",
+                        changeLabel = "Moved earlier",
+                        changeTone = AdjustChangeTone.Positive,
+                    ),
+                    AdjustItineraryStop(
+                        time = "14:00",
+                        title = "ACMI",
+                        changeLabel = "New · indoor",
+                        changeTone = AdjustChangeTone.Positive,
+                    ),
+                    AdjustItineraryStop(
+                        time = "16:30",
+                        title = "Queen Victoria Market",
+                        changeLabel = "New · covered",
+                        changeTone = AdjustChangeTone.Positive,
+                    ),
+                ),
+                removedStop = AdjustRemovedStop(
+                    title = "Royal Botanic Gardens",
+                    reason = "outdoor · rain",
+                ),
+            ),
+            AdjustItineraryPlan(
+                reasonLabel = "rain",
+                reasonDescription = "Heavy rain 2-4 PM - here's another indoor-friendly option:",
+                stops = listOf(
+                    AdjustItineraryStop(
+                        time = "10:00",
+                        title = "Melbourne Museum",
+                        changeLabel = "Kept",
+                        changeTone = AdjustChangeTone.Neutral,
+                    ),
+                    AdjustItineraryStop(
+                        time = "12:00",
+                        title = "ACMI",
+                        changeLabel = "Moved earlier",
+                        changeTone = AdjustChangeTone.Positive,
+                    ),
+                    AdjustItineraryStop(
+                        time = "13:30",
+                        title = "State Library",
+                        changeLabel = "New · indoor",
+                        changeTone = AdjustChangeTone.Positive,
+                    ),
+                    AdjustItineraryStop(
+                        time = "15:30",
+                        title = "National Gallery of Victoria",
+                        changeLabel = "New · indoor",
+                        changeTone = AdjustChangeTone.Positive,
+                    ),
+                ),
+                removedStop = AdjustRemovedStop(
+                    title = "Royal Botanic Gardens",
+                    reason = "outdoor · rain",
+                ),
+            ),
+        )
+    }
+
+    private fun AdjustItineraryPlan.toTripTimelineStops(): List<TripTimelineStop> {
+        // TODO: 之后如果 Zewen 直接返回 TripTimelineStop 或统一 itinerary model，这里可以删除。
+        return stops.mapIndexed { index, stop ->
+            TripTimelineStop(
+                time = stop.time,
+                title = stop.title,
+                status = if (index == 0) {
+                    TripStopStatus.Current
+                } else {
+                    TripStopStatus.Upcoming
+                },
+            )
+        }
+    }
+
     private fun openExternalMap(placeName: String) {
         // 外部地图统一入口：Home 提醒条和 Trip 的 Start navigation 都调用这里。
         val mapUri = Uri.parse("geo:0,0?q=${Uri.encode(placeName)}")
@@ -627,6 +962,8 @@ private enum class AuthScreen {
     CreateAccount,
     Home,
     Trip,
+    Explore,
+    AdjustItinerary,
     EditItinerary,
     PlanAddStop,
     EditAddStop,

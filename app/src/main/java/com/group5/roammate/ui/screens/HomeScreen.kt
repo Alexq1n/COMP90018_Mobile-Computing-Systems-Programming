@@ -71,6 +71,22 @@ data class HomePetStatus(
     val imageRes: Int,
 )
 
+// Leave now card data.
+// Zewen/Sitao 之后可以用真实行程、当前位置和路线时间替换这里的数据。
+data class HomeLeaveNowReminder(
+    val placeName: String,
+    val scheduledTime: String,
+    val delayMinutes: Int,
+    val navigationQuery: String,
+)
+
+// Smart suggestion card data.
+// Yan 之后可以用天气变化生成 message，Zewen 再用它触发行程调整。
+data class HomeSmartSuggestion(
+    val label: String,
+    val message: String,
+)
+
 // stop status: Done, Current, Next
 enum class HomeTripStopStatus {
     Done,
@@ -85,7 +101,8 @@ fun HomeScreen(
     userName: String,
     modifier: Modifier = Modifier,
     todayTripStops: List<HomeTripStop> = emptyList(),
-    showLeaveNowReminder: Boolean = false,
+    leaveNowReminder: HomeLeaveNowReminder? = null,
+    smartSuggestion: HomeSmartSuggestion? = null,
     petStatus: HomePetStatus,
     onNavigateReminderClick: () -> Unit,
     onSmartSuggestionClick: () -> Unit,
@@ -123,16 +140,24 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // reminder: only for overtime
-            if (showLeaveNowReminder) {
-                LeaveNowReminderCard(onNavigateClick = onNavigateReminderClick)
+            // Leave now reminder: null means no reminder now.
+            leaveNowReminder?.let { reminder ->
+                LeaveNowReminderCard(
+                    reminder = reminder,
+                    onNavigateClick = onNavigateReminderClick,
+                )
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // smart suggestion for weather: click to adjust
-            SmartSuggestionCard(onClick = onSmartSuggestionClick)
+            // Smart suggestion: null means no weather adjustment suggestion now.
+            smartSuggestion?.let { suggestion ->
+                SmartSuggestionCard(
+                    suggestion = suggestion,
+                    onClick = onSmartSuggestionClick,
+                )
 
-            Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(14.dp))
+            }
 
             // pet card: click to Companions
             PetStatusCard(
@@ -201,6 +226,7 @@ private fun HomeHeader() {
 // Leave now reminder
 @Composable
 private fun LeaveNowReminderCard(
+    reminder: HomeLeaveNowReminder,
     onNavigateClick: () -> Unit,   //  “Navigate” to External map
 ) {
     Surface(
@@ -242,7 +268,8 @@ private fun LeaveNowReminderCard(
                 )
 
                 Text(
-                    text = "Melbourne Museum at 10:00 · you're 3 min behind",
+                    text = "${reminder.placeName} at ${reminder.scheduledTime} · " +
+                        "you're ${reminder.delayMinutes} min behind",
                     color = RoamMateText,
                     fontSize = 16.sp,
                     lineHeight = 19.sp,
@@ -265,6 +292,7 @@ private fun LeaveNowReminderCard(
 // Smart Suggestion Card for weather
 @Composable
 private fun SmartSuggestionCard(
+    suggestion: HomeSmartSuggestion,
     onClick: () -> Unit,
 ) {
     Surface(
@@ -282,7 +310,7 @@ private fun SmartSuggestionCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Rain",
+                text = suggestion.label,
                 color = RoamMateBlueText,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.ExtraBold,
@@ -291,7 +319,7 @@ private fun SmartSuggestionCard(
             Spacer(modifier = Modifier.width(12.dp))
 
             Text(
-                text = "Smart suggestion · Rain 2-4 PM, tap to adjust your plan",
+                text = suggestion.message,
                 modifier = Modifier.weight(1f),
                 color = RoamMateBlueText,
                 fontSize = 16.sp,
@@ -655,6 +683,20 @@ private fun samplePetStatus(): HomePetStatus = HomePetStatus(
     imageRes = R.drawable.roammate_wombat,
 )
 
+// 预览用的 Leave now 假数据。
+private fun sampleLeaveNowReminder(): HomeLeaveNowReminder = HomeLeaveNowReminder(
+    placeName = "Melbourne Museum",
+    scheduledTime = "10:00",
+    delayMinutes = 3,
+    navigationQuery = "Melbourne Museum",
+)
+
+// 预览用的 Smart suggestion 假数据。
+private fun sampleSmartSuggestion(): HomeSmartSuggestion = HomeSmartSuggestion(
+    label = "Rain",
+    message = "Smart suggestion · Rain 2-4 PM, tap to adjust your plan",
+)
+
 // ===== 12. Preview：Android Studio 预览（不进正式 App）=====
 // 预览一：有今日行程 + 显示超时提醒
 @Preview(showBackground = true)
@@ -664,7 +706,8 @@ private fun HomeScreenPreviewWithTrip() {
         HomeScreen(
             userName = "Yufei",
             todayTripStops = sampleHomeTripStops(),
-            showLeaveNowReminder = true,
+            leaveNowReminder = sampleLeaveNowReminder(),
+            smartSuggestion = sampleSmartSuggestion(),
             petStatus = samplePetStatus(),
             onNavigateReminderClick = {},
             onSmartSuggestionClick = {},
@@ -686,7 +729,8 @@ private fun HomeScreenPreviewWithoutTrip() {
         HomeScreen(
             userName = "Yufei",
             todayTripStops = emptyList(),
-            showLeaveNowReminder = false,
+            leaveNowReminder = null,
+            smartSuggestion = null,
             petStatus = samplePetStatus(),
             onNavigateReminderClick = {},
             onSmartSuggestionClick = {},

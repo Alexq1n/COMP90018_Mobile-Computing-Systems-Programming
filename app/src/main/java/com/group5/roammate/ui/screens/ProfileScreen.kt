@@ -38,13 +38,21 @@ import androidx.compose.ui.unit.sp
 import com.group5.roammate.R
 import com.group5.roammate.ui.theme.RoamMateTheme
 
-// Profile 页面统一使用的颜色。
+// on-screen -> code:
+//   "Profile" title                         -> ProfileScreen (top text)
+//   avatar + name                           -> ProfileHeader
+//   rows: Travel preferences / Saved trips  -> ProfileActionRow (tap = open)
+//   buttons: Edit profile / Log out         -> ProfileScreen (bottom)
+//   bottom tabs                             -> RoamMateBottomNavigation
+
+// colors
 private val RoamMateTeal = Color(0xFF008B8F)
 private val RoamMateLightTeal = Color(0xFFE6F5F3)
-private val RoamMateCoral = Color(0xFFFF6F61)
+private val RoamMateCoral = Color(0xFFFF6F61)     // Log out
 private val RoamMateText = Color(0xFF17212B)
 private val RoamMateFieldBorder = Color(0xFFE3E8EF)
 
+// ---- screen ----
 @Composable
 fun ProfileScreen(
     userName: String,
@@ -58,6 +66,7 @@ fun ProfileScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.White,
+        // bottom tabs
         bottomBar = {
             RoamMateBottomNavigation(
                 selectedTab = RoamMateMainTab.Profile,
@@ -65,6 +74,7 @@ fun ProfileScreen(
             )
         },
     ) { innerPadding ->
+        // scroll column
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -76,6 +86,7 @@ fun ProfileScreen(
         ) {
             Spacer(modifier = Modifier.height(28.dp))
 
+            // "Profile" title
             Text(
                 text = "Profile",
                 color = RoamMateTeal,
@@ -86,12 +97,14 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // avatar + name
             ProfileHeader(
                 userName = userName,
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // row: Travel preferences
             // TODO: 这里之后跳转到共用的 Interests 页面，并保存为用户默认长期偏好。
             ProfileActionRow(
                 title = "Travel preferences",
@@ -100,6 +113,7 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // row: Saved trips
             // TODO: 这里之后跳转到 Saved Trips 页面，行程数据由 Yuxiang/Firebase 提供。
             ProfileActionRow(
                 title = "Saved trips",
@@ -108,6 +122,7 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
+            // button: Edit profile
             Button(
                 onClick = onEditProfileClick,
                 modifier = Modifier
@@ -128,6 +143,7 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // button: Log out (coral text)
             TextButton(
                 onClick = onLogoutClick,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -145,6 +161,7 @@ fun ProfileScreen(
     }
 }
 
+// ---- header (avatar + name) ----
 @Composable
 private fun ProfileHeader(
     userName: String,
@@ -153,7 +170,7 @@ private fun ProfileHeader(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 用户头像统一使用 RoamMate 吉祥物。
+        // avatar = mascot (fixed)
         Box(
             modifier = Modifier
                 .size(96.dp)
@@ -173,6 +190,7 @@ private fun ProfileHeader(
 
         Spacer(modifier = Modifier.width(20.dp))
 
+        // user name
         Text(
             text = userName,
             color = RoamMateText,
@@ -182,6 +200,7 @@ private fun ProfileHeader(
     }
 }
 
+// ---- one action row (title + > ) ; tap = open ----
 @Composable
 private fun ProfileActionRow(
     title: String,
@@ -202,6 +221,7 @@ private fun ProfileActionRow(
                 .padding(horizontal = 22.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // title
             Text(
                 text = title,
                 modifier = Modifier.weight(1f),
@@ -210,6 +230,7 @@ private fun ProfileActionRow(
                 fontWeight = FontWeight.Bold,
             )
 
+            // chevron
             Text(
                 text = ">",
                 color = RoamMateTeal,
@@ -220,6 +241,7 @@ private fun ProfileActionRow(
     }
 }
 
+// preview
 @Preview(showBackground = true)
 @Composable
 private fun ProfileScreenPreview() {

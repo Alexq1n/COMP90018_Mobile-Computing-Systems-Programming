@@ -34,11 +34,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.group5.roammate.ui.theme.RoamMateTheme
 
-// Trip page uniform color
+// on-screen -> code:
+//   "Trip" + destination + weather pill  -> TripHeader / WeatherPill
+//   timeline (time · dot · title · tag)  -> TripTimeline > TripTimelineRow
+//   dot (done/current/upcoming)          -> TimelineDot
+//   "Hidden gem" tag                     -> HiddenStopTag
+//   buttons: Edit itinerary / Start navigation -> TripActionBar
+//   bottom tabs                          -> RoamMateBottomNavigation
+
+// colors
 private val RoamMateTeal = Color(0xFF008B8F)
 private val RoamMateLightTeal = Color(0xFFE6F5F3)
 private val RoamMateText = Color(0xFF17212B)
@@ -46,27 +55,32 @@ private val RoamMateMutedText = Color(0xFF8A949E)
 private val RoamMateTimelineGrey = Color(0xFFC9D3D5)
 private val RoamMateWeatherBackground = Color(0xFFFFF4D7)
 private val RoamMateWeatherText = Color(0xFF8A661D)
+private val RoamMateHiddenBackground = Color(0xFFFFF7E7)
+private val RoamMateHiddenText = Color(0xFF936B16)
 
-// data: one stop in today's trip timeline
+// data: one stop in today's timeline
 data class TripTimelineStop(
     val time: String,
     val title: String,
     val status: TripStopStatus,
+    // Zewen 如果插入顺路小众点，就在这里传入小标签；普通站点保持 null。
+    val hiddenTag: String? = null,
 )
 
-// data: weather summary shown on Trip page
+// data: weather summary
 data class TripWeatherSummary(
     val temperature: String,
     val condition: String,
 )
 
-// stop status used by the timeline dot
+// stop status (dot style)
 enum class TripStopStatus {
     Done,
     Current,
     Upcoming,
 }
 
+// ---- screen ----
 @Composable
 fun TripScreen(
     destinationTitle: String,
@@ -81,6 +95,7 @@ fun TripScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.White,
+        // bottom: action buttons + tabs
         bottomBar = {
             Column {
                 TripActionBar(
@@ -95,6 +110,7 @@ fun TripScreen(
             }
         },
     ) { innerPadding ->
+        // scroll column
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -106,6 +122,7 @@ fun TripScreen(
         ) {
             Spacer(modifier = Modifier.height(28.dp))
 
+            // header (title + weather)
             TripHeader(
                 destinationTitle = destinationTitle,
                 weatherSummary = weatherSummary,
@@ -114,6 +131,7 @@ fun TripScreen(
             Spacer(modifier = Modifier.height(26.dp))
 
             // TODO: 之后这里显示 Zewen 生成的真实行程顺序，以及 Sitao 提供的当前进度。
+            // timeline
             TripTimeline(
                 stops = stops,
                 onStopClick = onStopClick,
@@ -124,13 +142,14 @@ fun TripScreen(
     }
 }
 
-// ---- header ----
+// ---- header ("Trip" + destination + weather pill) ----
 @Composable
 private fun TripHeader(
     destinationTitle: String,
     weatherSummary: TripWeatherSummary,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
+        // "Trip" title
         Text(
             text = "Trip",
             color = RoamMateTeal,
@@ -141,6 +160,7 @@ private fun TripHeader(
 
         Spacer(modifier = Modifier.height(4.dp))
 
+        // destination line
         Text(
             text = destinationTitle,
             color = RoamMateText,
@@ -151,6 +171,7 @@ private fun TripHeader(
 
         Spacer(modifier = Modifier.height(14.dp))
 
+        // weather pill (right-aligned)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
@@ -161,7 +182,7 @@ private fun TripHeader(
     }
 }
 
-// ---- weather pill ----
+// ---- weather pill (yellow, "18°C · Partly cloudy") ----
 @Composable
 private fun WeatherPill(
     weatherSummary: TripWeatherSummary,
@@ -182,7 +203,7 @@ private fun WeatherPill(
     }
 }
 
-// ---- timeline ----
+// ---- timeline (list of stops, or empty) ----
 @Composable
 private fun TripTimeline(
     stops: List<TripTimelineStop>,
@@ -204,7 +225,7 @@ private fun TripTimeline(
     }
 }
 
-// ---- empty timeline ----
+// ---- empty timeline (no stops) ----
 @Composable
 private fun EmptyTripTimeline() {
     Surface(
@@ -225,7 +246,7 @@ private fun EmptyTripTimeline() {
     }
 }
 
-// ---- timeline row ----
+// ---- one row (time · dot · title · optional tag) ; tap = open stop ----
 @Composable
 private fun TripTimelineRow(
     stop: TripTimelineStop,
@@ -233,18 +254,26 @@ private fun TripTimelineRow(
     isLast: Boolean,
     onClick: () -> Unit,
 ) {
+    // taller row when a hidden tag is shown
+    val rowHeight = if (stop.hiddenTag == null) {
+        92.dp
+    } else {
+        112.dp
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(92.dp)
+            .height(rowHeight)
             .clickable(
-                // Keep the row clean; only the dot shows progress status.
+                // no ripple; keep row clean
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick,
             ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // time (teal if current)
         Text(
             text = stop.time,
             modifier = Modifier.width(74.dp),
@@ -254,36 +283,68 @@ private fun TripTimelineRow(
             fontWeight = FontWeight.ExtraBold,
         )
 
+        // dot + connector line
         TimelineDotColumn(
             status = stop.status,
             showTopLine = !isFirst,
             showBottomLine = !isLast,
+            rowHeight = rowHeight,
         )
 
         Spacer(modifier = Modifier.width(20.dp))
 
+        // title + optional hidden tag
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stop.title,
+                color = RoamMateText,
+                fontSize = 23.sp,
+                lineHeight = 27.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+
+            stop.hiddenTag?.let { tagText ->
+                Spacer(modifier = Modifier.height(8.dp))
+                HiddenStopTag(text = tagText)
+            }
+        }
+    }
+}
+
+// ---- hidden-gem tag (backend-inserted stop) ----
+@Composable
+private fun HiddenStopTag(
+    text: String,
+) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = RoamMateHiddenBackground,
+        border = BorderStroke(1.dp, RoamMateHiddenText.copy(alpha = 0.14f)),
+    ) {
         Text(
-            text = stop.title,
-            modifier = Modifier.weight(1f),
-            color = RoamMateText,
-            fontSize = 23.sp,
-            lineHeight = 27.sp,
+            text = text,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            color = RoamMateHiddenText,
+            fontSize = 12.sp,
+            lineHeight = 14.sp,
             fontWeight = FontWeight.ExtraBold,
+            maxLines = 1,
         )
     }
 }
 
-// ---- timeline dot + line ----
+// ---- dot + line stack (top line · dot · bottom line) ----
 @Composable
 private fun TimelineDotColumn(
     status: TripStopStatus,
     showTopLine: Boolean,
     showBottomLine: Boolean,
+    rowHeight: Dp,
 ) {
     Column(
         modifier = Modifier
             .width(28.dp)
-            .height(92.dp),
+            .height(rowHeight),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         TimelineLineSegment(visible = showTopLine, modifier = Modifier.weight(1f))
@@ -294,7 +355,7 @@ private fun TimelineDotColumn(
     }
 }
 
-// ---- vertical connector ----
+// ---- vertical connector line ----
 @Composable
 private fun TimelineLineSegment(
     visible: Boolean,
@@ -313,7 +374,7 @@ private fun TimelineLineSegment(
     }
 }
 
-// ---- dot color: done grey, current teal, upcoming white ----
+// ---- dot (done = grey, current = teal, upcoming = white) ----
 @Composable
 private fun TimelineDot(
     status: TripStopStatus,
@@ -338,7 +399,7 @@ private fun TimelineDot(
     ) {}
 }
 
-// ---- bottom action buttons ----
+// ---- bottom buttons: Edit itinerary (outline) + Start navigation (teal) ----
 @Composable
 private fun TripActionBar(
     onEditItineraryClick: () -> Unit,
@@ -355,6 +416,7 @@ private fun TripActionBar(
                 .padding(horizontal = 28.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            // button: Edit itinerary -> edit page
             OutlinedButton(
                 onClick = onEditItineraryClick,
                 modifier = Modifier
@@ -373,6 +435,7 @@ private fun TripActionBar(
                 )
             }
 
+            // button: Start navigation -> external map
             Button(
                 onClick = onStartNavigationClick,
                 modifier = Modifier
@@ -395,6 +458,7 @@ private fun TripActionBar(
     }
 }
 
+// preview
 @Preview(showBackground = true)
 @Composable
 private fun TripScreenPreview() {
@@ -409,6 +473,12 @@ private fun TripScreenPreview() {
                 TripTimelineStop("09:00", "Federation Square", TripStopStatus.Done),
                 TripTimelineStop("10:00", "Melbourne Museum", TripStopStatus.Current),
                 TripTimelineStop("12:00", "Lunch nearby", TripStopStatus.Upcoming),
+                TripTimelineStop(
+                    time = "13:30",
+                    title = "Pidapipo Gelato",
+                    status = TripStopStatus.Upcoming,
+                    hiddenTag = "Hidden gem · nearby",
+                ),
                 TripTimelineStop("14:00", "Royal Botanic Gardens", TripStopStatus.Upcoming),
             ),
             onStopClick = {},

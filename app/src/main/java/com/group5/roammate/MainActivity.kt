@@ -21,7 +21,11 @@ import com.group5.roammate.ui.screens.AdjustItineraryStop
 import com.group5.roammate.ui.screens.AdjustRemovedStop
 import com.group5.roammate.ui.screens.AddStopPlace
 import com.group5.roammate.ui.screens.AddStopScreen
+import com.group5.roammate.ui.screens.AttractionDetail
+import com.group5.roammate.ui.screens.AttractionDetailScreen
+import com.group5.roammate.ui.screens.AttractionOpeningHours
 import com.group5.roammate.ui.screens.CreateAccountScreen
+import com.group5.roammate.ui.screens.EditProfileScreen
 import com.group5.roammate.ui.screens.EditItineraryScreen
 import com.group5.roammate.ui.screens.ExplorePlace
 import com.group5.roammate.ui.screens.ExplorePlaceCategory
@@ -38,6 +42,8 @@ import com.group5.roammate.ui.screens.LoginScreen
 import com.group5.roammate.ui.screens.PlanMyTripScreen
 import com.group5.roammate.ui.screens.ProfileScreen
 import com.group5.roammate.ui.screens.RoamMateMainTab
+import com.group5.roammate.ui.screens.SavedTrip
+import com.group5.roammate.ui.screens.SavedTripsScreen
 import com.group5.roammate.ui.screens.TripScreen
 import com.group5.roammate.ui.screens.TripStopStatus
 import com.group5.roammate.ui.screens.TripTimelineStop
@@ -59,6 +65,20 @@ class MainActivity : ComponentActivity() {
                 // This is a temporary page status.
                 var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.Login) }
 
+                // User name
+                // TODO: Replace with Yuxiang Firebase user profile.
+                var userName by rememberSaveable { mutableStateOf("Yufei") }
+
+                // Attraction detail 当前展示的景点。之后由 Explore/Trip 点击的真实景点数据替换。
+                var selectedAttractionDetail by remember {
+                    mutableStateOf(sampleAttractionDetail("Melbourne Museum"))
+                }
+
+                // 记录详情页从哪里进来，返回按钮才能回到正确页面。
+                var attractionDetailReturnScreen by rememberSaveable {
+                    mutableStateOf(AuthScreen.Explore)
+                }
+
                 // Profile 入口使用：长期默认兴趣偏好。
                 // TODO: 之后这里接 Yuxiang 的 Firebase 用户偏好数据库，永久保存。
                 var profileDefaultInterests by rememberSaveable {
@@ -75,6 +95,12 @@ class MainActivity : ComponentActivity() {
                 // TODO: 之后这里要作为 Zewen itinerary request 的 must-visit places。
                 var planRequiredPlaces by remember {
                     mutableStateOf(emptyList<AddStopPlace>())
+                }
+
+                // Saved trips
+                // TODO: Replace with Yuxiang Firebase saved trip history.
+                val savedTrips = remember {
+                    sampleSavedTrips()
                 }
 
                 // TODO: 这组 Trip timeline 是临时演示假数据。
@@ -329,11 +355,9 @@ class MainActivity : ComponentActivity() {
 
                             // TODO: 之后这里跳转 Attraction detail 页面。
                             onStopClick = { stop ->
-                                Toast.makeText(
-                                    this,
-                                    "Attraction detail for ${stop.title} is not ready yet",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                                selectedAttractionDetail = sampleAttractionDetail(stop.title)
+                                attractionDetailReturnScreen = AuthScreen.Trip
+                                currentScreen = AuthScreen.AttractionDetail
                             },
 
                             // TODO: 之后这里跳转 Edit itinerary 页面，手动增加/删除站点。
@@ -377,11 +401,9 @@ class MainActivity : ComponentActivity() {
 
                             // TODO: 之后这里跳转 Attraction detail 页面。
                             onPlaceClick = { place ->
-                                Toast.makeText(
-                                    this,
-                                    "Attraction detail for ${place.name} is not ready yet",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                                selectedAttractionDetail = place.toAttractionDetail()
+                                attractionDetailReturnScreen = AuthScreen.Explore
+                                currentScreen = AuthScreen.AttractionDetail
                             },
 
                             // Explore 当前页点 Explore 不动，其余已完成页面正常切换。
@@ -397,6 +419,42 @@ class MainActivity : ComponentActivity() {
                                         Toast.LENGTH_SHORT,
                                     ).show()
                                 }
+                            },
+                        )
+                    }
+
+                    AuthScreen.AttractionDetail -> {
+                        AttractionDetailScreen(
+                            modifier = Modifier.fillMaxSize(),
+                            attraction = selectedAttractionDetail,
+
+                            // 返回到打开详情页的来源页面：Explore 或 Trip。
+                            onBackClick = {
+                                currentScreen = attractionDetailReturnScreen
+                            },
+
+                            // Add to trip: 先加入当前行程假数据，并回到 Trip。
+                            // TODO: 之后这里应把景点交给 Zewen，让后端决定插入位置和重新排序。
+                            onAddToTripClick = { attraction ->
+                                tripTimelineStops = rebalanceTripStopsAfterManualEdit(
+                                    tripTimelineStops.withAddedTemporaryAttraction(attraction),
+                                )
+                                Toast.makeText(
+                                    this,
+                                    "${attraction.name} added to itinerary",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                                currentScreen = AuthScreen.Trip
+                            },
+
+                            // Navigate: 打开外部地图，和 Home/Trip 共用同一个入口。
+                            onNavigateClick = { attraction ->
+                                openExternalMap(attraction.name)
+                            },
+
+                            // Visit official website: 打开 Leyan 提供的景点官网。
+                            onWebsiteClick = { attraction ->
+                                openExternalWebsite(attraction.websiteUrl)
                             },
                         )
                     }
@@ -571,21 +629,21 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
 
                             // TODO: 这里之后换成 Yuxiang 从 Firebase 读到的真实用户姓名。
-                            userName = "Yufei",
+                            userName = userName,
 
                             // 从 Profile 进入 Interests，保存为用户长期默认偏好。
                             onTravelPreferencesClick = {
                                 currentScreen = AuthScreen.ProfileInterests
                             },
 
-                            // TODO: 这里之后跳转到 Saved Trips 页面，数据由 Yuxiang 提供。
+                            // Open Saved trips page.
                             onSavedTripsClick = {
-                                Toast.makeText(this, "Saved trips clicked", Toast.LENGTH_SHORT).show()
+                                currentScreen = AuthScreen.SavedTrips
                             },
 
-                            // TODO: 这里之后跳转到 Edit Profile 页面。
+                            // Open Edit profile page.
                             onEditProfileClick = {
-                                Toast.makeText(this, "Edit profile clicked", Toast.LENGTH_SHORT).show()
+                                currentScreen = AuthScreen.EditProfile
                             },
 
                             // TODO: 这里之后接 Yuxiang 的 Firebase logout。
@@ -606,6 +664,52 @@ class MainActivity : ComponentActivity() {
                                         Toast.LENGTH_SHORT,
                                     ).show()
                                 }
+                            },
+                        )
+                    }
+
+                    AuthScreen.SavedTrips -> {
+                        SavedTripsScreen(
+                            modifier = Modifier.fillMaxSize(),
+                            savedTrips = savedTrips,
+
+                            // Back button.
+                            onBackClick = {
+                                currentScreen = AuthScreen.Profile
+                            },
+
+                            // Create button.
+                            onCreateNewTripClick = {
+                                currentScreen = AuthScreen.PlanMyTrip
+                            },
+                        )
+                    }
+
+                    AuthScreen.EditProfile -> {
+                        EditProfileScreen(
+                            modifier = Modifier.fillMaxSize(),
+                            initialName = userName,
+
+                            // Back button.
+                            onBackClick = {
+                                currentScreen = AuthScreen.Profile
+                            },
+
+                            // Save button.
+                            // TODO: Send updatedName to Yuxiang Firebase user profile.
+                            onSaveChangesClick = { updatedName ->
+                                userName = updatedName
+                                Toast.makeText(
+                                    this,
+                                    "Profile updated",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                                currentScreen = AuthScreen.Profile
+                            },
+
+                            // Error toast.
+                            onValidationError = { message ->
+                                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
                             },
                         )
                     }
@@ -709,6 +813,22 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun List<TripTimelineStop>.withAddedTemporaryAttraction(
+        attraction: AttractionDetail,
+    ): List<TripTimelineStop> {
+        // TODO: 这是前端临时添加逻辑；之后由 Zewen 根据位置/时间/营业时间插入合适位置。
+        val alreadyExists = any { stop ->
+            stop.title == attraction.name
+        }
+        if (alreadyExists) return this
+
+        return this + TripTimelineStop(
+            time = nextTemporaryStopTime(lastOrNull()?.time),
+            title = attraction.name,
+            status = TripStopStatus.Upcoming,
+        )
+    }
+
     private fun nextTemporaryStopTime(
         lastStopTime: String?,
     ): String {
@@ -719,6 +839,28 @@ class MainActivity : ComponentActivity() {
             ?: 10
 
         return "%02d:00".format(nextHour.coerceAtMost(22))
+    }
+
+    private fun sampleSavedTrips(): List<SavedTrip> {
+        // TODO: Replace with Yuxiang Firebase saved trips.
+        // Empty list shows the empty state.
+        return listOf(
+            SavedTrip(
+                destination = "Melbourne",
+                durationText = "3 days",
+                dateText = "May 2025",
+            ),
+            SavedTrip(
+                destination = "Great Ocean Road",
+                durationText = "1 day",
+                dateText = "Mar 2025",
+            ),
+            SavedTrip(
+                destination = "Sydney",
+                durationText = "2 days",
+                dateText = "Jan 2025",
+            ),
+        )
     }
 
     private fun melbournePopularAddStopPlaces(): List<AddStopPlace> {
@@ -854,6 +996,105 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun ExplorePlace.toAttractionDetail(): AttractionDetail {
+        // Explore 只拿到列表卡片需要的轻量数据；详情页其余字段之后从 Leyan 的景点详情接口补齐。
+        return sampleAttractionDetail(name).copy(
+            distanceText = distanceText,
+            environmentLabel = environmentLabel,
+            weatherTag = tagText,
+        )
+    }
+
+    private fun sampleAttractionDetail(
+        name: String,
+    ): AttractionDetail {
+        // TODO: 之后替换为真实景点详情：
+        // Leyan/Yan 提供名称、图片、室内外、天气适配、营业时间、官网；
+        // Alex/Sitao sensor/GPS 提供用户当前位置，再计算 distanceText。
+        val defaultWeeklyHours = listOf(
+            AttractionOpeningHours("Mon", "10:00 am - 5:00 pm"),
+            AttractionOpeningHours("Tue", "10:00 am - 5:00 pm"),
+            AttractionOpeningHours("Wed", "10:00 am - 5:00 pm"),
+            AttractionOpeningHours("Thu", "10:00 am - 5:00 pm"),
+            AttractionOpeningHours("Fri", "10:00 am - 5:00 pm"),
+            AttractionOpeningHours("Sat", "10:00 am - 5:00 pm"),
+            AttractionOpeningHours("Sun", "10:00 am - 5:00 pm"),
+        )
+
+        return when (name) {
+            "Melbourne Museum" -> AttractionDetail(
+                name = "Melbourne Museum",
+                distanceText = "0.8 km",
+                environmentLabel = "Indoor",
+                weatherTag = "Good for rain",
+                todayHours = AttractionOpeningHours("Today", "10:00 am - 5:00 pm"),
+                weeklyHours = defaultWeeklyHours,
+                websiteUrl = "https://museumsvictoria.com.au/melbournemuseum/",
+                imageSymbol = "M",
+            )
+
+            "State Library Victoria", "State Library" -> AttractionDetail(
+                name = "State Library Victoria",
+                distanceText = "1.1 km",
+                environmentLabel = "Indoor",
+                weatherTag = "Good for rain",
+                todayHours = AttractionOpeningHours("Today", "10:00 am - 6:00 pm"),
+                weeklyHours = defaultWeeklyHours.map { hours ->
+                    hours.copy(timeRange = "10:00 am - 6:00 pm")
+                },
+                websiteUrl = "https://www.slv.vic.gov.au/",
+                imageSymbol = "S",
+            )
+
+            "ACMI" -> AttractionDetail(
+                name = "ACMI",
+                distanceText = "1.0 km",
+                environmentLabel = "Indoor",
+                weatherTag = "Good for rain",
+                todayHours = AttractionOpeningHours("Today", "10:00 am - 5:00 pm"),
+                weeklyHours = defaultWeeklyHours,
+                websiteUrl = "https://www.acmi.net.au/",
+                imageSymbol = "A",
+            )
+
+            "Royal Botanic Gardens" -> AttractionDetail(
+                name = "Royal Botanic Gardens",
+                distanceText = "2.4 km",
+                environmentLabel = "Outdoor",
+                weatherTag = "Best on sunny days",
+                todayHours = AttractionOpeningHours("Today", "7:30 am - 5:30 pm"),
+                weeklyHours = defaultWeeklyHours.map { hours ->
+                    hours.copy(timeRange = "7:30 am - 5:30 pm")
+                },
+                websiteUrl = "https://www.rbg.vic.gov.au/melbourne-gardens/",
+                imageSymbol = "R",
+            )
+
+            "Pidapipo Gelato" -> AttractionDetail(
+                name = "Pidapipo Gelato",
+                distanceText = "0.3 km",
+                environmentLabel = "Indoor",
+                weatherTag = "Hidden gem",
+                // Leyan 不一定每个地点都有营业时间；这里用 null 演示 UI fallback。
+                todayHours = null,
+                weeklyHours = emptyList(),
+                websiteUrl = "https://pidapipo.com/",
+                imageSymbol = "P",
+            )
+
+            else -> AttractionDetail(
+                name = name,
+                distanceText = "1.0 km",
+                environmentLabel = "Indoor",
+                weatherTag = null,
+                todayHours = null,
+                weeklyHours = emptyList(),
+                websiteUrl = null,
+                imageSymbol = name.firstOrNull()?.uppercase() ?: "A",
+            )
+        }
+    }
+
     private fun sampleAdjustedItineraryPlans(): List<AdjustItineraryPlan> {
         // TODO: 之后这里由 Zewen 后端返回。
         // UI 只需要拿到两个 AdjustItineraryPlan：第一个方案和 regenerate 后的第二个方案。
@@ -955,6 +1196,21 @@ class MainActivity : ComponentActivity() {
             Toast.makeText(this, "No map app available", Toast.LENGTH_SHORT).show()
         }
     }
+
+    private fun openExternalWebsite(websiteUrl: String?) {
+        if (websiteUrl == null) {
+            Toast.makeText(this, "Official website is not available", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val websiteIntent = Intent(Intent.ACTION_VIEW, Uri.parse(websiteUrl))
+
+        runCatching {
+            startActivity(websiteIntent)
+        }.onFailure {
+            Toast.makeText(this, "No browser app available", Toast.LENGTH_SHORT).show()
+        }
+    }
 }
 
 private enum class AuthScreen {
@@ -963,6 +1219,7 @@ private enum class AuthScreen {
     Home,
     Trip,
     Explore,
+    AttractionDetail,
     AdjustItinerary,
     EditItinerary,
     PlanAddStop,
@@ -970,5 +1227,7 @@ private enum class AuthScreen {
     PlanMyTrip,
     PlanTripInterests,
     Profile,
+    SavedTrips,
+    EditProfile,
     ProfileInterests,
 }

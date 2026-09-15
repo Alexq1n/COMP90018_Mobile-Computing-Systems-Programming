@@ -1,6 +1,6 @@
 # RoamMate Android UI
 
-RoamMate is a travel planning Android app for Australia. This branch currently focuses on the front-end UI, screen navigation, and temporary data flow for the main travel planning workflow.
+RoamMate is a travel planning Android app for Australia. This branch focuses on the front-end UI, screen navigation, and the temporary data flow needed before backend integration.
 
 ## Tech Stack
 
@@ -15,6 +15,36 @@ RoamMate is a travel planning Android app for Australia. This branch currently f
 - Kotlin: 2.2.10
 - Compose BOM: 2026.02.01
 
+## Current UI Status
+
+Most core UI screens are completed. The main remaining UI work is Pet, loading states, and error states.
+
+Completed:
+
+- Login
+- Create Account
+- Home
+- Plan My Trip
+- Interests
+- Trip
+- Adjust Itinerary
+- Edit Itinerary
+- Add a Stop
+- Explore
+- Attraction Detail
+- Profile
+- Edit Profile
+- Saved Trips
+- Bottom Navigation
+
+Remaining:
+
+- Pet / Companion page
+- Loading states
+- Error states
+- Empty states for more backend failure cases
+- Final backend integration and real data replacement
+
 ## Project Structure
 
 ```text
@@ -26,10 +56,15 @@ app/src/main/java/com/group5/roammate/
 │   ├── HomeScreen.kt
 │   ├── PlanMyTripScreen.kt
 │   ├── InterestsScreen.kt
-│   ├── ProfileScreen.kt
 │   ├── TripScreen.kt
+│   ├── AdjustItineraryScreen.kt
 │   ├── EditItineraryScreen.kt
 │   ├── AddStopScreen.kt
+│   ├── ExploreScreen.kt
+│   ├── AttractionDetailScreen.kt
+│   ├── ProfileScreen.kt
+│   ├── EditProfileScreen.kt
+│   ├── SavedTripsScreen.kt
 │   └── RoamMateBottomNavigation.kt
 └── ui/theme/
     ├── Color.kt
@@ -37,22 +72,27 @@ app/src/main/java/com/group5/roammate/
     └── Type.kt
 ```
 
-## Completed UI Screens
+## Completed Screens
 
 ### Login
 
-- Email and password input.
+- Email input.
+- Password input.
 - Log in button.
 - Create account navigation.
-- Current behavior: successful mock login goes to Home.
+- Current behavior: mock login goes to Home after non-empty email and password.
 - Future integration: Firebase authentication by Yuxiang.
 
 ### Create Account
 
-- Full name, email, password, and confirm password fields.
+- Full name input.
+- Email input.
+- Password input.
+- Confirm password input.
 - Basic front-end validation.
-- Uses the shared RoamMate color style and mascot image.
-- Future integration: Firebase registration and user profile creation by Yuxiang.
+- Mascot image is shared with Login.
+- Current behavior: mock registration goes to Home.
+- Future integration: Firebase registration and user creation by Yuxiang.
 
 ### Home
 
@@ -61,71 +101,134 @@ app/src/main/java/com/group5/roammate/
 - Smart suggestion card.
 - Pet status card.
 - Today's trip preview.
-- Plan My Trip and Explore shortcuts.
+- Plan My Trip shortcut.
+- Explore shortcut.
 - Bottom navigation.
-- Current behavior: trip data and pet data are temporary mock data.
+- Current behavior: reminders, suggestion, pet, and trip data are temporary mock data.
 
 ### Plan My Trip
 
-- Destination picker for major Australian cities.
+- Destination picker for Australian cities.
 - Date range picker.
 - Start time picker.
-- Interest selection.
-- Transport mode selection: Walk, Transit, Drive.
-- Add specific places entry.
+- Interest chips.
+- `+ More` opens Interests page for current trip interests.
+- Transport selection: Walk, Transit, Drive.
+- Search places to add opens Add a Stop.
 - Generate itinerary button.
-- Current behavior: creates a `PlanMyTripRequest` object and navigates to Trip.
-- Future integration: send request data to Zewen's itinerary generation logic.
+- Current behavior: creates a temporary `PlanMyTripRequest` and navigates to Trip.
+- Future integration: send request to Zewen's itinerary generation logic.
 
 ### Interests
 
 - Reusable interest selection page.
-- Entry 1: Plan My Trip `+ More`, saves temporary interests for the current trip only.
-- Entry 2: Profile `Travel preferences`, saves long-term default interests.
-- Future integration: profile preferences should be stored by Yuxiang; trip interests should be sent to Zewen only for the current itinerary.
+- Entry from Plan My Trip: temporary current-trip interests.
+- Entry from Profile Travel preferences: long-term default preferences.
+- Current behavior: both are stored in front-end state.
+- Future integration: long-term preferences should be stored by Yuxiang; trip interests should be sent to Zewen for the current itinerary only.
+
+### Trip
+
+- Today's trip timeline.
+- Weather summary.
+- Stop status dots: done / current / upcoming.
+- Optional hidden-gem tag.
+- Edit itinerary button.
+- Start navigation button.
+- Bottom navigation.
+- Current behavior: itinerary is temporary mock data in `MainActivity`.
+- Future integration: itinerary from Zewen, progress/location from Sitao, weather from Yan.
+
+### Adjust Itinerary
+
+- Weather adjustment popup.
+- Shows one regenerated plan from Zewen.
+- Shows kept / moved / new badges.
+- Shows removed outdoor/rain stop.
+- Apply this plan button.
+- Regenerate another button.
+- Back to previous plan button after the second option.
+- Keep current plan button.
+- Current behavior: two mock regenerated plans.
+- Future integration: generated alternatives from Zewen, weather trigger from Yan.
+
+### Edit Itinerary
+
+- Shows current itinerary stops.
+- Remove stop button.
+- Add a stop button.
+- Save button.
+- Current behavior: updates temporary front-end itinerary.
+- Future integration: add/remove operations should trigger Zewen re-generation or re-ordering.
+
+### Add a Stop
+
+- Shared page for:
+  - Plan My Trip search places to add.
+  - Edit Itinerary add a stop.
+- Search field.
+- Confirm search button.
+- Popular places in current city.
+- Not found state.
+- Add button on each result.
+- Current behavior: filters local mock results.
+- Future integration: search data from Alex/Yan, place details from Leyan/Yan, distance from Sitao, placement from Zewen.
+
+### Explore
+
+- Nearby place discovery page.
+- Category filters: Indoor, Outdoor, Cafe, Food.
+- Map-style visual area.
+- Nearby place cards.
+- Bottom navigation.
+- Hidden treasure is not shown as a standalone category.
+- Current behavior: local mock places and mock map points.
+- Future integration: GPS from Alex/Sitao, nearby places from Yan/Leyan, distance calculation from Sitao.
+
+### Attraction Detail
+
+- Back button.
+- Attraction image area.
+- Attraction name.
+- Distance.
+- Indoor/outdoor tag.
+- Weather suitability tag.
+- Opening hours.
+- Official website link.
+- Add to trip button.
+- Navigate button.
+- Current behavior: local mock attraction detail.
+- Future integration: attraction details/opening hours/website from Leyan/Yan, distance from Sitao, add-to-trip handling from Zewen.
 
 ### Profile
 
-- User profile summary.
+- User name.
+- Fixed mascot avatar.
 - Travel preferences entry.
 - Saved trips entry.
 - Edit profile button.
 - Log out button.
 - Bottom navigation.
-- Current behavior: user data is mock data.
-- Future integration: user information and saved trips from Yuxiang/Firebase.
+- Current behavior: user profile is temporary state.
+- Future integration: Firebase user profile from Yuxiang.
 
-### Trip
+### Edit Profile
 
-- Timeline for today's itinerary.
-- Weather summary.
-- Edit itinerary button.
-- Start navigation button.
-- Bottom navigation.
-- Current behavior: itinerary data is temporary mock data in `MainActivity`.
-- Future integration: itinerary list from Zewen, real-time progress/location from Sitao, weather data from Yan.
+- Back button.
+- Fixed mascot avatar.
+- Name input.
+- Save changes button.
+- Current behavior: updates temporary front-end user name.
+- Future integration: save user name to Yuxiang/Firebase.
 
-### Edit Itinerary
+### Saved Trips
 
-- Shows current and upcoming stops.
-- Allows removing stops.
-- Has an Add a stop entry.
-- Save button returns to Trip.
-- Current behavior: updates temporary front-end state.
-- Future integration: add/remove operations should trigger Zewen's itinerary re-generation or re-ordering logic.
-
-### Add a Stop
-
-- Shared page used by two entry points:
-  - Plan My Trip `Search places to add`
-  - Edit Itinerary `+ Add a stop`
-- Search field filters local mock results.
-- Shows `Not found` when there is no match.
-- Displays popular places in the current city instead of "results near you".
-- Current behavior:
-  - From Plan My Trip: added places are stored as required places for the current trip request.
-  - From Edit Itinerary: added places are temporarily inserted into the current itinerary.
-- Future integration: search/place data from Yan, distance/location from Sitao, itinerary placement from Zewen.
+- Back button.
+- Saved trip cards.
+- Empty state when data is empty.
+- Create new trip / Plan a trip button.
+- Current behavior: local mock saved trip history.
+- Future integration: saved trips from Yuxiang/Firebase.
 
 ## Navigation Flow
 
@@ -138,32 +241,70 @@ Home
 ├── Plan My Trip -> Plan My Trip
 ├── Today's trip -> Trip
 ├── Navigate -> external map
-├── Smart suggestion -> Adjust Itinerary (future)
+├── Smart suggestion -> Adjust Itinerary
+├── Pet card -> Pet / Companion page (future)
 └── Bottom tabs -> Home / Trip / Explore / Pet / Profile
 
 Plan My Trip
 ├── Back -> Home
+├── Destination -> city picker dialog
+├── Date -> date range picker dialog
+├── Start time -> time picker dialog
 ├── + More -> Interests (current trip only)
 ├── Search places to add -> Add a Stop
 └── Generate itinerary -> Trip
 
-Profile
-├── Travel preferences -> Interests (long-term default preferences)
-├── Saved trips -> Saved Trips (future)
-├── Edit profile -> Edit Profile (future)
-└── Log out -> Login
+Interests
+├── Back -> previous page
+└── Done -> Plan My Trip or Profile
 
 Trip
-├── Timeline stop -> Attraction Detail (future)
+├── Timeline stop -> Attraction Detail
 ├── Edit itinerary -> Edit Itinerary
 ├── Start navigation -> external map
 └── Bottom tabs -> Home / Trip / Explore / Pet / Profile
+
+Adjust Itinerary
+├── Apply this plan -> Trip
+├── Regenerate another -> next generated plan
+├── Back to previous plan -> previous generated plan
+└── Keep current plan -> Trip
 
 Edit Itinerary
 ├── Back -> Trip
 ├── Remove stop -> update temporary itinerary
 ├── + Add a stop -> Add a Stop
 └── Save -> Trip
+
+Add a Stop
+├── Back -> Plan My Trip or Edit Itinerary
+├── Search confirm -> search results
+└── Add result -> return to previous flow
+
+Explore
+├── Filter chips -> refresh nearby list
+├── Place card/map marker -> Attraction Detail
+└── Bottom tabs -> Home / Trip / Explore / Pet / Profile
+
+Attraction Detail
+├── Back -> Explore or Trip
+├── Add to trip -> add and return Trip
+├── Navigate -> external map
+└── Visit official website -> external browser
+
+Profile
+├── Travel preferences -> Interests (long-term default)
+├── Saved trips -> Saved Trips
+├── Edit profile -> Edit Profile
+└── Log out -> Login
+
+Saved Trips
+├── Back -> Profile
+└── Create new trip / Plan a trip -> Plan My Trip
+
+Edit Profile
+├── Back -> Profile
+└── Save changes -> Profile
 ```
 
 ## Current Temporary Data
@@ -171,22 +312,192 @@ Edit Itinerary
 Most data is currently stored in `MainActivity.kt` as front-end state so the UI can be tested before backend integration.
 
 ```kotlin
-profileDefaultInterests // long-term profile preference placeholder
-tripInterests           // current trip interests
-planRequiredPlaces      // must-visit places added from Plan My Trip
-tripTimelineStops       // temporary itinerary stops
+userName                 // temporary user name
+profileDefaultInterests  // long-term profile preference placeholder
+tripInterests            // current trip interests
+planRequiredPlaces       // must-visit places added from Plan My Trip
+tripTimelineStops        // temporary itinerary stops
+adjustPlanIndex          // selected adjust itinerary candidate
+selectedAttractionDetail // current detail page data
 ```
 
 These should be replaced by real data sources later.
 
-## Main Data Models Used by UI
+## Data Needed By Page
 
-### PlanMyTripRequest
+### Login
+
+Yuxiang: authLogin
+
+```kotlin
+data class AuthLoginRequest(
+    val email: String,
+    val password: String,
+)
+
+data class AuthLoginResult(
+    val success: Boolean,
+    val userId: String?,
+    val errorMessage: String?,
+)
+```
+
+Example:
+
+```json
+{
+  "email": "yufei@example.com",
+  "password": "123456"
+}
+```
+
+### Create Account
+
+Yuxiang: authRegister
+
+```kotlin
+data class AuthRegisterRequest(
+    val fullName: String,
+    val email: String,
+    val password: String,
+)
+
+data class AuthRegisterResult(
+    val success: Boolean,
+    val userId: String?,
+    val errorMessage: String?,
+)
+```
+
+Example:
+
+```json
+{
+  "fullName": "Yufei",
+  "email": "yufei@example.com",
+  "password": "123456"
+}
+```
+
+### Profile
+
+Yuxiang: userProfile
+
+```kotlin
+data class UserProfile(
+    val userId: String,
+    val name: String,
+    val email: String,
+    val defaultInterests: List<String>,
+)
+```
+
+Example:
+
+```json
+{
+  "userId": "user_001",
+  "name": "Yufei",
+  "email": "yufei@example.com",
+  "defaultInterests": ["Museums", "Parks", "Food"]
+}
+```
+
+### Edit Profile
+
+Yuxiang: updateUserProfile
+
+```kotlin
+data class UpdateUserProfileRequest(
+    val userId: String,
+    val name: String,
+)
+```
+
+Example:
+
+```json
+{
+  "userId": "user_001",
+  "name": "Yufei"
+}
+```
+
+### Saved Trips
+
+Yuxiang: savedTrips
+
+```kotlin
+data class SavedTrip(
+    val tripId: String,
+    val userId: String,
+    val destination: String,
+    val durationDays: Int,
+    val dateRangeText: String,
+    val createdAt: String,
+)
+```
+
+Example:
+
+```json
+{
+  "tripId": "trip_001",
+  "userId": "user_001",
+  "destination": "Melbourne",
+  "durationDays": 3,
+  "dateRangeText": "12 Sep 2026 - 14 Sep 2026",
+  "createdAt": "2026-09-16T00:40:00+10:00"
+}
+```
+
+### Interests
+
+Yuxiang: profileDefaultInterests
+
+```kotlin
+data class ProfileInterestsData(
+    val userId: String,
+    val interests: List<String>,
+)
+```
+
+Example:
+
+```json
+{
+  "userId": "user_001",
+  "interests": ["Museums", "Parks", "Food", "Art", "Wildlife"]
+}
+```
+
+Zewen: tripInterests
+
+```kotlin
+data class TripInterestsData(
+    val tripDraftId: String,
+    val interests: List<String>,
+)
+```
+
+Example:
+
+```json
+{
+  "tripDraftId": "draft_001",
+  "interests": ["Museums", "Parks", "Food"]
+}
+```
+
+### Plan My Trip
+
+Zewen: planMyTripRequest
 
 ```kotlin
 data class PlanMyTripRequest(
     val destination: String,
-    val date: String,
+    val startDate: String,
+    val endDate: String,
     val startTime: String,
     val interests: List<String>,
     val transportMode: String,
@@ -194,101 +505,513 @@ data class PlanMyTripRequest(
 )
 ```
 
-This object should be passed to Zewen's itinerary generation logic.
+Example:
 
-### TripTimelineStop
+```json
+{
+  "destination": "Melbourne",
+  "startDate": "2026-09-12",
+  "endDate": "2026-09-13",
+  "startTime": "10:00",
+  "interests": ["Museums", "Parks", "Food"],
+  "transportMode": "Transit",
+  "specificPlaces": ["Melbourne Museum"]
+}
+```
+
+Yan/Leyan: availablePlaces
 
 ```kotlin
-data class TripTimelineStop(
-    val time: String,
-    val title: String,
-    val status: TripStopStatus,
+data class PlaceSummary(
+    val placeId: String,
+    val name: String,
+    val city: String,
+    val category: String,
+    val environmentType: String,
+    val latitude: Double,
+    val longitude: Double,
 )
 ```
 
-This should later come from the generated itinerary and progress state.
+Example:
 
-### AddStopPlace
+```json
+{
+  "placeId": "place_melbourne_museum",
+  "name": "Melbourne Museum",
+  "city": "Melbourne",
+  "category": "Museum",
+  "environmentType": "Indoor",
+  "latitude": -37.8033,
+  "longitude": 144.9717
+}
+```
+
+### Add a Stop
+
+Alex/Yan: placeSearch
 
 ```kotlin
+data class PlaceSearchRequest(
+    val query: String,
+    val city: String,
+    val latitude: Double?,
+    val longitude: Double?,
+)
+
 data class AddStopPlace(
+    val placeId: String,
     val name: String,
     val distanceText: String,
     val environmentType: String,
 )
 ```
 
-This should later come from the attraction search/place dataset.
+Example:
 
-## Future Integration Plan
+```json
+{
+  "query": "gallery",
+  "city": "Melbourne",
+  "latitude": -37.8136,
+  "longitude": 144.9631
+}
+```
 
-### Yuxiang
+Zewen: addRequiredPlace
 
-- Firebase log in.
-- Firebase create account.
-- User profile data.
+```kotlin
+data class AddRequiredPlaceRequest(
+    val tripDraftId: String,
+    val placeId: String,
+    val name: String,
+)
+```
+
+Example:
+
+```json
+{
+  "tripDraftId": "draft_001",
+  "placeId": "place_melbourne_museum",
+  "name": "Melbourne Museum"
+}
+```
+
+### Trip
+
+Zewen: itinerary
+
+```kotlin
+data class ItineraryStop(
+    val stopId: String,
+    val placeId: String,
+    val title: String,
+    val startTime: String,
+    val endTime: String?,
+    val order: Int,
+    val latitude: Double?,
+    val longitude: Double?,
+    val hiddenTag: String?,
+)
+```
+
+Example:
+
+```json
+{
+  "stopId": "stop_001",
+  "placeId": "place_melbourne_museum",
+  "title": "Melbourne Museum",
+  "startTime": "10:00",
+  "endTime": "11:30",
+  "order": 1,
+  "latitude": -37.8033,
+  "longitude": 144.9717,
+  "hiddenTag": null
+}
+```
+
+Sitao: itineraryProgress
+
+```kotlin
+data class ItineraryProgress(
+    val currentStopId: String,
+    val doneStopIds: List<String>,
+    val nextStopId: String?,
+)
+```
+
+Example:
+
+```json
+{
+  "currentStopId": "stop_001",
+  "doneStopIds": ["stop_000"],
+  "nextStopId": "stop_002"
+}
+```
+
+Yan: tripWeatherSummary
+
+```kotlin
+data class TripWeatherSummary(
+    val temperature: String,
+    val condition: String,
+)
+```
+
+Example:
+
+```json
+{
+  "temperature": "18°C",
+  "condition": "Partly cloudy"
+}
+```
+
+### Home
+
+Zewen/Sitao: leaveNowReminder
+
+```kotlin
+data class HomeLeaveNowReminder(
+    val placeName: String,
+    val scheduledTime: String,
+    val delayMinutes: Int,
+    val navigationQuery: String,
+)
+```
+
+Example:
+
+```json
+{
+  "placeName": "Melbourne Museum",
+  "scheduledTime": "10:00",
+  "delayMinutes": 3,
+  "navigationQuery": "Melbourne Museum"
+}
+```
+
+Yan/Zewen: smartSuggestion
+
+```kotlin
+data class HomeSmartSuggestion(
+    val label: String,
+    val message: String,
+    val reasonType: String,
+)
+```
+
+Example:
+
+```json
+{
+  "label": "Rain",
+  "message": "Smart suggestion · Rain 2-4 PM, tap to adjust your plan",
+  "reasonType": "weather_rain"
+}
+```
+
+Zewen/Sitao: todayTripPreview
+
+```kotlin
+data class HomeTripStop(
+    val time: String,
+    val title: String,
+    val subtitle: String,
+    val status: String,
+)
+```
+
+Example:
+
+```json
+{
+  "time": "10:00",
+  "title": "Melbourne Museum",
+  "subtitle": "Now",
+  "status": "Current"
+}
+```
+
+Jie/Xiajie: petStatus
+
+```kotlin
+data class HomePetStatus(
+    val name: String,
+    val description: String,
+    val moodLabel: String,
+    val imageResName: String
+)
+```
+
+Example:
+
+```json
+{
+  "name": "Buddy",
+  "description": "Rainy day · been walking a while",
+  "moodLabel": "Tired",
+  "imageResName": "pet_tired_rain"
+}
+```
+
+### Adjust Itinerary
+
+Yan: weatherAlert
+
+```kotlin
+data class WeatherAlert(
+    val type: String,
+    val timeRange: String,
+    val description: String,
+)
+```
+
+Example:
+
+```json
+{
+  "type": "rain",
+  "timeRange": "14:00-16:00",
+  "description": "Heavy rain expected"
+}
+```
+
+Zewen: adjustedItineraryPlan
+
+```kotlin
+data class AdjustItineraryPlan(
+    val reasonLabel: String,
+    val reasonDescription: String,
+    val stops: List<AdjustItineraryStop>,
+    val removedStop: AdjustRemovedStop?,
+)
+
+data class AdjustItineraryStop(
+    val time: String,
+    val title: String,
+    val changeLabel: String,
+    val changeTone: String,
+)
+
+data class AdjustRemovedStop(
+    val title: String,
+    val reason: String,
+)
+```
+
+Example:
+
+```json
+{
+  "reasonLabel": "Adjust for rain?",
+  "reasonDescription": "Heavy rain 2-4 PM — here's a rewritten plan for today:",
+  "stops": [
+    {
+      "time": "10:00",
+      "title": "Melbourne Museum",
+      "changeLabel": "Kept",
+      "changeTone": "Neutral"
+    },
+    {
+      "time": "12:30",
+      "title": "State Library",
+      "changeLabel": "Moved earlier",
+      "changeTone": "Positive"
+    }
+  ],
+  "removedStop": {
+    "title": "Royal Botanic Gardens",
+    "reason": "outdoor · rain"
+  }
+}
+```
+
+### Edit Itinerary
+
+Zewen: editItineraryRequest
+
+```kotlin
+data class EditItineraryRequest(
+    val tripId: String,
+    val removedStopIds: List<String>,
+    val addedPlaceIds: List<String>,
+)
+```
+
+Example:
+
+```json
+{
+  "tripId": "trip_001",
+  "removedStopIds": ["stop_003"],
+  "addedPlaceIds": ["place_state_library"]
+}
+```
+
+### Explore
+
+Alex/Sitao: currentLocation
+
+```kotlin
+data class CurrentLocation(
+    val latitude: Double,
+    val longitude: Double,
+    val accuracyMeters: Float?,
+)
+```
+
+Example:
+
+```json
+{
+  "latitude": -37.8136,
+  "longitude": 144.9631,
+  "accuracyMeters": 12.0
+}
+```
+
+Yan/Leyan/Sitao: nearbyPlace
+
+```kotlin
+data class ExplorePlace(
+    val placeId: String,
+    val name: String,
+    val distanceText: String,
+    val category: String,
+    val environmentLabel: String,
+    val tagText: String,
+    val latitude: Double,
+    val longitude: Double,
+)
+```
+
+Example:
+
+```json
+{
+  "placeId": "place_melbourne_museum",
+  "name": "Melbourne Museum",
+  "distanceText": "0.8 km",
+  "category": "Indoor",
+  "environmentLabel": "Indoor",
+  "tagText": "Good for rain",
+  "latitude": -37.8033,
+  "longitude": 144.9717
+}
+```
+
+### Attraction Detail
+
+Leyan/Yan: attractionDetail
+
+```kotlin
+data class AttractionDetail(
+    val placeId: String,
+    val name: String,
+    val distanceText: String,
+    val environmentLabel: String,
+    val weatherTag: String?,
+    val todayHours: AttractionOpeningHours?,
+    val weeklyHours: List<AttractionOpeningHours>,
+    val websiteUrl: String?,
+    val imageUrl: String?,
+    val latitude: Double?,
+    val longitude: Double?,
+)
+
+data class AttractionOpeningHours(
+    val dayLabel: String,
+    val timeRange: String,
+)
+```
+
+Example:
+
+```json
+{
+  "placeId": "place_melbourne_museum",
+  "name": "Melbourne Museum",
+  "distanceText": "0.8 km away",
+  "environmentLabel": "Indoor",
+  "weatherTag": "Good for rain",
+  "todayHours": {
+    "dayLabel": "Today",
+    "timeRange": "10:00 am - 5:00 pm"
+  },
+  "weeklyHours": [
+    {
+      "dayLabel": "Mon",
+      "timeRange": "10:00 am - 5:00 pm"
+    }
+  ],
+  "websiteUrl": "https://museumsvictoria.com.au/melbournemuseum/",
+  "imageUrl": null,
+  "latitude": -37.8033,
+  "longitude": 144.9717
+}
+```
+
+## Member Data Summary
+
+Yuxiang: authentication, user profile, default interests, saved trips, save edited profile, save itinerary.
+
+Zewen: itinerary generation, itinerary stops, add/remove stop re-planning, adjust itinerary alternatives, hidden-gem insertion.
+
+Yan: weather data, weather alerts, weather suitability tags, place category/type data.
+
+Leyan: attraction details, opening hours, official website, attraction image/data source.
+
+Sitao: current GPS/location, distance calculation, route duration, itinerary progress, done/current/upcoming status.
+
+Alex: sensor/GPS input and place search support if search is handled on Alex's side.
+
+Jie/Xiajie: pet/companion status, pet image resource, pet mood, fatigue/weather reaction.
+
+## Database Recommendation
+
+Cloud database:
+
+- User account.
+- User profile.
+- Long-term default interests.
 - Saved trips.
-- Long-term travel preferences.
-- Save itinerary after generation/editing.
+- Saved itineraries.
+- Historical trip records.
 
-### Zewen
+Backend/API response, not necessarily stored in front-end database:
 
-- Generate itinerary from `PlanMyTripRequest`.
-- Use destination, date range, start time, interests, transport mode, and specific places.
-- Re-generate or re-order itinerary after adding/removing stops.
-- Return itinerary stops in the same shape needed by `TripTimelineStop` or an agreed backend model.
+- Current GPS location.
+- Current distance to places.
+- Current route duration.
+- Weather alert for the current time.
+- Smart suggestion message.
+- Generated itinerary candidate.
+- Adjust itinerary candidate.
+- Current loading/error state.
 
-### Yan
+Local front-end state:
 
-- Attraction/place data.
-- Place search result data.
-- Indoor/outdoor type.
-- Weather data for Home and Trip.
-- Smart suggestion/weather adjustment trigger.
+- Current selected tab.
+- Current input text.
+- Temporary Plan My Trip draft before submit.
+- Temporary current-trip interests.
+- Dialog open/close state.
+- Selected attraction detail page item.
 
-### Sitao
+Optional local cache:
 
-- Current location.
-- Distance to places.
-- Route duration.
-- Current itinerary progress.
-- Decide which stop is done/current/upcoming.
+- Recently viewed attractions.
+- Last generated trip draft.
+- Recently used city.
 
-### Pet Module
+## Current Integration Notes
 
-- Replace temporary mascot/pet status data.
-- Provide real pet state and image according to weather, walking time, and fatigue.
-
-## Known Limitations
-
-- No real authentication yet.
-- No persistent storage yet.
-- Itinerary and place data are mock data.
-- Search only filters local mock places.
-- External map navigation uses a simple Android map intent.
-- Explore, Pet, Saved Trips, Edit Profile, Attraction Detail, and Adjust Itinerary are future pages.
-
-## Run Locally
-
-1. Open the project in Android Studio.
-2. Sync Gradle.
-3. Select an emulator or Android device.
-4. Run the `app` configuration.
-
-Optional command line build:
-
-```bash
-./gradlew :app:assembleDebug
-```
-
-## Git Notes
-
-- Work on the `yufei_ui` branch for UI changes.
-- Do not commit `.idea/`.
-- Before pushing, run:
-
-```bash
-git status
-git pull --rebase origin yufei_ui
-git push origin yufei_ui
-```
+- `MainActivity.kt` is currently the navigation and temporary data center.
+- Temporary mock data is clearly marked with `TODO`.
+- Once backend is ready, replace mock lists and state in `MainActivity.kt`.
+- The UI already has callbacks for most buttons, so backend integration should mostly happen in callback blocks.
+- Pet and loading/error screens still need to be added.

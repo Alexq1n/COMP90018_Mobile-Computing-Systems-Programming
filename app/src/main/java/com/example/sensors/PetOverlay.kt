@@ -18,7 +18,10 @@ import androidx.compose.ui.unit.IntOffset
 fun PetOverlay(
     personPosition: IntOffset?,
     calibrationOffset: IntOffset,
-    onCalibrationOffsetChanged: (IntOffset) -> Unit
+    trackEnabled: Boolean,
+    manualPetPosition: IntOffset,
+    onCalibrationOffsetChanged: (IntOffset) -> Unit,
+    onManualPetPositionChanged: (IntOffset) -> Unit
 ) {
 
     val currentOffset by rememberUpdatedState(
@@ -28,14 +31,31 @@ fun PetOverlay(
     val currentCallback by rememberUpdatedState(
         onCalibrationOffsetChanged
     )
+    val currentManualPosition by rememberUpdatedState(
+        manualPetPosition
+    )
+    val currentManualCallback by rememberUpdatedState(
+        onManualPetPositionChanged
+    )
 
-    personPosition?.let { position ->
+    val currentTrackEnabled by rememberUpdatedState(
+        trackEnabled
+    )
 
-        val petPosition =
-            IntOffset(
-                position.x + calibrationOffset.x,
-                position.y + calibrationOffset.y
-            )
+    //Track on / Track off + manul offset
+    val petPosition =
+        if (trackEnabled) {
+            personPosition?.let { position ->
+
+
+                IntOffset(
+                    position.x + calibrationOffset.x,
+                    position.y + calibrationOffset.y
+                )
+            } ?: manualPetPosition
+        } else {
+            manualPetPosition
+        }
 
         Box(
             modifier = Modifier.fillMaxSize()
@@ -53,6 +73,8 @@ fun PetOverlay(
                         detectDragGestures { change, dragAmount ->
 
                             change.consume()
+                            // Track on
+                            if (currentTrackEnabled) {
 
                             val newOffset =
                                 IntOffset(
@@ -66,9 +88,19 @@ fun PetOverlay(
                             currentCallback(
                                 newOffset
                             )
+                        } else{
+                            // Track off
+                                val newPosition =
+                                    IntOffset(
+                                        currentManualPosition.x +
+                                                dragAmount.x.toInt(),
+                                        currentManualPosition.y +
+                                                dragAmount.y.toInt()
+                                    )
+                                    currentManualCallback(newPosition)
+                            }
                         }
                     }
             )
         }
     }
-}

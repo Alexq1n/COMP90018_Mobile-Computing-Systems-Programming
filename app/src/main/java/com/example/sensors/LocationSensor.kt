@@ -44,7 +44,6 @@ class LocationSensor(context: Context) {
 
     @SuppressLint("MissingPermission")
     fun enableLocation() {
-
         if (
             ContextCompat.checkSelfPermission(
                 context,

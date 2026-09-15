@@ -1,5 +1,4 @@
 package com.example.sensors
-
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
@@ -19,11 +18,12 @@ import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import androidx.compose.ui.unit.IntOffset
 
-@OptIn(ExperimentalGetImage::class)
 @Composable
+@OptIn(ExperimentalGetImage::class)
 fun CameraPreview(
+    petEnabled: Boolean,
+    trackEnabled: Boolean,
     onPersonPositionChanged: (IntOffset) -> Unit,
-    onFaceLost: () -> Unit,
     onCalibrationOffsetZero: () -> Unit
 ) {
 
@@ -34,7 +34,7 @@ fun CameraPreview(
         PreviewView(context)
     }
 
-    DisposableEffect(lifecycleOwner) {
+    DisposableEffect(lifecycleOwner, petEnabled,trackEnabled) {
 
         val cameraProviderFuture =
             ProcessCameraProvider.getInstance(context)
@@ -75,107 +75,117 @@ fun CameraPreview(
                     )
                     .build()
 
-            imageAnalysis.setAnalyzer(
-                ContextCompat.getMainExecutor(context)
-            ) { imageProxy ->
+            // Run ImageAnalysis only if Pet on + Track on
+            if (petEnabled && trackEnabled) {
+                imageAnalysis.setAnalyzer(
+                    ContextCompat.getMainExecutor(context)
+                ) { imageProxy ->
 
-                val mediaImage =
-                    imageProxy.image
+                    val mediaImage =
+                        imageProxy.image
 
-                if (mediaImage != null) {
+                    if (mediaImage != null) {
 
-                    val image =
-                        InputImage.fromMediaImage(
-                            mediaImage,
-                            imageProxy.imageInfo.rotationDegrees
-                        )
+                        val image =
+                            InputImage.fromMediaImage(
+                                mediaImage,
+                                imageProxy.imageInfo.rotationDegrees
+                            )
 
-                    faceDetector
-                        .process(image)
-                        .addOnSuccessListener { faces ->
+                        faceDetector
+                            .process(image)
+                            .addOnSuccessListener { faces ->
 
-                            val face =
-                                if (trackedFacePosition == null) {
+                                val face =
+                                    if (trackedFacePosition == null) {
 
-                                    faces.firstOrNull()
+                                        faces.firstOrNull()
 
-                                } else {
+                                    } else {
 
-                                    faces.minByOrNull { face ->
+                                        faces.minByOrNull { face ->
 
-                                        val box =
-                                            face.boundingBox
+                                            val box =
+                                                face.boundingBox
 
-                                        val centerX =
-                                            box.centerX()
+                                            val centerX =
+                                                box.centerX()
 
-                                        val centerY =
-                                            box.centerY()
+                                            val centerY =
+                                                box.centerY()
 
-                                        val dx =
-                                            centerX -
-                                                    trackedFacePosition!!.x
+                                            val dx =
+                                                centerX -
+                                                        trackedFacePosition!!.x
 
-                                        val dy =
-                                            centerY -
-                                                    trackedFacePosition!!.y
+                                            val dy =
+                                                centerY -
+                                                        trackedFacePosition!!.y
 
-                                        dx * dx + dy * dy
+                                            dx * dx + dy * dy
+                                        }
                                     }
-                                }
+                                // Track on, find face
+                                if (face != null) {
 
-                            if (face != null) {
+                                    lastFaceDetectedTime =
+                                        System.currentTimeMillis()
 
-                                lastFaceDetectedTime =
-                                    System.currentTimeMillis()
+                                    val box =
+                                        face.boundingBox
 
-                                val box =
-                                    face.boundingBox
+                                    val centerX =
+                                        box.centerX()
 
-                                val centerX =
-                                    box.centerX()
+                                    val centerY =
+                                        box.centerY()
 
-                                val centerY =
-                                    box.centerY()
+                                    val position =
+                                        IntOffset(
+                                            centerX,
+                                            centerY
+                                        )
 
-                                val position =
-                                    IntOffset(
-                                        centerX,
-                                        centerY
+                                    trackedFacePosition =
+                                        position
+
+                                    onPersonPositionChanged(
+                                        position
                                     )
 
-                                trackedFacePosition =
-                                    position
+                                } else {
+                                    // Face disappears for short time
+                                    // Keep offset
+                                    val currentTime =
+                                        System.currentTimeMillis()
 
-                                onPersonPositionChanged(
-                                    position
-                                )
+                                    if (
+                                        currentTime -
+                                        lastFaceDetectedTime > 1500
+                                    ) {
 
-                            } else {
-                                onFaceLost()
-                                val currentTime =
-                                    System.currentTimeMillis()
-
-                                if (
-                                    currentTime -
-                                    lastFaceDetectedTime > 1500
-                                ) {
-
-                                    trackedFacePosition = null
-                                    onCalibrationOffsetZero()
-
+                                        trackedFacePosition = null
+                                        onPersonPositionChanged(
+                                            IntOffset(900,350)
+                                        )
+                                        onCalibrationOffsetZero()
+                                        lastFaceDetectedTime = currentTime
+                                    }
                                 }
                             }
-                        }
-                        .addOnCompleteListener {
-                            imageProxy.close()
-                        }
+                            .addOnCompleteListener {
+                                imageProxy.close()
+                            }
 
-                } else {
+                    } else {
 
-                    imageProxy.close()
-                }
+                        imageProxy.close()
+                    }
             }
+        } else{
+            // Pet or track disabled → no image analysis
+            imageAnalysis.clearAnalyzer()
+        }
 
             cameraProvider.unbindAll()
 

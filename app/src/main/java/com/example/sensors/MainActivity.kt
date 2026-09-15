@@ -292,7 +292,7 @@ class MainActivity : ComponentActivity() {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp),
+                    .height(50.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(searchResults) { result ->

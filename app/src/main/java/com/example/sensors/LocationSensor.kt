@@ -21,6 +21,8 @@ class LocationSensor(context: Context) {
     private val client: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
+    private var currentLocation: LocationMessage? = null
+
     private val locationRequest =
         LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY,
@@ -32,6 +34,11 @@ class LocationSensor(context: Context) {
         override fun onLocationResult(result: LocationResult) {
 
             val location = result.lastLocation ?: return
+
+            currentLocation = LocationMessage(
+                location.latitude,
+                location.longitude
+            )
 
             EventBus.getDefault().post(
                 LocationMessage(
@@ -62,7 +69,9 @@ class LocationSensor(context: Context) {
             Looper.getMainLooper()
         )
     }
-
+    fun getCurrentLocation(): LocationMessage? {
+        return currentLocation
+    }
     fun disableLocation() {
 
         client.removeLocationUpdates(locationCallback)

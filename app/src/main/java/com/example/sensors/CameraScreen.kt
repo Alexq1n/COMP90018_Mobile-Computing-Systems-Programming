@@ -82,7 +82,7 @@ fun CameraScreen(
                     "image/jpeg"
                 )
 
-                // Save to Pictures/PetCamera
+                // Set the save location for the photo.
                 put(
                     MediaStore.Images.Media.RELATIVE_PATH,
                     "Pictures/PetCamera"

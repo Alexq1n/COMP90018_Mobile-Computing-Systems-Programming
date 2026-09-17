@@ -501,7 +501,7 @@ private fun CameraFeed(
         val detector = FaceDetection.getClient(
             FaceDetectorOptions.Builder()
                 .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
-                .setTrackingEnabled()
+                .enableTracking()
                 .setMinFaceSize(0.12f)
                 .build(),
         )

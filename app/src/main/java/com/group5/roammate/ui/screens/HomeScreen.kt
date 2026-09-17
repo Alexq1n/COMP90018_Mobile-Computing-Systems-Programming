@@ -1,7 +1,6 @@
 package com.group5.roammate.ui.screens
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,15 +28,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.group5.roammate.R
+import com.group5.roammate.pet.PetEnvironmentSnapshot
+import com.group5.roammate.pet.PetProfile
+import com.group5.roammate.pet.PetStateEngine
+import com.group5.roammate.pet.PetUiState
+import com.group5.roammate.ui.pet.PetAvatar
 import com.group5.roammate.ui.theme.RoamMateTheme
 
 
@@ -62,13 +63,12 @@ data class HomeTripStop(
     val status: HomeTripStopStatus,
 )
 
-// pet card
-// 夏桀 替换imageRes/name/description/moodLabel
+// Pet card. The shared PetUiState keeps Home, Companions, Play and Camera visually consistent.
 data class HomePetStatus(
     val name: String,
     val description: String,
     val moodLabel: String,
-    val imageRes: Int,
+    val petState: PetUiState,
 )
 
 // Leave now card data.
@@ -357,18 +357,16 @@ private fun PetStatusCard(
             modifier = Modifier.padding(horizontal = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // pet logo, 等夏桀
+            // The same animated/weather-dressed Buddy shown on the Pet tab.
             Box(
                 modifier = Modifier
                     .size(62.dp)
                     .background(Color.White, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Image(
-                    painter = painterResource(id = petStatus.imageRes),
-                    contentDescription = petStatus.name,
-                    modifier = Modifier.size(46.dp),
-                    contentScale = ContentScale.Fit,
+                PetAvatar(
+                    state = petStatus.petState,
+                    modifier = Modifier.size(56.dp),
                 )
             }
 
@@ -680,7 +678,7 @@ private fun samplePetStatus(): HomePetStatus = HomePetStatus(
     name = "Buddy",
     description = "Rainy day · been walking a while",
     moodLabel = "Tired",
-    imageRes = R.drawable.roammate_wombat,
+    petState = PetStateEngine.buildUiState(PetEnvironmentSnapshot.demo(), PetProfile()),
 )
 
 // 预览用的 Leave now 假数据。

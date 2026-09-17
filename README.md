@@ -17,7 +17,7 @@ RoamMate is a travel planning Android app for Australia. This branch focuses on 
 
 ## Current UI Status
 
-Most core UI screens are completed. The main remaining UI work is Pet, loading states, and error states.
+Most core UI screens are completed, including the virtual travel companion experience.
 
 Completed:
 
@@ -36,10 +36,13 @@ Completed:
 - Edit Profile
 - Saved Trips
 - Bottom Navigation
+- Pet / Companions
+- Play with Buddy interactions
+- Weather-driven wardrobe
+- Pet camera with face tracking and composited gallery saving
 
 Remaining:
 
-- Pet / Companion page
 - Loading states
 - Error states
 - Empty states for more backend failure cases
@@ -50,6 +53,16 @@ Remaining:
 ```text
 app/src/main/java/com/group5/roammate/
 ├── MainActivity.kt
+├── pet/
+│   ├── PetModels.kt
+│   ├── PetStateEngine.kt
+│   ├── PetPreferences.kt
+│   └── OpenMeteoPetWeatherRepository.kt
+├── ui/pet/
+│   ├── PetAvatar.kt
+│   ├── CompanionsScreen.kt
+│   ├── PlayWithBuddyScreen.kt
+│   └── PetCameraScreen.kt
 ├── ui/screens/
 │   ├── LoginScreen.kt
 │   ├── CreateAccountScreen.kt
@@ -230,6 +243,28 @@ app/src/main/java/com/group5/roammate/
 - Current behavior: local mock saved trip history.
 - Future integration: saved trips from Yuxiang/Firebase.
 
+### Pet / Virtual Travel Companion
+
+- One active Buddy with four switchable travel looks: corgi, koala, penguin, and kangaroo.
+- Original transparent 512 × 512 PNG assets are in `app/src/main/res/drawable-nodpi/`.
+- Auto wardrobe reacts to temperature, WMO weather condition, and wind speed.
+- Manual wardrobe override supports everyday, sun, rain, wind, and cold modes.
+- Mood and fatigue react to `activeMinutes` and `stepsSinceBreak`.
+- Tap and accelerometer shake interactions animate Buddy.
+- Travel check-ins unlock additional companion looks.
+- Selected look and wardrobe mode persist locally with `SharedPreferences`.
+- Current weather uses Open-Meteo as a key-free development fallback. Production can pass Yan's
+  weather payload into `PetEnvironmentSnapshot` and remove the fallback call.
+
+### Pet Camera
+
+- Front/rear camera switch using CameraX.
+- ML Kit face tracking positions Buddy near the traveller.
+- Buddy can be hidden, tracking can be disabled, and the overlay can always be dragged manually.
+- The captured file includes the camera preview, Buddy, outfit, weather, and location stamp.
+- JPEG output is saved to `Pictures/RoamMate` on Android 10+.
+- Camera permission is requested only when the camera experience opens.
+
 ## Navigation Flow
 
 ```text
@@ -242,7 +277,7 @@ Home
 ├── Today's trip -> Trip
 ├── Navigate -> external map
 ├── Smart suggestion -> Adjust Itinerary
-├── Pet card -> Pet / Companion page (future)
+├── Pet card -> Pet / Companions
 └── Bottom tabs -> Home / Trip / Explore / Pet / Profile
 
 Plan My Trip
@@ -297,6 +332,13 @@ Profile
 ├── Saved trips -> Saved Trips
 ├── Edit profile -> Edit Profile
 └── Log out -> Login
+
+Pet / Companions
+├── Select Buddy look or weather wardrobe mode
+├── Refresh live weather
+├── Play with Buddy -> interactive pet
+├── Photo -> Pet Camera -> system gallery
+└── Bottom tabs -> Home / Trip / Explore / Pet / Profile
 
 Saved Trips
 ├── Back -> Profile
@@ -736,14 +778,18 @@ Example:
 }
 ```
 
-Jie/Xiajie: petStatus
+Jie/Xiajie: pet context (implemented by `PetEnvironmentSnapshot`)
 
 ```kotlin
-data class HomePetStatus(
-    val name: String,
-    val description: String,
-    val moodLabel: String,
-    val imageResName: String
+data class PetEnvironmentSnapshot(
+    val condition: PetWeatherCondition,
+    val conditionLabel: String,
+    val temperatureC: Double,
+    val windSpeedKmh: Double,
+    val activeMinutes: Int,
+    val stepsSinceBreak: Int,
+    val locationLabel: String,
+    val source: String,
 )
 ```
 
@@ -751,10 +797,14 @@ Example:
 
 ```json
 {
-  "name": "Buddy",
-  "description": "Rainy day · been walking a while",
-  "moodLabel": "Tired",
-  "imageResName": "pet_tired_rain"
+  "condition": "Rain",
+  "conditionLabel": "Rain",
+  "temperatureC": 14.0,
+  "windSpeedKmh": 18.0,
+  "activeMinutes": 46,
+  "stepsSinceBreak": 4300,
+  "locationLabel": "Melbourne Museum",
+  "source": "Team weather service"
 }
 ```
 
@@ -969,7 +1019,7 @@ Sitao: current GPS/location, distance calculation, route duration, itinerary pro
 
 Alex: sensor/GPS input and place search support if search is handled on Alex's side.
 
-Jie/Xiajie: pet/companion status, pet image resource, pet mood, fatigue/weather reaction.
+Jie/Xiajie: pet/companion state, generated pet assets, interactions, weather wardrobe, and pet camera.
 
 ## Database Recommendation
 
@@ -1014,4 +1064,20 @@ Optional local cache:
 - Temporary mock data is clearly marked with `TODO`.
 - Once backend is ready, replace mock lists and state in `MainActivity.kt`.
 - The UI already has callbacks for most buttons, so backend integration should mostly happen in callback blocks.
-- Pet and loading/error screens still need to be added.
+- Pet is complete. Replace the demo activity/location fields and Open-Meteo fallback by assigning
+  team payloads to `PetEnvironmentSnapshot` in `MainActivity.kt`.
+
+## Pet Integration Contract
+
+The team only needs to populate one object; `PetStateEngine` derives outfit, mood, status copy, and
+travel tips. This avoids passing the chat's individual fields through multiple screens.
+
+| Provider | `PetEnvironmentSnapshot` field | Notes |
+| --- | --- | --- |
+| Yan weather | `condition`, `conditionLabel`, `temperatureC`, `windSpeedKmh` | WMO codes can use `PetWeatherAdapter.fromWmoCode`. |
+| Alex sensor | `activeMinutes`, `stepsSinceBreak` | If `TYPE_STEP_COUNTER` is unavailable, pass the accelerometer-derived fallback. |
+| Sitao location | `locationLabel` | A place name is sufficient; exact coordinates stay outside the pet UI. |
+| Yuxiang database | `PetProfile` | Mirror `selectedStyle`, `outfitMode`, and `checkedInPlaces` when Firebase is ready. |
+
+Weather fallback data is provided by [Open-Meteo](https://open-meteo.com/) and must retain visible
+attribution if it remains in the final app.

@@ -8,12 +8,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.group5.roammate.pet.OpenMeteoPetWeatherRepository
+import com.group5.roammate.pet.PetEnvironmentSnapshot
+import com.group5.roammate.pet.PetOutfitMode
+import com.group5.roammate.pet.PetPreferences
+import com.group5.roammate.pet.PetStateEngine
 import com.group5.roammate.ui.screens.AdjustChangeTone
 import com.group5.roammate.ui.screens.AdjustItineraryPlan
 import com.group5.roammate.ui.screens.AdjustItineraryScreen
@@ -48,7 +55,11 @@ import com.group5.roammate.ui.screens.TripScreen
 import com.group5.roammate.ui.screens.TripStopStatus
 import com.group5.roammate.ui.screens.TripTimelineStop
 import com.group5.roammate.ui.screens.TripWeatherSummary
+import com.group5.roammate.ui.pet.CompanionsScreen
+import com.group5.roammate.ui.pet.PetCameraScreen
+import com.group5.roammate.ui.pet.PlayWithBuddyScreen
 import com.group5.roammate.ui.theme.RoamMateTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +75,41 @@ class MainActivity : ComponentActivity() {
             RoamMateTheme(dynamicColor = false) {
                 // This is a temporary page status.
                 var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.Login) }
+
+                // Jie pet feature state. The environment can later be replaced directly with
+                // Yan/Alex/Sitao's weather, activity and location payloads.
+                val petPreferences = remember { PetPreferences(applicationContext) }
+                val petWeatherRepository = remember { OpenMeteoPetWeatherRepository() }
+                val petScope = rememberCoroutineScope()
+                var petProfile by remember { mutableStateOf(petPreferences.loadProfile()) }
+                var petEnvironment by remember { mutableStateOf(PetEnvironmentSnapshot.demo()) }
+                var isRefreshingPetWeather by remember { mutableStateOf(false) }
+                var petWeatherError by remember { mutableStateOf<String?>(null) }
+                val petState = PetStateEngine.buildUiState(petEnvironment, petProfile)
+
+                suspend fun refreshPetWeather() {
+                    isRefreshingPetWeather = true
+                    petWeatherRepository.fetchCurrent(
+                        latitude = -37.8136,
+                        longitude = 144.9631,
+                    ).onSuccess { weather ->
+                        petEnvironment = petEnvironment.copy(
+                            condition = weather.condition,
+                            conditionLabel = weather.conditionLabel,
+                            temperatureC = weather.temperatureC,
+                            windSpeedKmh = weather.windSpeedKmh,
+                            source = weather.source,
+                        )
+                        petWeatherError = null
+                    }.onFailure { error ->
+                        petWeatherError = error.message ?: "Weather request failed"
+                    }
+                    isRefreshingPetWeather = false
+                }
+
+                LaunchedEffect(Unit) {
+                    refreshPetWeather()
+                }
 
                 // User name
                 // TODO: Replace with Yuxiang Firebase user profile.
@@ -246,13 +292,13 @@ class MainActivity : ComponentActivity() {
                             // 如果没有建议，之后把这里传 null 即可隐藏卡片。
                             smartSuggestion = homeSmartSuggestion,
 
-                            // TODO: 这里现在先用吉祥物图片当 pet 占位。
-                            // TODO: 等 Jie/后端做好真正宠物后，把这组 HomePetStatus 换成真实 pet 数据。
+                            // Jie pet module: this card shares live weather, outfit and mood state
+                            // with the full Companions and camera experiences.
                             petStatus = HomePetStatus(
                                 name = "Buddy",
-                                description = "Rainy day · been walking a while",
-                                moodLabel = "Tired",
-                                imageRes = R.drawable.roammate_wombat,
+                                description = petState.statusLine,
+                                moodLabel = petState.mood.label,
+                                petState = petState,
                             ),
 
                             // TODO: 之后这里用真实当前站点地址打开外部地图导航。
@@ -266,9 +312,8 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.AdjustItinerary
                             },
 
-                            // TODO: 之后这里跳转到 Companions/Pet 页面。
                             onPetCardClick = {
-                                Toast.makeText(this, "Pet page is not ready yet", Toast.LENGTH_SHORT).show()
+                                currentScreen = AuthScreen.Pet
                             },
 
                             // 点击 Home 页底部按钮，进入 Plan My Trip 页面。
@@ -292,11 +337,7 @@ class MainActivity : ComponentActivity() {
                                     RoamMateMainTab.Trip -> currentScreen = AuthScreen.Trip
                                     RoamMateMainTab.Profile -> currentScreen = AuthScreen.Profile
                                     RoamMateMainTab.Explore -> currentScreen = AuthScreen.Explore
-                                    else -> Toast.makeText(
-                                        this,
-                                        "${tab.label} page is not ready yet",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
+                                    RoamMateMainTab.Pet -> currentScreen = AuthScreen.Pet
                                 }
                             },
                         )
@@ -377,11 +418,7 @@ class MainActivity : ComponentActivity() {
                                     RoamMateMainTab.Trip -> Unit
                                     RoamMateMainTab.Explore -> currentScreen = AuthScreen.Explore
                                     RoamMateMainTab.Profile -> currentScreen = AuthScreen.Profile
-                                    else -> Toast.makeText(
-                                        this,
-                                        "${tab.label} page is not ready yet",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
+                                    RoamMateMainTab.Pet -> currentScreen = AuthScreen.Pet
                                 }
                             },
                         )
@@ -413,11 +450,7 @@ class MainActivity : ComponentActivity() {
                                     RoamMateMainTab.Trip -> currentScreen = AuthScreen.Trip
                                     RoamMateMainTab.Explore -> Unit
                                     RoamMateMainTab.Profile -> currentScreen = AuthScreen.Profile
-                                    else -> Toast.makeText(
-                                        this,
-                                        "${tab.label} page is not ready yet",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
+                                    RoamMateMainTab.Pet -> currentScreen = AuthScreen.Pet
                                 }
                             },
                         )
@@ -624,6 +657,65 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    AuthScreen.Pet -> {
+                        CompanionsScreen(
+                            state = petState,
+                            profile = petProfile,
+                            isRefreshingWeather = isRefreshingPetWeather,
+                            weatherError = petWeatherError,
+                            onStyleSelected = { style ->
+                                val updatedProfile = petProfile.copy(selectedStyle = style)
+                                petProfile = updatedProfile
+                                petPreferences.saveProfile(updatedProfile)
+                            },
+                            onOutfitModeSelected = { outfitMode ->
+                                val updatedProfile = petProfile.copy(outfitMode = outfitMode)
+                                petProfile = updatedProfile
+                                petPreferences.saveProfile(updatedProfile)
+                            },
+                            onRefreshWeather = {
+                                petScope.launch { refreshPetWeather() }
+                            },
+                            onPlayWithBuddy = {
+                                currentScreen = AuthScreen.PlayWithBuddy
+                            },
+                            onTabClick = { tab ->
+                                when (tab) {
+                                    RoamMateMainTab.Home -> currentScreen = AuthScreen.Home
+                                    RoamMateMainTab.Trip -> currentScreen = AuthScreen.Trip
+                                    RoamMateMainTab.Explore -> currentScreen = AuthScreen.Explore
+                                    RoamMateMainTab.Pet -> Unit
+                                    RoamMateMainTab.Profile -> currentScreen = AuthScreen.Profile
+                                }
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+
+                    AuthScreen.PlayWithBuddy -> {
+                        PlayWithBuddyScreen(
+                            state = petState,
+                            onClose = { currentScreen = AuthScreen.Pet },
+                            onCycleGear = {
+                                val modes = PetOutfitMode.entries
+                                val nextIndex = (modes.indexOf(petProfile.outfitMode) + 1) % modes.size
+                                val updatedProfile = petProfile.copy(outfitMode = modes[nextIndex])
+                                petProfile = updatedProfile
+                                petPreferences.saveProfile(updatedProfile)
+                            },
+                            onOpenCamera = { currentScreen = AuthScreen.PetCamera },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+
+                    AuthScreen.PetCamera -> {
+                        PetCameraScreen(
+                            state = petState,
+                            onBack = { currentScreen = AuthScreen.PlayWithBuddy },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+
                     AuthScreen.Profile -> {
                         ProfileScreen(
                             modifier = Modifier.fillMaxSize(),
@@ -658,11 +750,7 @@ class MainActivity : ComponentActivity() {
                                     RoamMateMainTab.Home -> currentScreen = AuthScreen.Home
                                     RoamMateMainTab.Trip -> currentScreen = AuthScreen.Trip
                                     RoamMateMainTab.Explore -> currentScreen = AuthScreen.Explore
-                                    else -> Toast.makeText(
-                                        this,
-                                        "${tab.label} page is not ready yet",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
+                                    RoamMateMainTab.Pet -> currentScreen = AuthScreen.Pet
                                 }
                             },
                         )
@@ -1226,6 +1314,9 @@ private enum class AuthScreen {
     EditAddStop,
     PlanMyTrip,
     PlanTripInterests,
+    Pet,
+    PlayWithBuddy,
+    PetCamera,
     Profile,
     SavedTrips,
     EditProfile,

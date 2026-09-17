@@ -57,7 +57,6 @@ import com.group5.roammate.ui.screens.TripTimelineStop
 import com.group5.roammate.ui.screens.TripWeatherSummary
 import com.group5.roammate.ui.pet.CompanionsScreen
 import com.group5.roammate.ui.pet.PetCameraScreen
-import com.group5.roammate.ui.pet.PlayWithBuddyScreen
 import com.group5.roammate.ui.theme.RoamMateTheme
 import kotlinx.coroutines.launch
 
@@ -676,9 +675,14 @@ class MainActivity : ComponentActivity() {
                             onRefreshWeather = {
                                 petScope.launch { refreshPetWeather() }
                             },
-                            onPlayWithBuddy = {
-                                currentScreen = AuthScreen.PlayWithBuddy
+                            onCycleGear = {
+                                val modes = PetOutfitMode.entries
+                                val nextIndex = (modes.indexOf(petProfile.outfitMode) + 1) % modes.size
+                                val updatedProfile = petProfile.copy(outfitMode = modes[nextIndex])
+                                petProfile = updatedProfile
+                                petPreferences.saveProfile(updatedProfile)
                             },
+                            onOpenCamera = { currentScreen = AuthScreen.PetCamera },
                             onTabClick = { tab ->
                                 when (tab) {
                                     RoamMateMainTab.Home -> currentScreen = AuthScreen.Home
@@ -692,26 +696,10 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    AuthScreen.PlayWithBuddy -> {
-                        PlayWithBuddyScreen(
-                            state = petState,
-                            onClose = { currentScreen = AuthScreen.Pet },
-                            onCycleGear = {
-                                val modes = PetOutfitMode.entries
-                                val nextIndex = (modes.indexOf(petProfile.outfitMode) + 1) % modes.size
-                                val updatedProfile = petProfile.copy(outfitMode = modes[nextIndex])
-                                petProfile = updatedProfile
-                                petPreferences.saveProfile(updatedProfile)
-                            },
-                            onOpenCamera = { currentScreen = AuthScreen.PetCamera },
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    }
-
                     AuthScreen.PetCamera -> {
                         PetCameraScreen(
                             state = petState,
-                            onBack = { currentScreen = AuthScreen.PlayWithBuddy },
+                            onBack = { currentScreen = AuthScreen.Pet },
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
@@ -1315,7 +1303,6 @@ private enum class AuthScreen {
     PlanMyTrip,
     PlanTripInterests,
     Pet,
-    PlayWithBuddy,
     PetCamera,
     Profile,
     SavedTrips,

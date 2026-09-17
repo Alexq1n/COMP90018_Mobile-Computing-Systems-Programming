@@ -28,10 +28,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -64,11 +67,13 @@ fun CompanionsScreen(
     onStyleSelected: (CompanionStyle) -> Unit,
     onOutfitModeSelected: (PetOutfitMode) -> Unit,
     onRefreshWeather: () -> Unit,
-    onPlayWithBuddy: () -> Unit,
+    onCycleGear: () -> Unit,
+    onOpenCamera: () -> Unit,
     onTabClick: (RoamMateMainTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val unlockedStyles = PetStateEngine.unlockedStyles(profile.checkedInPlaces)
+    var treatTick by remember { mutableIntStateOf(0) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -127,87 +132,88 @@ fun CompanionsScreen(
 
             Spacer(Modifier.height(18.dp))
 
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
-                border = BorderStroke(1.dp, PetTeal.copy(alpha = 0.13f)),
-                shadowElevation = 2.dp,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(335.dp)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(Color(0xFFDDF5F2), Color(0xFFF7FCFB)),
-                            ),
-                        ),
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(18.dp),
-                    ) {
-                        Text(
-                            text = "Buddy the ${state.companionStyle.displayName}",
-                            color = PetText,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                        )
-                        Text(
-                            text = state.outfit.label,
-                            color = PetTeal,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-
-                    PetAvatar(
-                        state = state,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(top = 30.dp)
-                            .size(245.dp),
-                    )
-
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        shape = RoundedCornerShape(18.dp),
-                        color = Color.White.copy(alpha = 0.92f),
-                    ) {
-                        Text(
-                            text = state.statusLine,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                            color = PetText,
-                            fontSize = 13.sp,
-                            lineHeight = 17.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
-            }
+            InteractivePetStage(
+                state = state,
+                treatTick = treatTick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(430.dp),
+            )
 
             Spacer(Modifier.height(14.dp))
 
-            Button(
-                onClick = onPlayWithBuddy,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PetCoral),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(
-                    text = "Play with Buddy",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold,
+                PetQuickActionButton(
+                    label = "Treat",
+                    containerColor = Color.White,
+                    contentColor = PetTeal,
+                    modifier = Modifier.weight(1f),
+                    onClick = { treatTick += 1 },
+                )
+                PetQuickActionButton(
+                    label = "Outfit",
+                    containerColor = Color.White,
+                    contentColor = PetTeal,
+                    modifier = Modifier.weight(1f),
+                    onClick = onCycleGear,
+                )
+                PetQuickActionButton(
+                    label = "Photo",
+                    containerColor = PetCoral,
+                    contentColor = Color.White,
+                    modifier = Modifier.weight(1f),
+                    onClick = onOpenCamera,
                 )
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Buddy keeps moving even when you do nothing—watch for personality-specific actions.",
+                modifier = Modifier.fillMaxWidth(),
+                color = PetMuted,
+                fontSize = 11.sp,
+                lineHeight = 15.sp,
+                textAlign = TextAlign.Center,
+            )
+
+            Spacer(Modifier.height(18.dp))
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = PetLightTeal,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column {
+                        Text(
+                            text = "Buddy the ${state.companionStyle.displayName}",
+                            color = PetText,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                        )
+                        Text(
+                            text = state.environment.locationLabel,
+                            color = PetMuted,
+                            fontSize = 11.sp,
+                        )
+                    }
+                    Text(
+                        text = "${state.mood.label} · ${state.outfit.label}",
+                        color = PetTeal,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(22.dp))
 
             SectionTitle(
                 title = "Weather wardrobe",
@@ -291,6 +297,29 @@ fun CompanionsScreen(
         }
     }
 }
+
+@Composable
+private fun PetQuickActionButton(
+    label: String,
+    containerColor: Color,
+    contentColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(50.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+        ),
+        border = if (containerColor == Color.White) BorderStroke(1.dp, PetBorder) else null,
+    ) {
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+    }
+}
+
 @Composable
 private fun SectionTitle(title: String, subtitle: String) {
     Column {
@@ -415,7 +444,8 @@ private fun CompanionsScreenPreview() {
             onStyleSelected = {},
             onOutfitModeSelected = {},
             onRefreshWeather = {},
-            onPlayWithBuddy = {},
+            onCycleGear = {},
+            onOpenCamera = {},
             onTabClick = {},
         )
     }

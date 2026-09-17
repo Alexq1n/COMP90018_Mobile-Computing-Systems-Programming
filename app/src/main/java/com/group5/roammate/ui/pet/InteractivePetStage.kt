@@ -52,15 +52,15 @@ import com.group5.roammate.pet.PetUiState
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
-import kotlin.random.Random
 
 private val StageTeal = Color(0xFF008B8F)
 private val StageText = Color(0xFF17212B)
 private val StageMuted = Color(0xFF68777F)
 
 /**
- * The Pet tab's always-live companion. Autonomous behavior and direct touch coexist in one state
- * loop, so interaction interrupts the current action and naturally returns to independent life.
+ * The Pet tab's always-live companion. Mood selects one durable loop; direct input briefly
+ * interrupts it and then returns Buddy to that same loop. Micro-animation (breathing, blinking,
+ * tail and ear motion) lives inside every loop instead of randomly changing Buddy's emotion.
  */
 @Composable
 fun InteractivePetStage(
@@ -68,7 +68,9 @@ fun InteractivePetStage(
     treatTick: Int,
     modifier: Modifier = Modifier,
 ) {
-    var action by remember(state.companionStyle) { mutableStateOf(PetAction.Idle) }
+    var action by remember(state.companionStyle) {
+        mutableStateOf(PetBehaviorEngine.restingAction(state.mood))
+    }
     var message by remember(state.companionStyle) { mutableStateOf(state.statusLine) }
     var queuedReaction by remember { mutableStateOf<PetBehaviorCue?>(null) }
     var behaviorVersion by remember { mutableIntStateOf(0) }
@@ -96,32 +98,15 @@ fun InteractivePetStage(
         state.environment.locationLabel,
         behaviorVersion,
     ) {
-        queuedReaction?.let { cue ->
+        val cue = queuedReaction
+        if (cue != null) {
             action = cue.action
             message = cue.message
             delay(cue.durationMillis)
             queuedReaction = null
-            action = PetAction.Idle
-            message = state.statusLine
-            delay(900)
         }
-
-        while (true) {
-            delay(Random.nextLong(2_400L, 5_200L))
-            val next = PetBehaviorEngine.autonomousActions(
-                style = state.companionStyle,
-                mood = state.mood,
-            ).random()
-            action = next
-            message = PetBehaviorEngine.autonomousMessage(
-                style = state.companionStyle,
-                action = next,
-                locationLabel = state.environment.locationLabel,
-            )
-            delay(PetBehaviorEngine.durationFor(next))
-            action = PetAction.Idle
-            message = state.statusLine
-        }
+        action = PetBehaviorEngine.restingAction(state.mood)
+        message = state.statusLine
     }
 
     val density = LocalDensity.current
@@ -229,7 +214,7 @@ fun InteractivePetStage(
         }
 
         Text(
-            text = "Tap head or body · hold to pet · drag Buddy · shake phone",
+            text = "Breathes & blinks continuously · tap · hold · drag · shake",
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 18.dp, vertical = 13.dp),

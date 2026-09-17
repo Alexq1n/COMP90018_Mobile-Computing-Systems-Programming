@@ -34,51 +34,19 @@ data class PetBehaviorCue(
 )
 
 /**
- * Pure behavior rules shared by the UI and tests. Each companion has a deliberately different
- * autonomous rhythm and interaction vocabulary instead of sharing one generic animation loop.
+ * Pure behavior rules shared by the UI and tests.
+ *
+ * A mood is a durable state, not a playlist of random reactions. The avatar continuously animates
+ * inside [restingAction] (breathing, blinking, tail/ear movement) until a real input temporarily
+ * interrupts it. This keeps Buddy feeling alive without abruptly becoming happy, sad and asleep
+ * every few seconds.
  */
 object PetBehaviorEngine {
-    fun autonomousActions(style: CompanionStyle, mood: PetMood): List<PetAction> {
-        val personality = when (style) {
-            CompanionStyle.Corgi -> listOf(
-                PetAction.Blink,
-                PetAction.Curious,
-                PetAction.Inspect,
-                PetAction.Walk,
-                PetAction.Happy,
-            )
-
-            CompanionStyle.Koala -> listOf(
-                PetAction.Blink,
-                PetAction.Curious,
-                PetAction.Inspect,
-                PetAction.Yawn,
-                PetAction.Sleep,
-            )
-
-            CompanionStyle.Penguin -> listOf(
-                PetAction.Blink,
-                PetAction.Curious,
-                PetAction.Walk,
-                PetAction.Happy,
-                PetAction.Inspect,
-            )
-
-            CompanionStyle.Kangaroo -> listOf(
-                PetAction.Blink,
-                PetAction.Curious,
-                PetAction.Walk,
-                PetAction.Happy,
-                PetAction.Inspect,
-            )
-        }
-
-        return when (mood) {
-            PetMood.Tired -> personality + listOf(PetAction.Yawn, PetAction.Sleep, PetAction.Sad)
-            PetMood.Cozy -> personality + listOf(PetAction.Yawn, PetAction.Sleep)
-            PetMood.Excited -> personality + listOf(PetAction.Happy, PetAction.Walk)
-            PetMood.Ready -> personality
-        }
+    fun restingAction(mood: PetMood): PetAction = when (mood) {
+        PetMood.Ready -> PetAction.Idle
+        PetMood.Excited -> PetAction.Happy
+        PetMood.Cozy -> PetAction.Sleep
+        PetMood.Tired -> PetAction.Sad
     }
 
     fun reaction(
@@ -137,41 +105,6 @@ object PetBehaviorEngine {
         }
 
         return PetBehaviorCue(action, message, durationFor(action))
-    }
-
-    fun autonomousMessage(
-        style: CompanionStyle,
-        action: PetAction,
-        locationLabel: String,
-    ): String = when (action) {
-        PetAction.Idle -> "Taking in the atmosphere around $locationLabel."
-        PetAction.Blink -> "Buddy is quietly watching the world go by."
-        PetAction.Curious -> when (style) {
-            CompanionStyle.Corgi -> "Did Buddy hear a snack wrapper?"
-            CompanionStyle.Koala -> "Buddy found an interesting scent on the breeze."
-            CompanionStyle.Penguin -> "Buddy is deciding which way to waddle next."
-            CompanionStyle.Kangaroo -> "Ears up—Buddy is checking the trail ahead."
-        }
-        PetAction.Inspect -> when (style) {
-            CompanionStyle.Corgi -> "Sniffing out the next memorable stop."
-            CompanionStyle.Koala -> "Inspecting the eucalyptus supply very carefully."
-            CompanionStyle.Penguin -> "Looking for something shiny on the path."
-            CompanionStyle.Kangaroo -> "Checking the ground before the next big hop."
-        }
-        PetAction.Walk -> when (style) {
-            CompanionStyle.Corgi -> "Tiny paws, serious travel mission."
-            CompanionStyle.Koala -> "No rush. Buddy travels at koala speed."
-            CompanionStyle.Penguin -> "Waddle left, waddle right, destination ahead."
-            CompanionStyle.Kangaroo -> "Buddy is bouncing toward the next stop."
-        }
-        PetAction.Happy -> "Buddy is having a wonderful day at $locationLabel!"
-        PetAction.Sad -> "Buddy looks tired. A gentle pat might help."
-        PetAction.Yawn -> "That was a big yawn. It may be time for a short break."
-        PetAction.Sleep -> "Shh… Buddy is recharging for the next adventure."
-        PetAction.Petted -> "That feels nice."
-        PetAction.Surprised -> "Oh! Buddy did not expect that."
-        PetAction.Treat -> "Travel snacks make every stop better."
-        PetAction.Dragged -> "Buddy is coming with you."
     }
 
     fun durationFor(action: PetAction): Long = when (action) {

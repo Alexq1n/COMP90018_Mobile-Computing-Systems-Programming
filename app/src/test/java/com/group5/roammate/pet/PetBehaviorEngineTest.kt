@@ -6,27 +6,15 @@ import org.junit.Test
 
 class PetBehaviorEngineTest {
     @Test
-    fun companionsHaveDifferentAutonomousPersonalities() {
-        val corgi = PetBehaviorEngine.autonomousActions(CompanionStyle.Corgi, PetMood.Ready)
-        val koala = PetBehaviorEngine.autonomousActions(CompanionStyle.Koala, PetMood.Ready)
-        val penguin = PetBehaviorEngine.autonomousActions(CompanionStyle.Penguin, PetMood.Ready)
-
-        assertTrue(PetAction.Inspect in corgi)
-        assertTrue(PetAction.Sleep in koala)
-        assertTrue(PetAction.Walk in penguin)
-        assertTrue(corgi != koala)
+    fun readyMoodKeepsAStableIdleState() {
+        assertEquals(PetAction.Idle, PetBehaviorEngine.restingAction(PetMood.Ready))
     }
 
     @Test
-    fun tiredCompanionCanYawnSleepAndAskForComfort() {
-        val actions = PetBehaviorEngine.autonomousActions(
-            CompanionStyle.Kangaroo,
-            PetMood.Tired,
-        )
-
-        assertTrue(PetAction.Yawn in actions)
-        assertTrue(PetAction.Sleep in actions)
-        assertTrue(PetAction.Sad in actions)
+    fun moodChangesSelectOneDurableLoop() {
+        assertEquals(PetAction.Happy, PetBehaviorEngine.restingAction(PetMood.Excited))
+        assertEquals(PetAction.Sleep, PetBehaviorEngine.restingAction(PetMood.Cozy))
+        assertEquals(PetAction.Sad, PetBehaviorEngine.restingAction(PetMood.Tired))
     }
 
     @Test

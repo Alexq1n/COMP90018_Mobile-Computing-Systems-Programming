@@ -37,7 +37,7 @@ Completed:
 - Saved Trips
 - Bottom Navigation
 - Pet / Companions
-- Play with Buddy interactions
+- Direct on-page Buddy interactions
 - Weather-driven wardrobe
 - Pet camera with face tracking and composited gallery saving
 
@@ -60,8 +60,8 @@ app/src/main/java/com/group5/roammate/
 │   └── OpenMeteoPetWeatherRepository.kt
 ├── ui/pet/
 │   ├── PetAvatar.kt
+│   ├── InteractivePetStage.kt
 │   ├── CompanionsScreen.kt
-│   ├── PlayWithBuddyScreen.kt
 │   └── PetCameraScreen.kt
 ├── ui/screens/
 │   ├── LoginScreen.kt
@@ -246,11 +246,16 @@ app/src/main/java/com/group5/roammate/
 ### Pet / Virtual Travel Companion
 
 - One active Buddy with four switchable travel looks: corgi, koala, penguin, and kangaroo.
-- Original transparent 512 × 512 PNG assets are in `app/src/main/res/drawable-nodpi/`.
+- Desktop-pet pixel art uses 480 transparent frames: six four-frame loops for every companion and
+  fitted weather outfit.
 - Auto wardrobe reacts to temperature, WMO weather condition, and wind speed.
 - Manual wardrobe override supports everyday, sun, rain, wind, and cold modes.
 - Mood and fatigue react to `activeMinutes` and `stepsSinceBreak`.
-- Tap and accelerometer shake interactions animate Buddy.
+- A mood remains stable while breathing, blinking, tail/ear motion and other micro-animation loop
+  continuously inside it; Buddy no longer changes emotion at random.
+- Head/body taps, holds, drags, treats and accelerometer shakes temporarily interrupt the current
+  loop and then return to the same mood.
+- All interaction happens directly on the Pet page; there is no separate Play with Buddy screen.
 - Travel check-ins unlock additional companion looks.
 - Selected look and wardrobe mode persist locally with `SharedPreferences`.
 - Current weather uses Open-Meteo as a key-free development fallback. Production can pass Yan's
@@ -336,7 +341,7 @@ Profile
 Pet / Companions
 ├── Select Buddy look or weather wardrobe mode
 ├── Refresh live weather
-├── Play with Buddy -> interactive pet
+├── Tap / hold / drag / shake -> immediate Buddy reaction
 ├── Photo -> Pet Camera -> system gallery
 └── Bottom tabs -> Home / Trip / Explore / Pet / Profile
 

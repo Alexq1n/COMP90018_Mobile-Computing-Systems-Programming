@@ -70,8 +70,9 @@ data class PetEnvironmentSnapshot(
             conditionLabel = "Rain",
             temperatureC = 14.0,
             windSpeedKmh = 18.0,
-            activeMinutes = 46,
-            stepsSinceBreak = 4_300,
+            // Keep the demo in Ready so first launch demonstrates breathing + blinking.
+            activeMinutes = 18,
+            stepsSinceBreak = 1_600,
             locationLabel = "Melbourne Museum",
             source = "Demo data",
         )

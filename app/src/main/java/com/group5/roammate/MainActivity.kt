@@ -69,6 +69,11 @@ class MainActivity : ComponentActivity() {
                 // TODO: Replace with Yuxiang Firebase user profile.
                 var userName by rememberSaveable { mutableStateOf("Yufei") }
 
+                // Loading states
+                // TODO: Set true while backend / Firebase requests are running.
+                var isGeneratingItinerary by rememberSaveable { mutableStateOf(false) }
+                var isSearchingPlaces by rememberSaveable { mutableStateOf(false) }
+
                 // Attraction detail 当前展示的景点。之后由 Explore/Trip 点击的真实景点数据替换。
                 var selectedAttractionDetail by remember {
                     mutableStateOf(sampleAttractionDetail("Melbourne Museum"))
@@ -524,12 +529,16 @@ class MainActivity : ComponentActivity() {
                             },
 
                             // TODO: 之后这里把 request 交给 Zewen 的规划算法，再跳转到 Trip 页面。
+                            isGeneratingItinerary = isGeneratingItinerary,
                             onGenerateItineraryClick = { request ->
+                                isGeneratingItinerary = true
                                 Toast.makeText(
                                     this,
                                     "Generate itinerary for ${request.destination}",
                                     Toast.LENGTH_SHORT,
                                 ).show()
+                                // TODO: Set false after Zewen returns the generated itinerary.
+                                isGeneratingItinerary = false
                                 currentScreen = AuthScreen.Trip
                             },
                         )
@@ -540,6 +549,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
                             places = melbournePopularAddStopPlaces(),
+                            isSearching = isSearchingPlaces,
 
                             // 从 Plan My Trip 进来，返回 Plan My Trip。
                             onBackClick = {
@@ -549,11 +559,14 @@ class MainActivity : ComponentActivity() {
                             // TODO: 之后这里把 query 传给 Alex 的景点搜索接口。
                             // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
                             onSearchConfirmClick = { query ->
+                                isSearchingPlaces = true
                                 Toast.makeText(
                                     this,
                                     "Search: $query",
                                     Toast.LENGTH_SHORT,
                                 ).show()
+                                // TODO: Set false after Alex/Yan returns search results.
+                                isSearchingPlaces = false
                             },
 
                             // TODO: 之后这里把 added place 放进 Zewen 的 itinerary request。
@@ -574,6 +587,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
                             places = melbournePopularAddStopPlaces(),
+                            isSearching = isSearchingPlaces,
 
                             // 从 Edit itinerary 进来，返回 Edit itinerary。
                             onBackClick = {
@@ -583,11 +597,14 @@ class MainActivity : ComponentActivity() {
                             // TODO: 之后这里把 query 传给 Alex 的景点搜索接口。
                             // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
                             onSearchConfirmClick = { query ->
+                                isSearchingPlaces = true
                                 Toast.makeText(
                                     this,
                                     "Search: $query",
                                     Toast.LENGTH_SHORT,
                                 ).show()
+                                // TODO: Set false after Alex/Yan returns search results.
+                                isSearchingPlaces = false
                             },
 
                             // TODO: 之后这里把新增地点交给 Zewen，让后端插入合适位置并重新生成行程。

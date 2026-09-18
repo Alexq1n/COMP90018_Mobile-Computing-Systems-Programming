@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -116,6 +117,7 @@ fun PlanMyTripScreen(
     onMoreInterestsClick: () -> Unit,
     onSearchPlacesClick: () -> Unit,
     onGenerateItineraryClick: (PlanMyTripRequest) -> Unit,
+    isGeneratingItinerary: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     // state
@@ -134,6 +136,7 @@ fun PlanMyTripScreen(
         // bottom: Generate button
         bottomBar = {
             GenerateItineraryButton(
+                isLoading = isGeneratingItinerary,
                 onClick = {
                     onGenerateItineraryClick(
                         PlanMyTripRequest(
@@ -739,6 +742,7 @@ private fun SpecificPlacesPreview(
 // ---- Generate button (bottom bar) ----
 @Composable
 private fun GenerateItineraryButton(
+    isLoading: Boolean,
     onClick: () -> Unit,
 ) {
     Surface(
@@ -747,6 +751,7 @@ private fun GenerateItineraryButton(
     ) {
         Button(
             onClick = onClick,
+            enabled = !isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
@@ -756,13 +761,38 @@ private fun GenerateItineraryButton(
             colors = ButtonDefaults.buttonColors(
                 containerColor = RoamMateTeal,
                 contentColor = Color.White,
+                disabledContainerColor = RoamMateTeal.copy(alpha = 0.75f),
+                disabledContentColor = Color.White,
             ),
         ) {
-            Text(
-                text = "Generate itinerary",
-                fontSize = 17.sp,
-                fontWeight = FontWeight.ExtraBold,
-            )
+            if (isLoading) {
+                // loading content
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                    )
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Text(
+                        text = "Generating",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                }
+            } else {
+                // button text
+                Text(
+                    text = "Generate itinerary",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                )
+            }
         }
     }
 }
@@ -1717,6 +1747,24 @@ private fun PlanMyTripScreenPreview() {
             onMoreInterestsClick = {},
             onSearchPlacesClick = {},
             onGenerateItineraryClick = {},
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PlanMyTripLoadingPreview() {
+    RoamMateTheme(dynamicColor = false) {
+        PlanMyTripScreen(
+            selectedInterests = listOf("Museums", "Parks", "Food"),
+            specificPlaces = listOf("Melbourne Museum"),
+            onInterestsChanged = {},
+            onBackClick = {},
+            onMoreInterestsClick = {},
+            onSearchPlacesClick = {},
+            onGenerateItineraryClick = {},
+            isGeneratingItinerary = true,
             modifier = Modifier.fillMaxSize(),
         )
     }

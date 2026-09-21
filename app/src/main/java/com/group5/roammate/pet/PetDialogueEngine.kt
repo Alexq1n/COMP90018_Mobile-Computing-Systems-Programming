@@ -125,7 +125,7 @@ object PetDialogueEngine {
         val chosen = state.wardrobeChoice.manualOutfit
         val explanation = if (chosen != null && chosen != state.outfit) language.text(
             "I'm wearing $actual for the weather. Your ${outfitName(chosen)} is saved and returns when conditions are mild. ",
-            "我现在穿着$actual应对天气。你选的${outfitName(chosen)}已保留，天气温和时会自动换回来。",
+            "我现在穿着${actual}应对天气。你选的${outfitName(chosen)}已保留，天气温和时会自动换回来。",
         ) else language.text("I'm wearing $actual. ", "我现在穿着$actual。")
         return explanation + if (state.weather.isCurrent) weatherCare(state.weather, language) else unavailableWeather(language)
     }

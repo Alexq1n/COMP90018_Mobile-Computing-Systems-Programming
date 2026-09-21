@@ -34,7 +34,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.group5.roammate.pet.PetEnvironmentSnapshot
 import com.group5.roammate.pet.PetProfile
 import com.group5.roammate.pet.PetStateEngine
 import com.group5.roammate.pet.PetUiState
@@ -357,7 +356,7 @@ private fun PetStatusCard(
             modifier = Modifier.padding(horizontal = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // The same animated/weather-dressed Buddy shown on the Pet tab.
+            // The same animated, dressed Buddy shown on the Pet tab.
             Box(
                 modifier = Modifier
                     .size(62.dp)
@@ -676,9 +675,9 @@ private fun sampleHomeTripStops(): List<HomeTripStop> = listOf(
 // TODO: 之后真正宠物系统完成后，预览也可以换成真实 pet 资源。
 private fun samplePetStatus(): HomePetStatus = HomePetStatus(
     name = "Buddy",
-    description = "Rainy day · been walking a while",
-    moodLabel = "Tired",
-    petState = PetStateEngine.buildUiState(PetEnvironmentSnapshot.demo(), PetProfile()),
+    description = "Relaxed · ready to play",
+    moodLabel = "Ready",
+    petState = PetStateEngine.buildUiState(PetProfile()),
 )
 
 // 预览用的 Leave now 假数据。

@@ -38,7 +38,7 @@ Completed:
 - Bottom Navigation
 - Pet / Companions
 - Direct on-page Buddy interactions
-- Weather-driven wardrobe
+- Single-screen koala wardrobe
 - Pet camera with face tracking and composited gallery saving
 
 Remaining:
@@ -56,8 +56,7 @@ app/src/main/java/com/group5/roammate/
 ├── pet/
 │   ├── PetModels.kt
 │   ├── PetStateEngine.kt
-│   ├── PetPreferences.kt
-│   └── OpenMeteoPetWeatherRepository.kt
+│   └── PetPreferences.kt
 ├── ui/pet/
 │   ├── PetAvatar.kt
 │   ├── InteractivePetStage.kt
@@ -245,28 +244,22 @@ app/src/main/java/com/group5/roammate/
 
 ### Pet / Virtual Travel Companion
 
-- One active Buddy with four switchable travel looks: corgi, koala, penguin, and kangaroo.
-- Desktop-pet pixel art uses 480 transparent frames: six four-frame loops for every companion and
-  fitted weather outfit.
-- Auto wardrobe reacts to temperature, WMO weather condition, and wind speed.
-- Manual wardrobe override supports everyday, sun, rain, wind, and cold modes.
-- Mood and fatigue react to `activeMinutes` and `stepsSinceBreak`.
-- A mood remains stable while breathing, blinking, tail/ear motion and other micro-animation loop
-  continuously inside it; Buddy no longer changes emotion at random.
+- One koala Buddy with five fitted outfits: everyday, sunshine, raincoat, windbreaker and winter.
+- The entire Pet page fits one screen with no vertical scrolling.
+- Swipe left/right on Buddy, use the wardrobe arrows, or tap Outfit to change clothes.
+- Desktop-pet pixel art continuously loops breathing, blinking and subtle body movement.
 - Head/body taps, holds, drags, treats and accelerometer shakes temporarily interrupt the current
-  loop and then return to the same mood.
+  idle loop and then return to it.
 - All interaction happens directly on the Pet page; there is no separate Play with Buddy screen.
-- Travel check-ins unlock additional companion looks.
-- Selected look and wardrobe mode persist locally with `SharedPreferences`.
-- Current weather uses Open-Meteo as a key-free development fallback. Production can pass Yan's
-  weather payload into `PetEnvironmentSnapshot` and remove the fallback call.
+- The selected outfit persists locally with `SharedPreferences`.
+- The pet experience has no weather dependency or weather network request.
 
 ### Pet Camera
 
 - Front/rear camera switch using CameraX.
 - ML Kit face tracking positions Buddy near the traveller.
 - Buddy can be hidden, tracking can be disabled, and the overlay can always be dragged manually.
-- The captured file includes the camera preview, Buddy, outfit, weather, and location stamp.
+- The captured file includes the camera preview, Buddy, and outfit stamp.
 - JPEG output is saved to `Pictures/RoamMate` on Android 10+.
 - Camera permission is requested only when the camera experience opens.
 
@@ -339,9 +332,9 @@ Profile
 └── Log out -> Login
 
 Pet / Companions
-├── Select Buddy look or weather wardrobe mode
-├── Refresh live weather
+├── Swipe Buddy left/right or use arrows -> change fitted outfit
 ├── Tap / hold / drag / shake -> immediate Buddy reaction
+├── Treat -> snack reaction
 ├── Photo -> Pet Camera -> system gallery
 └── Bottom tabs -> Home / Trip / Explore / Pet / Profile
 
@@ -783,18 +776,11 @@ Example:
 }
 ```
 
-Jie/Xiajie: pet context (implemented by `PetEnvironmentSnapshot`)
+Jie/Xiajie: pet preference (implemented by `PetProfile`)
 
 ```kotlin
-data class PetEnvironmentSnapshot(
-    val condition: PetWeatherCondition,
-    val conditionLabel: String,
-    val temperatureC: Double,
-    val windSpeedKmh: Double,
-    val activeMinutes: Int,
-    val stepsSinceBreak: Int,
-    val locationLabel: String,
-    val source: String,
+data class PetProfile(
+    val selectedOutfit: PetOutfit,
 )
 ```
 
@@ -802,14 +788,7 @@ Example:
 
 ```json
 {
-  "condition": "Rain",
-  "conditionLabel": "Rain",
-  "temperatureC": 14.0,
-  "windSpeedKmh": 18.0,
-  "activeMinutes": 46,
-  "stepsSinceBreak": 4300,
-  "locationLabel": "Melbourne Museum",
-  "source": "Team weather service"
+  "selectedOutfit": "Raincoat"
 }
 ```
 
@@ -1024,7 +1003,7 @@ Sitao: current GPS/location, distance calculation, route duration, itinerary pro
 
 Alex: sensor/GPS input and place search support if search is handled on Alex's side.
 
-Jie/Xiajie: pet/companion state, generated pet assets, interactions, weather wardrobe, and pet camera.
+Jie/Xiajie: single-koala state, fitted pet assets, interactions, manual wardrobe, and pet camera.
 
 ## Database Recommendation
 
@@ -1069,20 +1048,10 @@ Optional local cache:
 - Temporary mock data is clearly marked with `TODO`.
 - Once backend is ready, replace mock lists and state in `MainActivity.kt`.
 - The UI already has callbacks for most buttons, so backend integration should mostly happen in callback blocks.
-- Pet is complete. Replace the demo activity/location fields and Open-Meteo fallback by assigning
-  team payloads to `PetEnvironmentSnapshot` in `MainActivity.kt`.
+- Pet is self-contained. `PetProfile.selectedOutfit` is the only persisted pet preference.
 
 ## Pet Integration Contract
 
-The team only needs to populate one object; `PetStateEngine` derives outfit, mood, status copy, and
-travel tips. This avoids passing the chat's individual fields through multiple screens.
-
-| Provider | `PetEnvironmentSnapshot` field | Notes |
-| --- | --- | --- |
-| Yan weather | `condition`, `conditionLabel`, `temperatureC`, `windSpeedKmh` | WMO codes can use `PetWeatherAdapter.fromWmoCode`. |
-| Alex sensor | `activeMinutes`, `stepsSinceBreak` | If `TYPE_STEP_COUNTER` is unavailable, pass the accelerometer-derived fallback. |
-| Sitao location | `locationLabel` | A place name is sufficient; exact coordinates stay outside the pet UI. |
-| Yuxiang database | `PetProfile` | Mirror `selectedStyle`, `outfitMode`, and `checkedInPlaces` when Firebase is ready. |
-
-Weather fallback data is provided by [Open-Meteo](https://open-meteo.com/) and must retain visible
-attribution if it remains in the final app.
+The pet feature is intentionally independent from weather and sensor providers. If Firebase later
+stores the wardrobe choice, mirror the `PetProfile.selectedOutfit` enum name. The UI, animation and
+camera all consume the same `PetUiState` built by `PetStateEngine`.

@@ -10,8 +10,8 @@ class PetFrameResourcesTest {
     @Test
     fun idleBlinkLivesInsideTheIdleFrameSequence() {
         assertEquals(
-            "pet_pixel_corgi_raincoat_idle_2",
-            CompanionStyle.Corgi.frameResourceName(
+            "pet_pixel_koala_raincoat_idle_2",
+            CompanionStyle.Koala.frameResourceName(
                 PetOutfit.Raincoat,
                 PetAction.Idle,
                 2,
@@ -26,8 +26,8 @@ class PetFrameResourcesTest {
         assertEquals(PetSpriteLoop.Walk, PetAction.Dragged.spriteLoop())
         assertEquals(PetSpriteLoop.Petted, PetAction.Petted.spriteLoop())
         assertEquals(
-            "pet_pixel_penguin_winter_happy_3",
-            CompanionStyle.Penguin.frameResourceName(
+            "pet_pixel_koala_winter_happy_3",
+            CompanionStyle.Koala.frameResourceName(
                 PetOutfit.Winter,
                 PetAction.Surprised,
                 -1,

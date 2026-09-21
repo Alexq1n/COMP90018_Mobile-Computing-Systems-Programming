@@ -11,9 +11,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -50,6 +51,7 @@ import com.group5.roammate.pet.PetBehaviorEngine
 import com.group5.roammate.pet.PetInteraction
 import com.group5.roammate.pet.PetUiState
 import kotlinx.coroutines.delay
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
@@ -66,6 +68,8 @@ private val StageMuted = Color(0xFF68777F)
 fun InteractivePetStage(
     state: PetUiState,
     treatTick: Int,
+    onPreviousOutfit: () -> Unit,
+    onNextOutfit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var action by remember(state.companionStyle) {
@@ -76,13 +80,11 @@ fun InteractivePetStage(
     var behaviorVersion by remember { mutableIntStateOf(0) }
     var petOffset by remember(state.companionStyle) { mutableStateOf(Offset.Zero) }
     var lastTapAt by remember { mutableLongStateOf(0L) }
+    val latestPreviousOutfit by rememberUpdatedState(onPreviousOutfit)
+    val latestNextOutfit by rememberUpdatedState(onNextOutfit)
 
     fun react(interaction: PetInteraction) {
-        queuedReaction = PetBehaviorEngine.reaction(
-            style = state.companionStyle,
-            interaction = interaction,
-            locationLabel = state.environment.locationLabel,
-        )
+        queuedReaction = PetBehaviorEngine.reaction(interaction)
         behaviorVersion += 1
     }
 
@@ -94,8 +96,8 @@ fun InteractivePetStage(
 
     LaunchedEffect(
         state.companionStyle,
+        state.outfit,
         state.mood,
-        state.environment.locationLabel,
         behaviorVersion,
     ) {
         val cue = queuedReaction
@@ -110,10 +112,10 @@ fun InteractivePetStage(
     }
 
     val density = LocalDensity.current
-    val maxHorizontal = with(density) { 58.dp.toPx() }
     val maxVertical = with(density) { 38.dp.toPx() }
+    val outfitSwipeThreshold = with(density) { 48.dp.toPx() }
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
             .background(
@@ -123,6 +125,12 @@ fun InteractivePetStage(
                 RoundedCornerShape(28.dp),
             ),
     ) {
+        val avatarSize = minOf(
+            286.dp,
+            (maxWidth - 32.dp).coerceAtLeast(0.dp),
+            (maxHeight - 104.dp).coerceAtLeast(0.dp),
+        )
+
         Surface(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -156,16 +164,17 @@ fun InteractivePetStage(
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(top = 58.dp)
-                .size(286.dp)
-                .offset { IntOffset(petOffset.x.roundToInt(), petOffset.y.roundToInt()) }
-                .pointerInput(state.companionStyle) {
+                .padding(top = 48.dp)
+                .fillMaxWidth()
+                .height(avatarSize)
+                .pointerInput(state.companionStyle, state.outfit) {
                     val dragThreshold = viewConfiguration.touchSlop
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         val startedAt = SystemClock.uptimeMillis()
                         val start = down.position
-                        var dragged = false
+                        var gestureMode = GestureMode.Undecided
+                        var totalDelta = Offset.Zero
                         var pressed = true
 
                         while (pressed) {
@@ -173,34 +182,55 @@ fun InteractivePetStage(
                             val change = event.changes.firstOrNull { it.id == down.id } ?: break
                             pressed = change.pressed
                             val delta = change.positionChange()
-                            val distance = (change.position - start).getDistance()
-                            if (!dragged && distance > dragThreshold) {
-                                dragged = true
-                                action = PetAction.Dragged
-                                message = "Buddy is following your hand."
+                            totalDelta += delta
+                            if (gestureMode == GestureMode.Undecided &&
+                                totalDelta.getDistance() > dragThreshold
+                            ) {
+                                gestureMode = if (
+                                    abs(totalDelta.x) > abs(totalDelta.y) * 1.2f
+                                ) {
+                                    message = "Swipe to try another outfit."
+                                    GestureMode.OutfitSwipe
+                                } else {
+                                    action = PetAction.Dragged
+                                    message = "Buddy is following your hand."
+                                    GestureMode.VerticalDrag
+                                }
                             }
-                            if (dragged && delta != Offset.Zero) {
+
+                            if (gestureMode == GestureMode.VerticalDrag && delta != Offset.Zero) {
                                 petOffset = Offset(
-                                    x = (petOffset.x + delta.x).coerceIn(-maxHorizontal, maxHorizontal),
+                                    x = 0f,
                                     y = (petOffset.y + delta.y).coerceIn(-maxVertical, maxVertical),
                                 )
+                                change.consume()
+                            } else if (gestureMode == GestureMode.OutfitSwipe) {
                                 change.consume()
                             }
                         }
 
-                        if (dragged) {
-                            react(PetInteraction.Drag)
-                        } else {
-                            val now = SystemClock.uptimeMillis()
-                            val heldFor = now - startedAt
-                            val interaction = when {
-                                heldFor >= 520L -> PetInteraction.LongPress
-                                now - lastTapAt <= 330L -> PetInteraction.DoubleTap
-                                start.y < size.height * 0.48f -> PetInteraction.TapHead
-                                else -> PetInteraction.TapBody
+                        when (gestureMode) {
+                            GestureMode.OutfitSwipe -> {
+                                when {
+                                    totalDelta.x <= -outfitSwipeThreshold -> latestNextOutfit()
+                                    totalDelta.x >= outfitSwipeThreshold -> latestPreviousOutfit()
+                                    else -> message = state.statusLine
+                                }
                             }
-                            lastTapAt = now
-                            react(interaction)
+
+                            GestureMode.VerticalDrag -> react(PetInteraction.Drag)
+                            GestureMode.Undecided -> {
+                                val now = SystemClock.uptimeMillis()
+                                val heldFor = now - startedAt
+                                val interaction = when {
+                                    heldFor >= 520L -> PetInteraction.LongPress
+                                    now - lastTapAt <= 330L -> PetInteraction.DoubleTap
+                                    start.y < size.height * 0.48f -> PetInteraction.TapHead
+                                    else -> PetInteraction.TapBody
+                                }
+                                lastTapAt = now
+                                react(interaction)
+                            }
                         }
                     }
                 },
@@ -209,12 +239,14 @@ fun InteractivePetStage(
             PetAvatar(
                 state = state,
                 action = action,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .size(avatarSize)
+                    .offset { IntOffset(petOffset.x.roundToInt(), petOffset.y.roundToInt()) },
             )
         }
 
         Text(
-            text = "Breathes & blinks continuously · tap · hold · drag · shake",
+            text = "Swipe outfit · tap · hold · drag up/down · shake",
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 18.dp, vertical = 13.dp),
@@ -224,6 +256,12 @@ fun InteractivePetStage(
             textAlign = TextAlign.Center,
         )
     }
+}
+
+private enum class GestureMode {
+    Undecided,
+    VerticalDrag,
+    OutfitSwipe,
 }
 
 @Composable

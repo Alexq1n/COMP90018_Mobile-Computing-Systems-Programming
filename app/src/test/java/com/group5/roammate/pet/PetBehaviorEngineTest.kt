@@ -20,14 +20,10 @@ class PetBehaviorEngineTest {
     @Test
     fun interactionMapsToExpectedVisibleReaction() {
         val pat = PetBehaviorEngine.reaction(
-            style = CompanionStyle.Corgi,
             interaction = PetInteraction.TapHead,
-            locationLabel = "Melbourne",
         )
         val drag = PetBehaviorEngine.reaction(
-            style = CompanionStyle.Penguin,
             interaction = PetInteraction.Drag,
-            locationLabel = "St Kilda",
         )
 
         assertEquals(PetAction.Petted, pat.action)

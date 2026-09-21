@@ -1,8 +1,8 @@
 # RoamMate pixel companion artwork
 
-The production companions are compact desktop-pet-style pixel characters designed for RoamMate's
-teal/coral UI. `pet-pixel-sheets/` contains one 4 × 6 transparent source sheet for every animal and
-weather outfit (4 animals × 5 outfits = 20 sheets).
+The production companion is a compact desktop-pet-style pixel koala designed for RoamMate's
+teal/coral UI. The Android app currently exposes its five fitted outfit sets only; the other source
+characters remain in the asset catalogue as unused prototypes.
 
 Each sheet has four frames per row:
 
@@ -26,9 +26,9 @@ those states. `PetAvatar` loops the four authored frames inside that state indef
 interaction (tap, hold, drag, shake or treat) temporarily selects another loop and then returns to
 the mood's durable state.
 
-Weather gear is baked into every animation frame rather than stretched over the character. Each
-animal has anatomy-specific everyday, sunshine, raincoat, windbreaker and winter artwork, including
-pose-aware clothing for walking, curling up, bouncing and receiving a pat.
+Gear is baked into every animation frame rather than stretched over the character. The koala has
+pose-aware everyday, sunshine, raincoat, windbreaker and winter artwork for walking, curling up,
+bouncing and receiving a pat.
 
 ## Base generation prompt
 
@@ -42,7 +42,7 @@ pose-aware clothing for walking, curling up, bouncing and receiving a pat.
 ## Outfit edit prompt
 
 > Edit the supplied 4 × 6 pixel-art sheet while preserving identity, species anatomy, all 24
-> poses, expressions, anchor, scale and transparent canvas. Add the specified weather garment to
+> poses, expressions, anchor, scale and transparent canvas. Add the specified garment to
 > every frame. Make it genuinely fitted and pose-aware for idle, walking, curled sleep, happy, sad
 > and petted rows; fabric must bend and compress with the body, never cover the eyes, float, or look
 > pasted on. Keep crisp hard pixel edges and output a transparent PNG only.

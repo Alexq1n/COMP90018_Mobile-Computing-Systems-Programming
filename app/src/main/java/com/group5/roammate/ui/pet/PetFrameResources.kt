@@ -4,7 +4,7 @@ import com.group5.roammate.pet.CompanionStyle
 import com.group5.roammate.pet.PetAction
 import com.group5.roammate.pet.PetOutfit
 
-/** Six authored pixel-animation loops shared by all companions and weather outfits. */
+/** Six authored pixel-animation loops shared by the sprite catalogue and fitted outfits. */
 internal enum class PetSpriteLoop(val resourceKey: String) {
     Idle("idle"),
     Walk("walk"),

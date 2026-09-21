@@ -1,90 +1,39 @@
 package com.group5.roammate.pet
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PetStateEngineTest {
     @Test
-    fun autoWardrobePrefersRaincoatForRain() {
-        val environment = environment(
-            condition = PetWeatherCondition.Rain,
-            temperatureC = 18.0,
-            windSpeedKmh = 35.0,
-        )
+    fun productStateAlwaysUsesTheKoala() {
+        val state = PetStateEngine.buildUiState(PetProfile())
 
-        assertEquals(
-            PetOutfit.Raincoat,
-            PetStateEngine.resolveOutfit(environment, PetOutfitMode.Auto),
-        )
+        assertEquals(CompanionStyle.Koala, state.companionStyle)
+        assertEquals(PetMood.Ready, state.mood)
     }
 
     @Test
-    fun autoWardrobeUsesWinterGearForColdWeather() {
-        val environment = environment(
-            condition = PetWeatherCondition.Cloudy,
-            temperatureC = 8.5,
+    fun selectedOutfitIsUsedWithoutWeatherRules() {
+        val state = PetStateEngine.buildUiState(
+            PetProfile(selectedOutfit = PetOutfit.Winter),
         )
 
-        assertEquals(
-            PetOutfit.Winter,
-            PetStateEngine.resolveOutfit(environment, PetOutfitMode.Auto),
-        )
+        assertEquals(PetOutfit.Winter, state.outfit)
     }
 
     @Test
-    fun manualWardrobeOverridesLiveWeather() {
-        val rainy = environment(condition = PetWeatherCondition.Rain)
-
+    fun outfitNavigationWrapsInBothDirections() {
         assertEquals(
             PetOutfit.Sunshine,
-            PetStateEngine.resolveOutfit(rainy, PetOutfitMode.Sunshine),
-        )
-    }
-
-    @Test
-    fun activityThresholdMakesBuddyTired() {
-        assertEquals(
-            PetMood.Tired,
-            PetStateEngine.resolveMood(environment(activeMinutes = 40)),
+            PetStateEngine.outfitAfter(PetOutfit.Everyday, 1),
         )
         assertEquals(
-            PetMood.Tired,
-            PetStateEngine.resolveMood(environment(stepsSinceBreak = 4_000)),
+            PetOutfit.Winter,
+            PetStateEngine.outfitAfter(PetOutfit.Everyday, -1),
+        )
+        assertEquals(
+            PetOutfit.Everyday,
+            PetStateEngine.outfitAfter(PetOutfit.Winter, 1),
         )
     }
-
-    @Test
-    fun checkInsUnlockTravelLooks() {
-        val unlocked = PetStateEngine.unlockedStyles(
-            setOf("Melbourne CBD", "St Kilda Beach", "Great Ocean Road"),
-        )
-
-        assertTrue(unlocked.containsAll(CompanionStyle.entries))
-    }
-
-    @Test
-    fun wmoCodesMapToPetWeather() {
-        assertEquals(PetWeatherCondition.Clear, PetWeatherAdapter.fromWmoCode(0))
-        assertEquals(PetWeatherCondition.Rain, PetWeatherAdapter.fromWmoCode(63))
-        assertEquals(PetWeatherCondition.Snow, PetWeatherAdapter.fromWmoCode(75))
-        assertEquals(PetWeatherCondition.Storm, PetWeatherAdapter.fromWmoCode(96))
-    }
-
-    private fun environment(
-        condition: PetWeatherCondition = PetWeatherCondition.Clear,
-        temperatureC: Double = 20.0,
-        windSpeedKmh: Double = 5.0,
-        activeMinutes: Int = 0,
-        stepsSinceBreak: Int = 0,
-    ) = PetEnvironmentSnapshot(
-        condition = condition,
-        conditionLabel = PetWeatherAdapter.label(condition),
-        temperatureC = temperatureC,
-        windSpeedKmh = windSpeedKmh,
-        activeMinutes = activeMinutes,
-        stepsSinceBreak = stepsSinceBreak,
-        locationLabel = "Test location",
-        source = "Test",
-    )
 }

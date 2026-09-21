@@ -8,17 +8,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.group5.roammate.pet.OpenMeteoPetWeatherRepository
-import com.group5.roammate.pet.PetEnvironmentSnapshot
-import com.group5.roammate.pet.PetOutfitMode
 import com.group5.roammate.pet.PetPreferences
 import com.group5.roammate.pet.PetStateEngine
 import com.group5.roammate.ui.screens.AdjustChangeTone
@@ -58,7 +53,6 @@ import com.group5.roammate.ui.screens.TripWeatherSummary
 import com.group5.roammate.ui.pet.CompanionsScreen
 import com.group5.roammate.ui.pet.PetCameraScreen
 import com.group5.roammate.ui.theme.RoamMateTheme
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,40 +69,10 @@ class MainActivity : ComponentActivity() {
                 // This is a temporary page status.
                 var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.Login) }
 
-                // Jie pet feature state. The environment can later be replaced directly with
-                // Yan/Alex/Sitao's weather, activity and location payloads.
+                // Jie pet feature state: one koala and one locally persisted outfit choice.
                 val petPreferences = remember { PetPreferences(applicationContext) }
-                val petWeatherRepository = remember { OpenMeteoPetWeatherRepository() }
-                val petScope = rememberCoroutineScope()
                 var petProfile by remember { mutableStateOf(petPreferences.loadProfile()) }
-                var petEnvironment by remember { mutableStateOf(PetEnvironmentSnapshot.demo()) }
-                var isRefreshingPetWeather by remember { mutableStateOf(false) }
-                var petWeatherError by remember { mutableStateOf<String?>(null) }
-                val petState = PetStateEngine.buildUiState(petEnvironment, petProfile)
-
-                suspend fun refreshPetWeather() {
-                    isRefreshingPetWeather = true
-                    petWeatherRepository.fetchCurrent(
-                        latitude = -37.8136,
-                        longitude = 144.9631,
-                    ).onSuccess { weather ->
-                        petEnvironment = petEnvironment.copy(
-                            condition = weather.condition,
-                            conditionLabel = weather.conditionLabel,
-                            temperatureC = weather.temperatureC,
-                            windSpeedKmh = weather.windSpeedKmh,
-                            source = weather.source,
-                        )
-                        petWeatherError = null
-                    }.onFailure { error ->
-                        petWeatherError = error.message ?: "Weather request failed"
-                    }
-                    isRefreshingPetWeather = false
-                }
-
-                LaunchedEffect(Unit) {
-                    refreshPetWeather()
-                }
+                val petState = PetStateEngine.buildUiState(petProfile)
 
                 // User name
                 // TODO: Replace with Yuxiang Firebase user profile.
@@ -291,8 +255,7 @@ class MainActivity : ComponentActivity() {
                             // 如果没有建议，之后把这里传 null 即可隐藏卡片。
                             smartSuggestion = homeSmartSuggestion,
 
-                            // Jie pet module: this card shares live weather, outfit and mood state
-                            // with the full Companions and camera experiences.
+                            // Jie pet module: Home, Pet and Camera share the same koala outfit.
                             petStatus = HomePetStatus(
                                 name = "Buddy",
                                 description = petState.statusLine,
@@ -659,26 +622,8 @@ class MainActivity : ComponentActivity() {
                     AuthScreen.Pet -> {
                         CompanionsScreen(
                             state = petState,
-                            profile = petProfile,
-                            isRefreshingWeather = isRefreshingPetWeather,
-                            weatherError = petWeatherError,
-                            onStyleSelected = { style ->
-                                val updatedProfile = petProfile.copy(selectedStyle = style)
-                                petProfile = updatedProfile
-                                petPreferences.saveProfile(updatedProfile)
-                            },
-                            onOutfitModeSelected = { outfitMode ->
-                                val updatedProfile = petProfile.copy(outfitMode = outfitMode)
-                                petProfile = updatedProfile
-                                petPreferences.saveProfile(updatedProfile)
-                            },
-                            onRefreshWeather = {
-                                petScope.launch { refreshPetWeather() }
-                            },
-                            onCycleGear = {
-                                val modes = PetOutfitMode.entries
-                                val nextIndex = (modes.indexOf(petProfile.outfitMode) + 1) % modes.size
-                                val updatedProfile = petProfile.copy(outfitMode = modes[nextIndex])
+                            onOutfitSelected = { outfit ->
+                                val updatedProfile = petProfile.copy(selectedOutfit = outfit)
                                 petProfile = updatedProfile
                                 petPreferences.saveProfile(updatedProfile)
                             },

@@ -22,12 +22,7 @@ import com.group5.roammate.pet.PetUiState
 import kotlinx.coroutines.delay
 
 @DrawableRes
-fun CompanionStyle.imageRes(): Int = when (this) {
-    CompanionStyle.Corgi -> R.drawable.pet_pixel_corgi_everyday_idle_0
-    CompanionStyle.Koala -> R.drawable.pet_pixel_koala_everyday_idle_0
-    CompanionStyle.Penguin -> R.drawable.pet_pixel_penguin_everyday_idle_0
-    CompanionStyle.Kangaroo -> R.drawable.pet_pixel_kangaroo_everyday_idle_0
-}
+fun CompanionStyle.imageRes(): Int = R.drawable.pet_pixel_koala_everyday_idle_0
 
 /**
  * Pixel-art companion renderer.
@@ -59,7 +54,7 @@ fun PetAvatar(
         framePhase = 0
         if (!animateIdle) return@LaunchedEffect
         while (true) {
-            delay(state.companionStyle.frameDelay(loop, framePhase))
+            delay(frameDelay(loop, framePhase))
             framePhase = (framePhase + 1) % 4
         }
     }
@@ -87,52 +82,17 @@ fun PetAvatar(
     )
 }
 
-private fun CompanionStyle.frameDelay(loop: PetSpriteLoop, phase: Int): Long = when (loop) {
+private fun frameDelay(loop: PetSpriteLoop, phase: Int): Long = when (loop) {
     PetSpriteLoop.Idle -> when (phase) {
-        0 -> when (this) {
-            CompanionStyle.Corgi -> 1_350L
-            CompanionStyle.Koala -> 1_850L
-            CompanionStyle.Penguin -> 1_450L
-            CompanionStyle.Kangaroo -> 1_600L
-        }
-
-        1 -> when (this) {
-            CompanionStyle.Corgi -> 800L
-            CompanionStyle.Koala -> 1_050L
-            CompanionStyle.Penguin -> 850L
-            CompanionStyle.Kangaroo -> 950L
-        }
-
+        0 -> 1_850L
+        1 -> 1_050L
         2 -> 110L
         else -> 145L
     }
 
-    PetSpriteLoop.Walk -> when (this) {
-        CompanionStyle.Corgi -> 145L
-        CompanionStyle.Koala -> 270L
-        CompanionStyle.Penguin -> 190L
-        CompanionStyle.Kangaroo -> 175L
-    }
-
-    PetSpriteLoop.Sleep -> when (this) {
-        CompanionStyle.Corgi -> 620L
-        CompanionStyle.Koala -> 760L
-        CompanionStyle.Penguin -> 680L
-        CompanionStyle.Kangaroo -> 650L
-    }
-
-    PetSpriteLoop.Happy -> when (this) {
-        CompanionStyle.Corgi -> 180L
-        CompanionStyle.Koala -> 250L
-        CompanionStyle.Penguin -> 170L
-        CompanionStyle.Kangaroo -> 185L
-    }
-
+    PetSpriteLoop.Walk -> 270L
+    PetSpriteLoop.Sleep -> 760L
+    PetSpriteLoop.Happy -> 250L
     PetSpriteLoop.Sad -> 620L
-    PetSpriteLoop.Petted -> when (this) {
-        CompanionStyle.Corgi -> 220L
-        CompanionStyle.Koala -> 310L
-        CompanionStyle.Penguin -> 210L
-        CompanionStyle.Kangaroo -> 235L
-    }
+    PetSpriteLoop.Petted -> 310L
 }

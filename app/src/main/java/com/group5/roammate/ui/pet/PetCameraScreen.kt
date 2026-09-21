@@ -104,8 +104,8 @@ private data class FaceAnchor(
 )
 
 /**
- * Camera experience for a RoamMate travel photo. The visible preview, pet, weather and place stamp
- * are captured together, so the gallery image is the same composition the user sees on screen.
+ * Camera experience for a RoamMate photo. The visible preview, koala and outfit stamp are captured
+ * together, so the gallery image is the same composition the user sees on screen.
  */
 @Composable
 fun PetCameraScreen(
@@ -216,8 +216,8 @@ fun PetCameraScreen(
 
         if (hasCameraPermission) {
             TravelPhotoStamp(
-                condition = "${state.environment.conditionLabel} · ${state.environment.temperatureC.toInt()}°C",
-                location = state.environment.locationLabel,
+                title = "BUDDY",
+                subtitle = "${state.outfit.label} koala",
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .statusBarsPadding()
@@ -305,8 +305,8 @@ fun PetCameraScreen(
 
 @Composable
 private fun TravelPhotoStamp(
-    condition: String,
-    location: String,
+    title: String,
+    subtitle: String,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -317,13 +317,13 @@ private fun TravelPhotoStamp(
     ) {
         Column(modifier = Modifier.padding(horizontal = 13.dp, vertical = 9.dp)) {
             Text(
-                text = condition,
+                text = title,
                 color = Color.White,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.ExtraBold,
             )
             Text(
-                text = location,
+                text = subtitle,
                 color = Color.White.copy(alpha = 0.82f),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,

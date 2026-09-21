@@ -49,11 +49,7 @@ object PetBehaviorEngine {
         PetMood.Tired -> PetAction.Sad
     }
 
-    fun reaction(
-        style: CompanionStyle,
-        interaction: PetInteraction,
-        locationLabel: String,
-    ): PetBehaviorCue {
+    fun reaction(interaction: PetInteraction): PetBehaviorCue {
         val action = when (interaction) {
             PetInteraction.TapHead, PetInteraction.LongPress -> PetAction.Petted
             PetInteraction.TapBody -> PetAction.Happy
@@ -62,46 +58,14 @@ object PetBehaviorEngine {
             PetInteraction.Treat -> PetAction.Treat
         }
 
-        val message = when (style) {
-            CompanionStyle.Corgi -> when (interaction) {
-                PetInteraction.TapHead -> "Buddy leans into your hand. Tail-wag level: maximum!"
-                PetInteraction.TapBody -> "Play time? Buddy is ready to race around $locationLabel."
-                PetInteraction.DoubleTap -> "Two taps! Buddy thought someone rang the doorbell."
-                PetInteraction.LongPress -> "Buddy closes their eyes and asks for more pats."
-                PetInteraction.Drag -> "Wheee! Put Buddy somewhere with a good view."
-                PetInteraction.Shake -> "Adventure detected! Buddy is checking every direction."
-                PetInteraction.Treat -> "Crunch! Buddy carefully checks the ground for one more snack."
-            }
-
-            CompanionStyle.Koala -> when (interaction) {
-                PetInteraction.TapHead -> "A very slow, very happy koala smile."
-                PetInteraction.TapBody -> "Buddy gives you a tiny eucalyptus-powered cheer."
-                PetInteraction.DoubleTap -> "That woke Buddy up! Just for a moment."
-                PetInteraction.LongPress -> "Buddy relaxes under your hand and almost falls asleep."
-                PetInteraction.Drag -> "Easy does it—Buddy prefers the scenic route."
-                PetInteraction.Shake -> "Buddy hugs the eucalyptus branch and looks around."
-                PetInteraction.Treat -> "Fresh leaves! Buddy takes a calm little nibble."
-            }
-
-            CompanionStyle.Penguin -> when (interaction) {
-                PetInteraction.TapHead -> "Buddy chirps and happily flaps both wings."
-                PetInteraction.TapBody -> "A wobbly dance begins in the middle of $locationLabel."
-                PetInteraction.DoubleTap -> "Surprise! Buddy nearly waddled the wrong way."
-                PetInteraction.LongPress -> "Buddy stays perfectly still for the warm head pat."
-                PetInteraction.Drag -> "Sliding practice! Buddy is enjoying the ride."
-                PetInteraction.Shake -> "Buddy spins, checks the route, and strikes a pose."
-                PetInteraction.Treat -> "One travel snack, swallowed with an enthusiastic chirp."
-            }
-
-            CompanionStyle.Kangaroo -> when (interaction) {
-                PetInteraction.TapHead -> "Buddy's ears perk up before a grateful little nuzzle."
-                PetInteraction.TapBody -> "One happy bounce—and Buddy is ready to explore."
-                PetInteraction.DoubleTap -> "Buddy freezes, ears up, then checks the horizon."
-                PetInteraction.LongPress -> "Buddy settles down and lets both ears relax."
-                PetInteraction.Drag -> "A shortcut without hopping? Buddy could get used to this."
-                PetInteraction.Shake -> "Route check complete! Buddy is alert and ready."
-                PetInteraction.Treat -> "Snack secured. Buddy checks the pouch for later."
-            }
+        val message = when (interaction) {
+            PetInteraction.TapHead -> "A very slow, very happy koala smile."
+            PetInteraction.TapBody -> "Buddy gives you a tiny eucalyptus-powered cheer."
+            PetInteraction.DoubleTap -> "That woke Buddy up! Just for a moment."
+            PetInteraction.LongPress -> "Buddy relaxes under your hand and almost falls asleep."
+            PetInteraction.Drag -> "Easy does it—Buddy prefers the scenic route."
+            PetInteraction.Shake -> "Buddy hugs the eucalyptus branch and looks around."
+            PetInteraction.Treat -> "Fresh leaves! Buddy takes a calm little nibble."
         }
 
         return PetBehaviorCue(action, message, durationFor(action))

@@ -79,7 +79,6 @@ fun SavedTripsScreen(
                 .navigationBarsPadding()
                 .padding(horizontal = 28.dp),
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
 
             // back button
             IconButton(

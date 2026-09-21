@@ -13,8 +13,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
@@ -62,9 +68,25 @@ fun CompanionsScreen(
     onOpenCamera: () -> Unit,
     onTabClick: (RoamMateMainTab) -> Unit,
     tripContext: PetTripContext = PetTripContext(),
+    environment: PetEnvironment? = null,
     modifier: Modifier = Modifier,
 ) {
     var treatTick by remember { mutableIntStateOf(0) }
+    var showConversation by remember { androidx.compose.runtime.mutableStateOf(false) }
+    var showEnvironment by remember { androidx.compose.runtime.mutableStateOf(false) }
+    var reply by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    var replyTick by remember { mutableIntStateOf(0) }
+    val motion = rememberPetMotion()
+    if (showConversation) {
+        PetConversationDialog(
+            state = state, tripContext = tripContext, isMoving = motion.state.isMoving,
+            onDismiss = { showConversation = false },
+            onReply = { reply = it; replyTick += 1 },
+        )
+    }
+    if (showEnvironment) {
+        PetEnvironmentDialog(state, environment, motion) { showEnvironment = false }
+    }
     val previousOutfit = {
         onWardrobeSelected(PetStateEngine.wardrobeAfter(state.wardrobeChoice, -1))
     }
@@ -90,7 +112,7 @@ fun CompanionsScreen(
         ) {
             Spacer(Modifier.height(12.dp))
 
-            PetHeader(state = state)
+            PetHeader(state = state, isMoving = motion.state.isMoving, onWeatherClick = { showEnvironment = true })
 
             Spacer(Modifier.height(12.dp))
 
@@ -100,6 +122,9 @@ fun CompanionsScreen(
                 onPreviousOutfit = previousOutfit,
                 onNextOutfit = nextOutfit,
                 tripContext = tripContext,
+                isMoving = motion.state.isMoving,
+                spokenReply = reply,
+                replyTick = replyTick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
@@ -127,11 +152,11 @@ fun CompanionsScreen(
                     onClick = { treatTick += 1 },
                 )
                 PetQuickActionButton(
-                    label = "Outfit",
+                    label = "Talk",
                     containerColor = Color.White,
                     contentColor = PetTeal,
                     modifier = Modifier.weight(1f),
-                    onClick = nextOutfit,
+                    onClick = { showConversation = true },
                 )
                 PetQuickActionButton(
                     label = "Photo",
@@ -148,7 +173,7 @@ fun CompanionsScreen(
 }
 
 @Composable
-private fun PetHeader(state: PetUiState) {
+private fun PetHeader(state: PetUiState, isMoving: Boolean, onWeatherClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -167,7 +192,7 @@ private fun PetHeader(state: PetUiState) {
                 fontWeight = FontWeight.ExtraBold,
             )
             Text(
-                text = "Your pocket weather buddy",
+                text = if (isMoving) "Walking together" else "Your little travel companion",
                 color = PetMuted,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -177,15 +202,14 @@ private fun PetHeader(state: PetUiState) {
         }
 
         Surface(
+            modifier = Modifier.clickable(onClickLabel = "Weather and motion settings", onClick = onWeatherClick),
             shape = RoundedCornerShape(18.dp),
             color = PetLightTeal,
         ) {
             Text(
-                text = if (state.weather.source == "Demo fallback") {
-                    "PREVIEW · ${state.weather.temperatureC.toInt()}°"
-                } else {
-                    "${state.weather.label.uppercase()} · ${state.weather.temperatureC.toInt()}°"
-                },
+                text = if (state.weather.isCurrent) {
+                    "${state.weather.label} · ${state.weather.temperatureC.toInt()}°"
+                } else "Weather —",
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 color = PetTeal,
                 fontSize = 11.sp,
@@ -216,35 +240,42 @@ private fun OutfitSelector(
         ) {
             OutfitArrow(label = "‹", contentDescription = "Previous outfit", onClick = onPrevious)
 
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = if (state.wardrobeChoice == PetWardrobeChoice.Weather) {
-                        "Weather · ${state.outfit.label}"
-                    } else {
-                        state.wardrobeChoice.label
-                    },
-                    color = PetText,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.ExtraBold,
+            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                PetAvatar(
+                    state = state.copy(outfit = state.wardrobeChoice.manualOutfit ?: state.outfit),
+                    modifier = Modifier.size(38.dp), animateIdle = false,
                 )
-                Spacer(Modifier.height(5.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    PetWardrobeChoice.entries.forEach { choice ->
-                        Box(
-                            modifier = Modifier
-                                .size(if (choice == state.wardrobeChoice) 7.dp else 5.dp)
-                                .background(
-                                    color = if (choice == state.wardrobeChoice) PetTeal else PetBorder,
-                                    shape = CircleShape,
-                                ),
-                        )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = state.wardrobeChoice.label,
+                        color = PetText,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                    Text(
+                        text = state.wardrobeNote,
+                        color = PetMuted, fontSize = 10.sp, maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        PetWardrobeChoice.entries.forEach { choice ->
+                            Box(
+                                modifier = Modifier
+                                    .size(if (choice == state.wardrobeChoice) 7.dp else 5.dp)
+                                    .background(
+                                        color = if (choice == state.wardrobeChoice) PetTeal else PetBorder,
+                                        shape = CircleShape,
+                                    ),
+                            )
+                        }
                     }
                 }
-            }
 
+            }
             OutfitArrow(label = "›", contentDescription = "Next outfit", onClick = onNext)
         }
     }
@@ -313,4 +344,46 @@ private fun CompanionsScreenPreview() {
             onTabClick = {},
         )
     }
+}
+
+@Composable
+private fun PetEnvironmentDialog(
+    state: PetUiState,
+    environment: PetEnvironment?,
+    motion: PetMotionController,
+    onDismiss: () -> Unit,
+) {
+    val uriHandler = LocalUriHandler.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Buddy's surroundings") },
+        text = {
+            Column(Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(state.weather.locationLabel, fontWeight = FontWeight.Bold)
+                Text(if (state.weather.isCurrent) {
+                    "${state.weather.label}, ${state.weather.temperatureC.toInt()}°C · wind ${state.weather.windSpeedKmh.toInt()} km/h"
+                } else "No fresh weather available. Buddy won't guess the conditions.")
+                environment?.status?.let { Text(it, fontSize = 12.sp) }
+                if (environment != null) {
+                    TextButton(onClick = environment::requestLocationPermission) { Text("Use my location") }
+                    TextButton(onClick = environment::useMelbourne) { Text("Use Melbourne") }
+                    TextButton(onClick = environment::refresh, enabled = !environment.isRefreshing) {
+                        Text(if (environment.isRefreshing) "Updating…" else "Refresh weather")
+                    }
+                }
+                Text("Weather protection comes first", fontWeight = FontWeight.Bold)
+                Text("Buddy wears fitted rain, winter, wind or sun gear when needed. Your chosen fashion is saved and returns in mild weather.")
+                Text("Motion: ${motion.state.source.label}")
+                if (motion.state.needsActivityPermission) {
+                    TextButton(onClick = motion.requestActivityPermission) { Text("Enable step detection") }
+                }
+                Text("Without a step sensor, movement is estimated from the phone. A desk or emulator may not produce walking events.", fontSize = 12.sp)
+                TextButton(onClick = { uriHandler.openUri("https://open-meteo.com/") }) {
+                    Text("Weather data: Open-Meteo · CC BY 4.0")
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+    )
 }

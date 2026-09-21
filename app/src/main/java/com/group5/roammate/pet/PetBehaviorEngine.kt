@@ -78,18 +78,21 @@ object PetBehaviorEngine {
         tripContext: PetTripContext = PetTripContext(),
         variation: Int = 0,
     ): PetBehaviorCue {
+        if (!weather.isCurrent) return PetBehaviorCue(
+            PetAction.Curious, "I can't check fresh weather yet. Let's take a water break while it reconnects.", 5_500L,
+        )
         val nextStop = tripContext.nextStopName
         val timedStop = when {
             nextStop == null -> null
             tripContext.nextStopTime.isNullOrBlank() -> nextStop
             else -> "$nextStop at ${tripContext.nextStopTime}"
         }
-        val itineraryEnding = timedStop?.let { " For $it, allow a little extra travel time." }
+        val itineraryEnding = timedStop?.let { " ${if (tripContext.isDemo) "Sample plan" else "Next stop"}: $it. Allow extra travel time." }
             ?: " Keep the next part of your trip flexible."
 
         val message = when {
             weather.condition == PetWeatherCondition.Storm ->
-                "Thunderstorms are nearby—stay under cover and postpone exposed outdoor stops." +
+                "The weather feed reports thunderstorms—stay under cover and postpone exposed outdoor stops." +
                     itineraryEnding
             weather.condition == PetWeatherCondition.Snow || weather.temperatureC <= 9.0 ->
                 "It is ${weather.temperatureC.toInt()}°C—wear a warm layer and watch for slippery paths." +
@@ -103,13 +106,13 @@ object PetBehaviorEngine {
             weather.condition == PetWeatherCondition.Fog ->
                 "Visibility may be low—slow down and leave earlier for your next stop." +
                     itineraryEnding
-            weather.condition == PetWeatherCondition.Clear && weather.temperatureC >= 25.0 ->
+            weather.isDay && weather.condition == PetWeatherCondition.Clear && weather.temperatureC >= 25.0 ->
                 "It is warm and sunny—bring water, sunscreen and a shady break." +
                     itineraryEnding
             variation % 2 == 0 ->
-                "${weather.label} today—Buddy thinks a light layer and a water bottle are a safe bet."
+                "${weather.label} right now—Buddy thinks a light layer and a water bottle are a safe bet."
             timedStop != null ->
-                "Next up: $timedStop. Conditions look manageable, so this is a good time to get moving."
+                "${if (tripContext.isDemo) "Sample plan" else "Next up"}: $timedStop. Conditions look manageable, so this is a good time to get moving."
             else ->
                 "Conditions look comfortable. Buddy votes for a relaxed walk and a photo stop."
         }
@@ -120,7 +123,7 @@ object PetBehaviorEngine {
                 PetAction.Curious
             else -> PetAction.Happy
         }
-        return PetBehaviorCue(action, message, 4_200L)
+        return PetBehaviorCue(action, message, 7_000L)
     }
 
     fun durationFor(action: PetAction): Long = when (action) {

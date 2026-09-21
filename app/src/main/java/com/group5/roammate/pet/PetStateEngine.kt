@@ -1,55 +1,59 @@
 package com.group5.roammate.pet
 
+/** One resolved appearance drives the stage, Home, camera and spoken wardrobe description. */
 object PetStateEngine {
     fun buildUiState(
         profile: PetProfile,
         weather: PetWeatherSnapshot = PetWeatherSnapshot.demo(),
     ): PetUiState {
-        val resolvedOutfit = resolveOutfit(weather, profile.wardrobeChoice)
+        val gear = protectiveOutfit(weather)
+        val outfit = resolveOutfit(weather, profile.wardrobeChoice)
+        val savedFashion = profile.wardrobeChoice.manualOutfit
+        val note = when {
+            !weather.isCurrent -> "Weather unavailable · personal style"
+            gear != null && savedFashion != null -> "${gear.label} on · ${savedFashion.label} saved"
+            gear != null -> "${gear.label} · weather matched"
+            else -> "Comfortable weather · ${outfit.label}"
+        }
         return PetUiState(
             companionStyle = CompanionStyle.Koala,
-            outfit = resolvedOutfit,
+            outfit = outfit,
             wardrobeChoice = profile.wardrobeChoice,
             weather = weather,
-            // Weather changes the scene and default clothes, not Buddy's durable emotion.
             mood = PetMood.Ready,
-            statusLine = statusFor(profile.wardrobeChoice, resolvedOutfit),
+            statusLine = when {
+                !weather.isCurrent -> "I'm here with you. Let's check the weather when it reconnects."
+                gear == PetOutfit.Raincoat -> "Raincoat on! Let's find a sheltered route together."
+                gear == PetOutfit.Winter -> "Wrapped up warm. How about a cosy break?"
+                gear == PetOutfit.Windbreaker -> "Zipped up for the wind. Stay close, little explorer."
+                gear == PetOutfit.Sunshine -> "Sun hat ready! Let's bring water and find some shade."
+                else -> "${outfit.label} today. Ready when you are!"
+            },
+            weatherOutfit = gear,
+            wardrobeNote = note,
         )
     }
 
-    fun resolveOutfit(
-        weather: PetWeatherSnapshot,
-        wardrobeChoice: PetWardrobeChoice,
-    ): PetOutfit {
-        wardrobeChoice.manualOutfit?.let { return it }
+    /** Weather protection takes priority; the chosen fashion is remembered, never overwritten. */
+    fun resolveOutfit(weather: PetWeatherSnapshot, wardrobeChoice: PetWardrobeChoice): PetOutfit =
+        protectiveOutfit(weather) ?: wardrobeChoice.manualOutfit ?: PetOutfit.Everyday
 
+    fun protectiveOutfit(weather: PetWeatherSnapshot): PetOutfit? {
+        if (!weather.isCurrent) return null
         return when {
-            weather.condition == PetWeatherCondition.Snow || weather.temperatureC <= 9.0 ->
-                PetOutfit.Winter
-            weather.condition == PetWeatherCondition.Rain ||
-                weather.condition == PetWeatherCondition.Storm -> PetOutfit.Raincoat
+            weather.condition == PetWeatherCondition.Storm ||
+                weather.condition == PetWeatherCondition.Rain -> PetOutfit.Raincoat
+            weather.condition == PetWeatherCondition.Snow || weather.temperatureC <= 9.0 -> PetOutfit.Winter
             weather.windSpeedKmh >= 25.0 -> PetOutfit.Windbreaker
-            weather.condition == PetWeatherCondition.Clear && weather.temperatureC >= 25.0 ->
-                PetOutfit.Sunshine
-            else -> PetOutfit.Everyday
+            weather.isDay && weather.condition == PetWeatherCondition.Clear &&
+                weather.temperatureC >= 25.0 -> PetOutfit.Sunshine
+            else -> null
         }
     }
 
-    fun wardrobeAfter(
-        current: PetWardrobeChoice,
-        steps: Int,
-    ): PetWardrobeChoice {
+    fun wardrobeAfter(current: PetWardrobeChoice, steps: Int): PetWardrobeChoice {
         val choices = PetWardrobeChoice.entries
         return choices[Math.floorMod(choices.indexOf(current) + steps, choices.size)]
-    }
-
-    private fun statusFor(
-        choice: PetWardrobeChoice,
-        outfit: PetOutfit,
-    ): String = if (choice == PetWardrobeChoice.Weather) {
-        "Ready to roam in ${outfit.label.lowercase()}."
-    } else {
-        "Buddy loves this ${choice.label.lowercase()} look."
     }
 }
 

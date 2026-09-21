@@ -1,7 +1,6 @@
 package com.group5.roammate.ui.screens
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -17,10 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -32,7 +31,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -44,7 +42,6 @@ import com.group5.roammate.ui.theme.RoamMateTheme
 // on-screen -> code:
 //   "Explore" + "Near <area>"        -> ExploreScreen (top texts)
 //   filter chips (Indoor/Outdoor..)  -> ExploreFilterRow > ExploreFilterChip
-//   map + dots + locate button       -> NearbyMapPreview
 //   bottom sheet + list              -> NearbyResultsPanel
 //   one place card (tap = open)      -> NearbyPlaceCard
 //   "No nearby places"               -> EmptyNearbyCard
@@ -56,9 +53,6 @@ private val RoamMateLightTeal = Color(0xFFE6F5F3)
 private val RoamMateText = Color(0xFF17212B)
 private val RoamMateMutedText = Color(0xFF8A949E)
 private val RoamMateFieldBorder = Color(0xFFE3E8EF)
-private val RoamMateMapBackground = Color(0xFFEAF6F3)   // map fill
-private val RoamMateMapLine = Color(0xFFFFFFFF)         // map grid lines
-private val RoamMateGpsBlue = Color(0xFF168BFF)         // "you are here" dot
 
 // filter tabs (only changes place type; all still nearby)
 enum class ExplorePlaceCategory(
@@ -70,7 +64,7 @@ enum class ExplorePlaceCategory(
     Food("Food"),
 }
 
-// data: one nearby place (name, distance, map x/y 0..1, tag)
+// data: one nearby place
 data class ExplorePlace(
     val name: String,
     val distanceText: String,
@@ -103,6 +97,7 @@ fun ExploreScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.White,
+        contentWindowInsets = WindowInsets(0.dp),
         // bottom tabs
         bottomBar = {
             RoamMateBottomNavigation(
@@ -118,7 +113,6 @@ fun ExploreScreen(
                 .padding(innerPadding)
                 .statusBarsPadding(),
         ) {
-            Spacer(modifier = Modifier.height(26.dp))
 
             // "Explore" title
             Text(
@@ -150,13 +144,6 @@ fun ExploreScreen(
                 onCategoryClick = { category ->
                     selectedCategory = category
                 },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // map preview
-            NearbyMapPreview(
-                places = filteredPlaces,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -221,96 +208,6 @@ private fun ExploreFilterChip(
             fontWeight = FontWeight.ExtraBold,
             maxLines = 1,
         )
-    }
-}
-
-// ---- map preview (grid + dots + locate button) ----
-@Composable
-private fun NearbyMapPreview(
-    places: List<ExplorePlace>,
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(292.dp)
-            .padding(horizontal = 28.dp),
-        shape = RoundedCornerShape(24.dp),
-        color = RoamMateMapBackground,
-        border = BorderStroke(1.dp, RoamMateTeal.copy(alpha = 0.08f)),
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // draw map: grid lines + user dot + place dots
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val verticalStep = size.width / 5f
-                val horizontalStep = size.height / 5f
-
-                // grid lines (fake map)
-                for (index in 1..4) {
-                    drawLine(
-                        color = RoamMateMapLine.copy(alpha = 0.75f),
-                        start = Offset(verticalStep * index, 0f),
-                        end = Offset(verticalStep * index, size.height),
-                        strokeWidth = 2f,
-                    )
-                    drawLine(
-                        color = RoamMateMapLine.copy(alpha = 0.75f),
-                        start = Offset(0f, horizontalStep * index),
-                        end = Offset(size.width, horizontalStep * index),
-                        strokeWidth = 2f,
-                    )
-                }
-
-                // user location (blue dot)
-                // TODO: 这里之后用 Alex/Sitao 的 GPS 坐标作为当前定位点。
-                val userLocation = Offset(size.width * 0.50f, size.height * 0.56f)
-                drawCircle(
-                    color = Color.White,
-                    radius = 17f,
-                    center = userLocation,
-                )
-                drawCircle(
-                    color = RoamMateGpsBlue,
-                    radius = 11f,
-                    center = userLocation,
-                )
-
-                // place markers (teal dots, positioned by mapX/mapY)
-                // TODO: 这里之后用 Yan/Leyan 景点数据里的坐标画 marker。
-                places.forEach { place ->
-                    drawCircle(
-                        color = Color.White,
-                        radius = 15f,
-                        center = Offset(size.width * place.mapX, size.height * place.mapY),
-                    )
-                    drawCircle(
-                        color = RoamMateTeal,
-                        radius = 9f,
-                        center = Offset(size.width * place.mapX, size.height * place.mapY),
-                    )
-                }
-            }
-
-            // locate button (bottom-right ⌖)
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                shape = CircleShape,
-                color = Color.White,
-                shadowElevation = 4.dp,
-            ) {
-                Text(
-                    text = "⌖",
-                    modifier = Modifier
-                        .size(42.dp)
-                        .padding(top = 5.dp),
-                    color = RoamMateText,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
     }
 }
 

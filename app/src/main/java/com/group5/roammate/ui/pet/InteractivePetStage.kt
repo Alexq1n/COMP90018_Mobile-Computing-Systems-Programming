@@ -12,6 +12,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -45,6 +46,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.group5.roammate.pet.PetAction
 import com.group5.roammate.pet.PetBehaviorCue
 import com.group5.roammate.pet.PetBehaviorEngine
@@ -71,13 +76,20 @@ fun InteractivePetStage(
     onPreviousOutfit: () -> Unit,
     onNextOutfit: () -> Unit,
     tripContext: PetTripContext = PetTripContext(),
+    isMoving: Boolean = false,
+    spokenReply: String? = null,
+    replyTick: Int = 0,
     modifier: Modifier = Modifier,
 ) {
-    var action by remember(state.companionStyle) {
-        mutableStateOf(PetBehaviorEngine.restingAction(state.mood))
-    }
-    var message by remember(state.companionStyle) { mutableStateOf(state.statusLine) }
     var queuedReaction by remember { mutableStateOf<PetBehaviorCue?>(null) }
+    var dragging by remember { mutableStateOf(false) }
+    val action = when {
+        dragging -> PetAction.Dragged
+        queuedReaction != null -> queuedReaction!!.action
+        isMoving -> PetAction.Walk
+        else -> PetBehaviorEngine.restingAction(state.mood)
+    }
+    val message = queuedReaction?.message ?: if (isMoving) "I'm walking with you." else state.statusLine
     var behaviorVersion by remember { mutableIntStateOf(0) }
     var petOffset by remember(state.companionStyle) { mutableStateOf(Offset.Zero) }
     var lastTapAt by remember { mutableLongStateOf(0L) }
@@ -101,22 +113,16 @@ fun InteractivePetStage(
         if (treatTick > 0) react(PetInteraction.Treat)
     }
 
-    LaunchedEffect(
-        state.companionStyle,
-        state.outfit,
-        state.mood,
-        state.statusLine,
-        behaviorVersion,
-    ) {
-        val cue = queuedReaction
-        if (cue != null) {
-            action = cue.action
-            message = cue.message
+    LaunchedEffect(replyTick) {
+        spokenReply?.takeIf { it.isNotBlank() }?.let {
+            showCue(PetBehaviorCue(PetAction.Curious, it, 8_000L))
+        }
+    }
+    LaunchedEffect(behaviorVersion) {
+        queuedReaction?.let { cue ->
             delay(cue.durationMillis)
             queuedReaction = null
         }
-        action = PetBehaviorEngine.restingAction(state.mood)
-        message = state.statusLine
     }
 
     val density = LocalDensity.current
@@ -136,23 +142,23 @@ fun InteractivePetStage(
             modifier = Modifier.fillMaxSize(),
         )
 
-        val avatarSize = minOf(
-            286.dp,
-            (maxWidth - 32.dp).coerceAtLeast(0.dp),
-            (maxHeight - 118.dp).coerceAtLeast(0.dp),
-        )
+        val bubbleHeight = if (maxHeight < 280.dp) 68.dp else 94.dp
+        val avatarSize = minOf(286.dp, (maxWidth - 32.dp).coerceAtLeast(0.dp),
+            (maxHeight - bubbleHeight - 22.dp).coerceAtLeast(0.dp))
 
         Surface(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(start = 16.dp, top = 16.dp, end = 16.dp)
-                .fillMaxWidth(),
+                .padding(start = 12.dp, top = 10.dp, end = 12.dp)
+                .fillMaxWidth()
+                .height(bubbleHeight),
             shape = RoundedCornerShape(18.dp),
             color = Color.White.copy(alpha = 0.94f),
             border = BorderStroke(1.dp, StageTeal.copy(alpha = 0.13f)),
         ) {
             Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 11.dp),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
@@ -168,79 +174,88 @@ fun InteractivePetStage(
                     lineHeight = 17.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
+                    maxLines = if (bubbleHeight < 80.dp) 2 else 3,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
 
         Box(
             modifier = Modifier
-                .align(Alignment.Center)
-                .padding(top = 48.dp)
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 8.dp)
                 .fillMaxWidth()
                 .height(avatarSize)
                 .pointerInput(state.companionStyle, state.outfit) {
                     val dragThreshold = viewConfiguration.touchSlop
                     awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        val startedAt = SystemClock.uptimeMillis()
-                        val start = down.position
-                        var gestureMode = GestureMode.Undecided
-                        var totalDelta = Offset.Zero
-                        var pressed = true
+                        try {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            val startedAt = SystemClock.uptimeMillis()
+                            val start = down.position
+                            var gestureMode = GestureMode.Undecided
+                            var totalDelta = Offset.Zero
+                            var pressed = true
 
-                        while (pressed) {
-                            val event = awaitPointerEvent()
-                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                            pressed = change.pressed
-                            val delta = change.positionChange()
-                            totalDelta += delta
-                            if (gestureMode == GestureMode.Undecided &&
-                                totalDelta.getDistance() > dragThreshold
-                            ) {
-                                gestureMode = if (
-                                    abs(totalDelta.x) > abs(totalDelta.y) * 1.2f
+                            while (pressed) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                                pressed = change.pressed
+                                val delta = change.positionChange()
+                                totalDelta += delta
+                                if (gestureMode == GestureMode.Undecided &&
+                                    totalDelta.getDistance() > dragThreshold
                                 ) {
-                                    GestureMode.OutfitSwipe
-                                } else {
-                                    action = PetAction.Dragged
-                                    message = "Buddy is following your hand."
-                                    GestureMode.VerticalDrag
+                                    gestureMode = if (
+                                        abs(totalDelta.x) > abs(totalDelta.y) * 1.2f
+                                    ) {
+                                        GestureMode.OutfitSwipe
+                                    } else {
+                                        dragging = true
+                                        GestureMode.VerticalDrag
+                                    }
+                                }
+
+                                if (gestureMode == GestureMode.VerticalDrag && delta != Offset.Zero) {
+                                    petOffset = Offset(
+                                        x = 0f,
+                                        y = (petOffset.y + delta.y).coerceIn(-maxVertical, maxVertical),
+                                    )
+                                    change.consume()
+                                } else if (gestureMode == GestureMode.OutfitSwipe) {
+                                    change.consume()
                                 }
                             }
 
-                            if (gestureMode == GestureMode.VerticalDrag && delta != Offset.Zero) {
-                                petOffset = Offset(
-                                    x = 0f,
-                                    y = (petOffset.y + delta.y).coerceIn(-maxVertical, maxVertical),
-                                )
-                                change.consume()
-                            } else if (gestureMode == GestureMode.OutfitSwipe) {
-                                change.consume()
-                            }
-                        }
+                            dragging = false
+                            petOffset = Offset.Zero
+                            when (gestureMode) {
+                                GestureMode.OutfitSwipe -> {
+                                    when {
+                                        totalDelta.x <= -outfitSwipeThreshold -> latestNextOutfit()
+                                        totalDelta.x >= outfitSwipeThreshold -> latestPreviousOutfit()
+                                        else -> Unit
+                                    }
+                                }
 
-                        when (gestureMode) {
-                            GestureMode.OutfitSwipe -> {
-                                when {
-                                    totalDelta.x <= -outfitSwipeThreshold -> latestNextOutfit()
-                                    totalDelta.x >= outfitSwipeThreshold -> latestPreviousOutfit()
-                                    else -> message = state.statusLine
+                                GestureMode.VerticalDrag -> react(PetInteraction.Drag)
+                                GestureMode.Undecided -> {
+                                    val now = SystemClock.uptimeMillis()
+                                    val heldFor = now - startedAt
+                                    val interaction = when {
+                                        heldFor >= 520L -> PetInteraction.LongPress
+                                        now - lastTapAt <= 330L -> PetInteraction.DoubleTap
+                                        start.y < size.height * 0.48f -> PetInteraction.TapHead
+                                        else -> PetInteraction.TapBody
+                                    }
+                                    lastTapAt = now
+                                    react(interaction)
                                 }
                             }
-
-                            GestureMode.VerticalDrag -> react(PetInteraction.Drag)
-                            GestureMode.Undecided -> {
-                                val now = SystemClock.uptimeMillis()
-                                val heldFor = now - startedAt
-                                val interaction = when {
-                                    heldFor >= 520L -> PetInteraction.LongPress
-                                    now - lastTapAt <= 330L -> PetInteraction.DoubleTap
-                                    start.y < size.height * 0.48f -> PetInteraction.TapHead
-                                    else -> PetInteraction.TapBody
-                                }
-                                lastTapAt = now
-                                react(interaction)
-                            }
+                        } finally {
+                            // A weather outfit update can cancel pointerInput midway through a drag.
+                            dragging = false
+                            petOffset = Offset.Zero
                         }
                     }
                 },
@@ -268,7 +283,8 @@ private fun ShakeDetectorEffect(onShake: () -> Unit) {
     val context = LocalContext.current
     val latestOnShake by rememberUpdatedState(onShake)
 
-    DisposableEffect(context) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(context, lifecycleOwner) {
         val manager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val accelerometer = manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         var lastShake = 0L
@@ -279,7 +295,7 @@ private fun ShakeDetectorEffect(onShake: () -> Unit) {
                 val z = event.values[2] / SensorManager.GRAVITY_EARTH
                 val gForce = sqrt(x * x + y * y + z * z)
                 val now = SystemClock.elapsedRealtime()
-                if (gForce > 2.35f && now - lastShake > 1_000L) {
+                if (gForce > 2.35f && now - lastShake > 3_000L) {
                     lastShake = now
                     latestOnShake()
                 }
@@ -288,9 +304,18 @@ private fun ShakeDetectorEffect(onShake: () -> Unit) {
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
         }
 
-        if (accelerometer != null) {
-            manager.registerListener(listener, accelerometer, SensorManager.SENSOR_DELAY_GAME)
+        fun updateRegistration() {
+            manager.unregisterListener(listener)
+            if (accelerometer != null && lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                manager.registerListener(listener, accelerometer, SensorManager.SENSOR_DELAY_GAME)
+            }
         }
-        onDispose { manager.unregisterListener(listener) }
+        val observer = LifecycleEventObserver { _, _ -> updateRegistration() }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        updateRegistration()
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            manager.unregisterListener(listener)
+        }
     }
 }

@@ -43,8 +43,9 @@ fun AnimatedWeatherBackdrop(
     weather: PetWeatherSnapshot,
     modifier: Modifier = Modifier,
 ) {
-    val wind = weather.windSpeedKmh.toFloat().coerceIn(0f, 90f)
-    val temperature = weather.temperatureC.toFloat()
+    val sceneCondition = if (weather.isCurrent) weather.condition else PetWeatherCondition.Unknown
+    val wind = weather.windSpeedKmh.toFloat().takeIf { it.isFinite() }?.coerceIn(0f, 90f) ?: 0f
+    val temperature = weather.temperatureC.toFloat().takeIf { it.isFinite() } ?: 18f
     val transition = rememberInfiniteTransition(label = "petWeatherBackdrop")
 
     val drift by transition.animateFloat(
@@ -90,16 +91,25 @@ fun AnimatedWeatherBackdrop(
     Box(modifier = modifier.clip(RoundedCornerShape(28.dp))) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawWeatherSky(
-                condition = weather.condition,
+                condition = sceneCondition,
                 temperature = temperature,
             )
 
-            when (weather.condition) {
-                PetWeatherCondition.Clear -> drawClearScene(
-                    drift = drift,
-                    pulse = pulse,
-                    temperature = temperature,
-                )
+            when (sceneCondition) {
+                PetWeatherCondition.Clear -> if (weather.isDay) {
+                    drawClearScene(drift = drift, pulse = pulse, temperature = temperature)
+                } else {
+                    drawRect(Brush.verticalGradient(listOf(Color(0xFF253B59), Color(0xFF7899A7))))
+                    val moon = Offset(size.width * .78f, size.height * .24f)
+                    drawCircle(Color(0xFFFFF2CC), size.minDimension * .08f, moon)
+                    drawCircle(Color(0xFF354F6B), size.minDimension * .073f,
+                        moon + Offset(size.minDimension * .033f, -size.minDimension * .025f))
+                    repeat(12) { i ->
+                        drawCircle(Color.White.copy(alpha = .4f + (pulse - .92f) * 3f),
+                            2.dp.toPx(), Offset(size.width * ((i * .137f + .06f) % 1f),
+                                size.height * ((i * .087f + .03f) % .62f)))
+                    }
+                }
 
                 PetWeatherCondition.Cloudy -> drawCloudyScene(drift = drift)
                 PetWeatherCondition.Fog -> drawFogScene(drift = drift)
@@ -125,7 +135,7 @@ fun AnimatedWeatherBackdrop(
                 )
             }
 
-            drawSoftGround(condition = weather.condition)
+            drawSoftGround(condition = sceneCondition)
         }
     }
 }

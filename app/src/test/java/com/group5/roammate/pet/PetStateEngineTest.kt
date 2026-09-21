@@ -84,14 +84,17 @@ class PetStateEngineTest {
     }
 
     @Test
-    fun selectedFashionOverridesTheAutomaticWeatherLook() {
+    fun protectiveGearOverridesButPreservesSelectedFashion() {
         val rainy = weather(condition = PetWeatherCondition.Rain)
         val state = PetStateEngine.buildUiState(
             profile = PetProfile(wardrobeChoice = PetWardrobeChoice.Explorer),
             weather = rainy,
         )
 
-        assertEquals(PetOutfit.Explorer, state.outfit)
+        assertEquals(PetOutfit.Raincoat, state.outfit)
+        assertEquals(PetWardrobeChoice.Explorer, state.wardrobeChoice)
+        val mild = rainy.copy(condition = PetWeatherCondition.Cloudy)
+        assertEquals(PetOutfit.Explorer, PetStateEngine.buildUiState(PetProfile(state.wardrobeChoice), mild).outfit)
     }
 
     @Test
@@ -121,6 +124,28 @@ class PetStateEngineTest {
         assertEquals(PetWeatherCondition.Unknown, PetWeatherAdapter.fromWmoCode(-1))
     }
 
+    @Test
+    fun staleWeatherCannotForceClothing() {
+        val oldRain = weather(PetWeatherCondition.Rain).copy(observedAtMillis = System.currentTimeMillis() - 46 * 60_000L)
+        assertEquals(PetOutfit.Pajamas, PetStateEngine.resolveOutfit(oldRain, PetWardrobeChoice.Pajamas))
+        assertEquals(PetOutfit.Everyday, PetStateEngine.resolveOutfit(PetWeatherSnapshot.demo(), PetWardrobeChoice.Weather))
+    }
+
+    @Test
+    fun nightDoesNotSelectSunHat() {
+        val night = weather(PetWeatherCondition.Clear, temperatureC = 29.0).copy(isDay = false)
+        assertEquals(PetOutfit.Everyday, PetStateEngine.resolveOutfit(night, PetWardrobeChoice.Weather))
+    }
+
+    @Test
+    fun staleAndFutureTimestampsAreRejected() {
+        val now = 1_000_000L
+        val weather = weather().copy(observedAtMillis = now)
+        org.junit.Assert.assertTrue(weather.isFreshAt(now))
+        org.junit.Assert.assertFalse(weather.isFreshAt(now - 1))
+        org.junit.Assert.assertFalse(weather.isFreshAt(now + 46 * 60_000L))
+    }
+
     private fun weatherState(
         condition: PetWeatherCondition,
         temperatureC: Double = 18.0,
@@ -141,5 +166,6 @@ class PetStateEngineTest {
         windSpeedKmh = windSpeedKmh,
         locationLabel = "Test location",
         source = "Unit test",
+        observedAtMillis = System.currentTimeMillis(),
     )
 }

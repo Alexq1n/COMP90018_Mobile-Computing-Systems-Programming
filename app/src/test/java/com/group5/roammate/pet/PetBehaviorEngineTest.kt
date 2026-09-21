@@ -120,6 +120,7 @@ class PetBehaviorEngineTest {
         windSpeedKmh = windSpeedKmh,
         locationLabel = "Test location",
         source = "Unit test",
+        observedAtMillis = System.currentTimeMillis(),
     )
 
     private fun assertContains(actual: String, expected: String) {

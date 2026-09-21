@@ -3,9 +3,11 @@ package com.group5.roammate.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,15 +29,26 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.group5.roammate.ui.theme.RoamMateTheme
+import kotlin.math.roundToInt
 
 // Edit itinerary page uniform color
 private val RoamMateTeal = Color(0xFF008B8F)
@@ -51,14 +65,35 @@ fun EditItineraryScreen(
     onBackClick: () -> Unit,
     onRemoveStopClick: (TripTimelineStop) -> Unit,
     onAddStopClick: () -> Unit,
-    onSaveClick: () -> Unit,
+    onSaveClick: (List<TripTimelineStop>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // local order
+    var editableStops by remember(stops) {
+        mutableStateOf(stops)
+    }
+
+    // move row
+    fun moveStop(fromIndex: Int, toIndex: Int) {
+        if (fromIndex !in editableStops.indices) return
+        val safeToIndex = toIndex.coerceIn(editableStops.indices)
+        if (fromIndex == safeToIndex) return
+
+        editableStops = editableStops.toMutableList().apply {
+            add(safeToIndex, removeAt(fromIndex))
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.White,
+        contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
-            SaveItineraryButton(onClick = onSaveClick)
+            SaveItineraryButton(
+                onClick = {
+                    onSaveClick(editableStops)
+                },
+            )
         },
     ) { innerPadding ->
         Column(
@@ -70,7 +105,6 @@ fun EditItineraryScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 28.dp),
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
 
             BackCircleButton(onClick = onBackClick)
 
@@ -87,7 +121,7 @@ fun EditItineraryScreen(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = "Remove a stop, or add a new one",
+                text = "Remove, add, or drag to reorder",
                 color = RoamMateMutedText,
                 fontSize = 18.sp,
                 lineHeight = 22.sp,
@@ -97,17 +131,30 @@ fun EditItineraryScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // TODO: 之后这里接 Zewen 的真实行程站点列表。
-            if (stops.isEmpty()) {
+            if (editableStops.isEmpty()) {
                 EmptyEditItineraryCard()
             } else {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    stops.forEach { stop ->
-                        EditItineraryStopCard(
-                            stop = stop,
-                            onRemoveClick = { onRemoveStopClick(stop) },
-                        )
+                    editableStops.forEachIndexed { index, stop ->
+                        key(stop.time, stop.title) {
+                            EditItineraryStopCard(
+                                stop = stop,
+                                onMoveUp = {
+                                    moveStop(index, index - 1)
+                                },
+                                onMoveDown = {
+                                    moveStop(index, index + 1)
+                                },
+                                onRemoveClick = {
+                                    editableStops = editableStops.filterNot { currentStop ->
+                                        currentStop.sameStopKey(stop)
+                                    }
+                                    onRemoveStopClick(stop)
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -146,16 +193,63 @@ private fun BackCircleButton(
 @Composable
 private fun EditItineraryStopCard(
     stop: TripTimelineStop,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
     onRemoveClick: () -> Unit,
 ) {
+    // drag state
+    val dragThresholdPx = with(LocalDensity.current) { 54.dp.toPx() }
+    val moveUp by rememberUpdatedState(onMoveUp)
+    val moveDown by rememberUpdatedState(onMoveDown)
+    var dragOffsetY by remember(stop.time, stop.title) {
+        mutableStateOf(0f)
+    }
+    var isDragging by remember(stop.time, stop.title) {
+        mutableStateOf(false)
+    }
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(78.dp),
+            .height(78.dp)
+            .offset {
+                IntOffset(0, dragOffsetY.roundToInt())
+            }
+            .zIndex(if (isDragging) 1f else 0f)
+            .pointerInput(stop.time, stop.title) {
+                detectDragGesturesAfterLongPress(
+                    onDragStart = {
+                        isDragging = true
+                    },
+                    onDragEnd = {
+                        isDragging = false
+                        dragOffsetY = 0f
+                    },
+                    onDragCancel = {
+                        isDragging = false
+                        dragOffsetY = 0f
+                    },
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        dragOffsetY += dragAmount.y
+
+                        when {
+                            dragOffsetY > dragThresholdPx -> {
+                                moveDown()
+                                dragOffsetY = 0f
+                            }
+                            dragOffsetY < -dragThresholdPx -> {
+                                moveUp()
+                                dragOffsetY = 0f
+                            }
+                        }
+                    },
+                )
+            },
         shape = RoundedCornerShape(18.dp),
         color = Color.White,
         border = BorderStroke(1.dp, RoamMateFieldBorder),
-        shadowElevation = 2.dp,
+        shadowElevation = if (isDragging) 8.dp else 2.dp,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 18.dp),
@@ -183,9 +277,26 @@ private fun EditItineraryStopCard(
 
             Spacer(modifier = Modifier.width(14.dp))
 
+            // drag handle
+            Text(
+                text = "≡",
+                color = RoamMateMutedText,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
             RemoveStopButton(onClick = onRemoveClick)
         }
     }
+}
+
+// ---- same stop ----
+private fun TripTimelineStop.sameStopKey(
+    other: TripTimelineStop,
+): Boolean {
+    return time == other.time && title == other.title
 }
 
 // ---- remove button ----
@@ -301,7 +412,7 @@ private fun EditItineraryScreenPreview() {
             onBackClick = {},
             onRemoveStopClick = {},
             onAddStopClick = {},
-            onSaveClick = {},
+            onSaveClick = { _ -> },
             modifier = Modifier.fillMaxSize(),
         )
     }

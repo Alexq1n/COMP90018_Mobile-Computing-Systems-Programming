@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -63,6 +65,7 @@ fun AddStopScreen(
     onBackClick: () -> Unit,
     onSearchConfirmClick: (String) -> Unit,
     onAddPlaceClick: (AddStopPlace) -> Unit,
+    isSearching: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     var searchText by rememberSaveable { mutableStateOf("") }
@@ -79,6 +82,7 @@ fun AddStopScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.White,
+        contentWindowInsets = WindowInsets(0.dp),
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -89,7 +93,6 @@ fun AddStopScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 28.dp),
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
 
             BackCircleButton(onClick = onBackClick)
 
@@ -118,10 +121,11 @@ fun AddStopScreen(
 
                     // Only this confirm click sends the query to the future search logic.
                     // Typing in the field should not call Alex's search.
-                    if (query.isNotBlank()) {
+                    if (query.isNotBlank() && !isSearching) {
                         onSearchConfirmClick(query)
                     }
                 },
+                isSearching = isSearching,
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -141,7 +145,9 @@ fun AddStopScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             // TODO: 之后这里接 Alex 的搜索结果，Yan 的景点/室内室外数据，Sitao 的距离定位数据。
-            if (filteredPlaces.isEmpty()) {
+            if (isSearching) {
+                SearchLoadingCard()
+            } else if (filteredPlaces.isEmpty()) {
                 NotFoundCard(searchText = confirmedSearchText)
             } else {
                 Column(
@@ -189,6 +195,7 @@ private fun AddStopSearchField(
     onSearchTextChange: (String) -> Unit,
     onClearClick: () -> Unit,
     onSearchConfirmClick: () -> Unit,
+    isSearching: Boolean,
 ) {
     Row(
         modifier = Modifier
@@ -198,7 +205,11 @@ private fun AddStopSearchField(
     ) {
         OutlinedTextField(
             value = searchText,
-            onValueChange = onSearchTextChange,
+            onValueChange = {
+                if (!isSearching) {
+                    onSearchTextChange(it)
+                }
+            },
             modifier = Modifier
                 .weight(1f)
                 .height(62.dp),
@@ -216,7 +227,10 @@ private fun AddStopSearchField(
                 if (searchText.isNotBlank()) {
                     Text(
                         text = "×",
-                        modifier = Modifier.clickable(onClick = onClearClick),
+                        modifier = Modifier.clickable(
+                            enabled = !isSearching,
+                            onClick = onClearClick,
+                        ),
                         color = RoamMateMutedText,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
@@ -246,7 +260,8 @@ private fun AddStopSearchField(
         )
 
         SearchConfirmButton(
-            enabled = searchText.isNotBlank(),
+            enabled = searchText.isNotBlank() && !isSearching,
+            isLoading = isSearching,
             onClick = onSearchConfirmClick,
         )
     }
@@ -256,25 +271,36 @@ private fun AddStopSearchField(
 @Composable
 private fun SearchConfirmButton(
     enabled: Boolean,
+    isLoading: Boolean,
     onClick: () -> Unit,
 ) {
     Box(
         modifier = Modifier
             .size(52.dp)
             .background(
-                color = if (enabled) RoamMateTeal else RoamMateFieldBorder,
+                color = if (enabled || isLoading) RoamMateTeal else RoamMateFieldBorder,
                 shape = CircleShape,
             )
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = "⌕",
-            color = Color.White,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.ExtraBold,
-            textAlign = TextAlign.Center,
-        )
+        if (isLoading) {
+            // loading spinner
+            CircularProgressIndicator(
+                modifier = Modifier.size(22.dp),
+                color = Color.White,
+                strokeWidth = 2.dp,
+            )
+        } else {
+            // search icon
+            Text(
+                text = "⌕",
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 
@@ -372,6 +398,40 @@ private fun AddPlaceButton(
     }
 }
 
+// ---- search loading ----
+@Composable
+private fun SearchLoadingCard() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = RoamMateLightTeal.copy(alpha = 0.55f),
+        border = BorderStroke(1.dp, RoamMateTeal.copy(alpha = 0.12f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 24.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // loading spinner
+            CircularProgressIndicator(
+                modifier = Modifier.size(22.dp),
+                color = RoamMateTeal,
+                strokeWidth = 2.dp,
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // loading text
+            Text(
+                text = "Searching places",
+                color = RoamMateTeal,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+        }
+    }
+}
+
 // ---- no result ----
 @Composable
 private fun NotFoundCard(
@@ -423,6 +483,26 @@ private fun AddStopScreenPreview() {
             onBackClick = {},
             onSearchConfirmClick = {},
             onAddPlaceClick = {},
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AddStopLoadingPreview() {
+    RoamMateTheme(dynamicColor = false) {
+        AddStopScreen(
+            currentCity = "Melbourne",
+            places = listOf(
+                AddStopPlace("Melbourne Museum", "1.8 km", "Indoor"),
+                AddStopPlace("National Gallery of Victoria", "1.2 km", "Indoor"),
+                AddStopPlace("Royal Botanic Gardens", "2.4 km", "Outdoor"),
+            ),
+            onBackClick = {},
+            onSearchConfirmClick = {},
+            onAddPlaceClick = {},
+            isSearching = true,
             modifier = Modifier.fillMaxSize(),
         )
     }

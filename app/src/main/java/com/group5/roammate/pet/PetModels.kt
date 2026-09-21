@@ -59,6 +59,8 @@ data class PetUiState(
     val weather: PetWeatherSnapshot,
     val mood: PetMood,
     val statusLine: String,
+    val weatherOutfit: PetOutfit? = null,
+    val wardrobeNote: String = "",
 )
 
 data class PetProfile(
@@ -72,15 +74,28 @@ data class PetWeatherSnapshot(
     val windSpeedKmh: Double,
     val locationLabel: String,
     val source: String,
+    val observedAtMillis: Long = 0L,
+    val todayHighC: Double? = null,
+    val todayLowC: Double? = null,
+    val todayRainChancePercent: Int? = null,
+    val forecastDate: String? = null,
+    val isDay: Boolean = true,
 ) {
+    val isCurrent: Boolean get() = isFreshAt(System.currentTimeMillis())
+
+    fun isFreshAt(nowMillis: Long): Boolean =
+        source != "Demo fallback" && condition != PetWeatherCondition.Unknown &&
+            temperatureC.isFinite() && windSpeedKmh.isFinite() &&
+            observedAtMillis > 0L && nowMillis - observedAtMillis in 0L..45 * 60_000L
+
     companion object {
-        /** Immediate offline state while the key-free live weather request is loading. */
+        /** No fabricated conditions are used while a live request is unavailable. */
         fun demo(): PetWeatherSnapshot = PetWeatherSnapshot(
-            condition = PetWeatherCondition.Cloudy,
-            label = "Weather preview",
-            temperatureC = 18.0,
-            windSpeedKmh = 14.0,
-            locationLabel = "Melbourne",
+            condition = PetWeatherCondition.Unknown,
+            label = "Weather unavailable",
+            temperatureC = 0.0,
+            windSpeedKmh = 0.0,
+            locationLabel = "Melbourne · selected city",
             source = "Demo fallback",
         )
     }
@@ -90,4 +105,5 @@ data class PetWeatherSnapshot(
 data class PetTripContext(
     val nextStopName: String? = null,
     val nextStopTime: String? = null,
+    val isDemo: Boolean = true,
 )

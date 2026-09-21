@@ -15,7 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.group5.roammate.pet.OpenMeteoPetWeatherRepository
+import com.group5.roammate.ui.pet.rememberPetEnvironment
 import com.group5.roammate.pet.PetPreferences
 import com.group5.roammate.pet.PetStateEngine
 import com.group5.roammate.pet.PetTripContext
@@ -52,14 +52,13 @@ import com.group5.roammate.ui.screens.SavedTrip
 import com.group5.roammate.ui.screens.SavedTripsScreen
 import com.group5.roammate.ui.screens.TripScreen
 import com.group5.roammate.ui.screens.TripStopStatus
+import com.group5.roammate.ui.screens.TripSummary
 import com.group5.roammate.ui.screens.TripTimelineStop
 import com.group5.roammate.ui.screens.TripWeatherSummary
 import com.group5.roammate.ui.pet.CompanionsScreen
 import com.group5.roammate.ui.pet.PetCameraScreen
 import com.group5.roammate.ui.theme.RoamMateTheme
-import kotlinx.coroutines.delay
 
-private const val PET_WEATHER_REFRESH_MILLIS = 15 * 60 * 1_000L
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -79,24 +78,58 @@ class MainActivity : ComponentActivity() {
                 // Jie pet feature state: one koala, live weather gear and a persisted fashion choice.
                 val petPreferences = remember { PetPreferences(applicationContext) }
                 var petProfile by remember { mutableStateOf(petPreferences.loadProfile()) }
-                var petWeather by remember { mutableStateOf(PetWeatherSnapshot.demo()) }
-                val petWeatherRepository = remember { OpenMeteoPetWeatherRepository() }
-                LaunchedEffect(Unit) {
-                    while (true) {
-                        // TODO: Replace the Melbourne coordinates with Yan/Sitao's current location.
-                        petWeatherRepository.fetchCurrent(
-                            latitude = -37.8136,
-                            longitude = 144.9631,
-                            locationLabel = "Melbourne",
-                        ).onSuccess { petWeather = it }
-                        delay(PET_WEATHER_REFRESH_MILLIS)
-                    }
-                }
+                val petEnvironment = rememberPetEnvironment()
+                val petWeather = petEnvironment.weather
                 val petState = PetStateEngine.buildUiState(petProfile, petWeather)
 
                 // User name
                 // TODO: Replace with Yuxiang Firebase user profile.
                 var userName by rememberSaveable { mutableStateOf("Yufei") }
+
+                // Loading states
+                // TODO: Set true while backend / Firebase requests are running.
+                var isGeneratingItinerary by rememberSaveable { mutableStateOf(false) }
+                var isSearchingPlaces by rememberSaveable { mutableStateOf(false) }
+
+                // Demonstration location for Yufei's Explore preview, not a measured GPS fix.
+                // TODO: Alex should update this and set isSample = false when GPS changes.
+                val currentSensorLocation = remember {
+                    mutableStateOf(
+                        SensorLocation(
+                            latitude = -37.8039,
+                            longitude = 144.9717,
+                            accuracyMeters = 12f,
+                            areaName = "Carlton",
+                        ),
+                    )
+                }
+
+                // Sensor trigger
+                // TODO: Alex should call this when shake is detected.
+                fun handleShakeTrigger() {
+                    when (currentScreen) {
+                        AuthScreen.Explore -> {
+                            // Explore: shake refreshes nearby suggestions.
+                            Toast.makeText(this, "Shake: refresh nearby places", Toast.LENGTH_SHORT).show()
+                        }
+
+                        AuthScreen.Trip -> {
+                            // Trip: shake re-checks current progress.
+                            Toast.makeText(this, "Shake: update trip progress", Toast.LENGTH_SHORT).show()
+                        }
+
+                        AuthScreen.PlanMyTrip,
+                        AuthScreen.PlanAddStop,
+                        AuthScreen.EditAddStop -> {
+                            // Planning/search: shake can suggest one nearby place.
+                            Toast.makeText(this, "Shake: suggest a nearby stop", Toast.LENGTH_SHORT).show()
+                        }
+
+                        else -> {
+                            // Other pages: no shake action.
+                        }
+                    }
+                }
 
                 // Attraction detail 当前展示的景点。之后由 Explore/Trip 点击的真实景点数据替换。
                 var selectedAttractionDetail by remember {
@@ -253,8 +286,10 @@ class MainActivity : ComponentActivity() {
                         // TODO: 这是 Home 顶部 Smart suggestion 的临时假数据。
                         // TODO: 之后由 Yan 提供天气变化，Zewen 根据建议触发行程调整。
                         val homeSmartSuggestion = HomeSmartSuggestion(
-                            label = "Rain",
-                            message = "Smart suggestion · Rain 2-4 PM, tap to adjust your plan",
+                            label = if (petWeather.isCurrent) petWeather.label else "Weather",
+                            message = if (petWeather.isCurrent) {
+                                "${petWeather.locationLabel}: ${petWeather.temperatureC.toInt()}°C · ${petState.statusLine}"
+                            } else "Live weather is unavailable. Open Buddy to refresh.",
                         )
 
                         HomeScreen(
@@ -289,10 +324,7 @@ class MainActivity : ComponentActivity() {
                             },
 
                             // TODO: 之后这里跳转到 Adjust itinerary 页面。
-                            onSmartSuggestionClick = {
-                                adjustPlanIndex = 0
-                                currentScreen = AuthScreen.AdjustItinerary
-                            },
+                            onSmartSuggestionClick = { currentScreen = AuthScreen.Pet },
 
                             onPetCardClick = {
                                 currentScreen = AuthScreen.Pet
@@ -369,8 +401,15 @@ class MainActivity : ComponentActivity() {
 
                             // TODO: 这里之后接 Yan 的实时天气数据。
                             weatherSummary = TripWeatherSummary(
-                                temperature = "18°C",
-                                condition = "Partly cloudy",
+                                temperature = if (petWeather.isCurrent) "${petWeather.temperatureC.toInt()}°C" else "—",
+                                condition = if (petWeather.isCurrent) "${petWeather.label} · ${petWeather.locationLabel}" else "Weather unavailable",
+                            ),
+
+                            // TODO: 这里之后接 Zewen 生成的多天行程 summary。
+                            // 例如：3 days in Melbourne + Day 1 / Day 2 / Day 3 简介。
+                            tripSummary = TripSummary(
+                                title = "3 days in Melbourne",
+                                description = "Day 1: Melbourne Museum, State Library and ACMI. Day 2: Royal Botanic Gardens and Queen Victoria Market. Day 3: Brighton Beach and Southbank.",
                             ),
 
                             // TODO: 等 Zewen 的行程列表和 Sitao 的进度状态完成后，替换成真实顺序/状态。
@@ -415,7 +454,9 @@ class MainActivity : ComponentActivity() {
 
                         ExploreScreen(
                             modifier = Modifier.fillMaxSize(),
-                            currentArea = "Carlton",
+                            currentArea = currentSensorLocation.value.let { location ->
+                                if (location.isSample) "${location.areaName} · sample" else location.areaName
+                            },
                             places = nearbyExplorePlaces,
 
                             // TODO: 之后这里跳转 Attraction detail 页面。
@@ -502,8 +543,14 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.EditAddStop
                             },
 
-                            // TODO: 之后这里接 Yuxiang 保存行程；Zewen 返回新行程后再保存。
-                            onSaveClick = {
+                            // TODO: 之后这里把 reorderedStops 发给 Zewen 重新计算时间，再交给 Yuxiang 保存。
+                            onSaveClick = { reorderedStops ->
+                                val doneStops = tripTimelineStops.filter { stop ->
+                                    stop.status == TripStopStatus.Done
+                                }
+                                tripTimelineStops = rebalanceTripStopsAfterManualEdit(
+                                    doneStops + reorderedStops,
+                                )
                                 Toast.makeText(this, "Itinerary saved", Toast.LENGTH_SHORT).show()
                                 currentScreen = AuthScreen.Trip
                             },
@@ -539,12 +586,16 @@ class MainActivity : ComponentActivity() {
                             },
 
                             // TODO: 之后这里把 request 交给 Zewen 的规划算法，再跳转到 Trip 页面。
+                            isGeneratingItinerary = isGeneratingItinerary,
                             onGenerateItineraryClick = { request ->
+                                isGeneratingItinerary = true
                                 Toast.makeText(
                                     this,
                                     "Generate itinerary for ${request.destination}",
                                     Toast.LENGTH_SHORT,
                                 ).show()
+                                // TODO: Set false after Zewen returns the generated itinerary.
+                                isGeneratingItinerary = false
                                 currentScreen = AuthScreen.Trip
                             },
                         )
@@ -555,6 +606,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
                             places = melbournePopularAddStopPlaces(),
+                            isSearching = isSearchingPlaces,
 
                             // 从 Plan My Trip 进来，返回 Plan My Trip。
                             onBackClick = {
@@ -564,11 +616,14 @@ class MainActivity : ComponentActivity() {
                             // TODO: 之后这里把 query 传给 Alex 的景点搜索接口。
                             // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
                             onSearchConfirmClick = { query ->
+                                isSearchingPlaces = true
                                 Toast.makeText(
                                     this,
                                     "Search: $query",
                                     Toast.LENGTH_SHORT,
                                 ).show()
+                                // TODO: Set false after Alex/Yan returns search results.
+                                isSearchingPlaces = false
                             },
 
                             // TODO: 之后这里把 added place 放进 Zewen 的 itinerary request。
@@ -589,6 +644,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
                             places = melbournePopularAddStopPlaces(),
+                            isSearching = isSearchingPlaces,
 
                             // 从 Edit itinerary 进来，返回 Edit itinerary。
                             onBackClick = {
@@ -598,11 +654,14 @@ class MainActivity : ComponentActivity() {
                             // TODO: 之后这里把 query 传给 Alex 的景点搜索接口。
                             // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
                             onSearchConfirmClick = { query ->
+                                isSearchingPlaces = true
                                 Toast.makeText(
                                     this,
                                     "Search: $query",
                                     Toast.LENGTH_SHORT,
                                 ).show()
+                                // TODO: Set false after Alex/Yan returns search results.
+                                isSearchingPlaces = false
                             },
 
                             // TODO: 之后这里把新增地点交给 Zewen，让后端插入合适位置并重新生成行程。
@@ -645,6 +704,7 @@ class MainActivity : ComponentActivity() {
                         }
                         CompanionsScreen(
                             state = petState,
+                            environment = petEnvironment,
                             onWardrobeSelected = { wardrobeChoice ->
                                 val updatedProfile = petProfile.copy(
                                     wardrobeChoice = wardrobeChoice,
@@ -655,6 +715,7 @@ class MainActivity : ComponentActivity() {
                             tripContext = PetTripContext(
                                 nextStopName = nextStop?.title,
                                 nextStopTime = nextStop?.time,
+                                isDemo = true, // Change only when real itinerary data replaces sample stops.
                             ),
                             onOpenCamera = { currentScreen = AuthScreen.PetCamera },
                             onTabClick = { tab ->
@@ -1080,6 +1141,7 @@ class MainActivity : ComponentActivity() {
                 todayHours = AttractionOpeningHours("Today", "10:00 am - 5:00 pm"),
                 weeklyHours = defaultWeeklyHours,
                 websiteUrl = "https://museumsvictoria.com.au/melbournemuseum/",
+                photoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Melbourne_Museum_exterior.jpg/1280px-Melbourne_Museum_exterior.jpg",
                 imageSymbol = "M",
             )
 
@@ -1262,6 +1324,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+// Location adapter for Alex; defaults are explicitly demonstration data.
+private data class SensorLocation(
+    val latitude: Double,
+    val longitude: Double,
+    val accuracyMeters: Float,
+    val areaName: String,
+    val isSample: Boolean = true,
+)
 
 private enum class AuthScreen {
     Login,

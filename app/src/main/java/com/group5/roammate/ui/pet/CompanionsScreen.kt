@@ -72,18 +72,8 @@ fun CompanionsScreen(
     modifier: Modifier = Modifier,
 ) {
     var treatTick by remember { mutableIntStateOf(0) }
-    var showConversation by remember { androidx.compose.runtime.mutableStateOf(false) }
     var showEnvironment by remember { androidx.compose.runtime.mutableStateOf(false) }
-    var reply by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
-    var replyTick by remember { mutableIntStateOf(0) }
     val motion = rememberPetMotion()
-    if (showConversation) {
-        PetConversationDialog(
-            state = state, tripContext = tripContext, isMoving = motion.state.isMoving,
-            onDismiss = { showConversation = false },
-            onReply = { reply = it; replyTick += 1 },
-        )
-    }
     if (showEnvironment) {
         PetEnvironmentDialog(state, environment, motion) { showEnvironment = false }
     }
@@ -123,8 +113,6 @@ fun CompanionsScreen(
                 onNextOutfit = nextOutfit,
                 tripContext = tripContext,
                 isMoving = motion.state.isMoving,
-                spokenReply = reply,
-                replyTick = replyTick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
@@ -150,13 +138,6 @@ fun CompanionsScreen(
                     contentColor = PetTeal,
                     modifier = Modifier.weight(1f),
                     onClick = { treatTick += 1 },
-                )
-                PetQuickActionButton(
-                    label = "Talk",
-                    containerColor = Color.White,
-                    contentColor = PetTeal,
-                    modifier = Modifier.weight(1f),
-                    onClick = { showConversation = true },
                 )
                 PetQuickActionButton(
                     label = "Photo",

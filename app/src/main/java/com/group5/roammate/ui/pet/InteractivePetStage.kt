@@ -77,8 +77,6 @@ fun InteractivePetStage(
     onNextOutfit: () -> Unit,
     tripContext: PetTripContext = PetTripContext(),
     isMoving: Boolean = false,
-    spokenReply: String? = null,
-    replyTick: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     var queuedReaction by remember { mutableStateOf<PetBehaviorCue?>(null) }
@@ -111,12 +109,6 @@ fun InteractivePetStage(
 
     LaunchedEffect(treatTick) {
         if (treatTick > 0) react(PetInteraction.Treat)
-    }
-
-    LaunchedEffect(replyTick) {
-        spokenReply?.takeIf { it.isNotBlank() }?.let {
-            showCue(PetBehaviorCue(PetAction.Curious, it, 8_000L))
-        }
     }
     LaunchedEffect(behaviorVersion) {
         queuedReaction?.let { cue ->

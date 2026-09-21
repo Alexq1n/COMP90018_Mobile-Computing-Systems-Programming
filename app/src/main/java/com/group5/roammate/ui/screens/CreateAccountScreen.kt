@@ -93,7 +93,6 @@ fun CreateAccountScreen(
                 .padding(horizontal = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
 
             // Back button: returns to the previous auth page.
             Row(modifier = Modifier.fillMaxWidth()) {

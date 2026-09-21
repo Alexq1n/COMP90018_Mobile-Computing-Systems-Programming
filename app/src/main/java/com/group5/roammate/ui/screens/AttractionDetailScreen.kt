@@ -1,6 +1,9 @@
 package com.group5.roammate.ui.screens
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,19 +31,26 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.group5.roammate.ui.theme.RoamMateTheme
+import java.net.URL
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 // colors
 private val RoamMateTeal = Color(0xFF008B8F)
@@ -58,6 +69,7 @@ data class AttractionDetail(
     val todayHours: AttractionOpeningHours?,
     val weeklyHours: List<AttractionOpeningHours>,
     val websiteUrl: String?,
+    val photoUrl: String? = null,
     val imageSymbol: String = "M",
 )
 
@@ -79,6 +91,7 @@ fun AttractionDetailScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.White,
+        contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
             AttractionDetailActionBar(
                 onAddToTripClick = { onAddToTripClick(attraction) },
@@ -126,15 +139,11 @@ private fun AttractionHero(
                 .padding(start = 28.dp, top = 24.dp),
         )
 
-        // TODO: 之后这里替换成 Leyan/Yan 提供的真实景点图片 URL 或本地缓存图片。
-        Text(
-            text = attraction.imageSymbol,
-            modifier = Modifier.align(Alignment.Center),
-            color = RoamMateText.copy(alpha = 0.62f),
-            fontSize = 96.sp,
-            lineHeight = 104.sp,
-            fontWeight = FontWeight.ExtraBold,
-            textAlign = TextAlign.Center,
+        // photo
+        AttractionHeroPhoto(
+            photoUrl = attraction.photoUrl,
+            fallbackText = attraction.imageSymbol,
+            modifier = Modifier.fillMaxSize(),
         )
 
         Surface(
@@ -152,6 +161,91 @@ private fun AttractionHero(
                 lineHeight = 18.sp,
                 fontWeight = FontWeight.ExtraBold,
                 maxLines = 1,
+            )
+        }
+    }
+}
+
+// ---- hero photo (URL image or fallback) ----
+@Composable
+private fun AttractionHeroPhoto(
+    photoUrl: String?,
+    fallbackText: String,
+    modifier: Modifier = Modifier,
+) {
+    var photoBitmap by remember(photoUrl) {
+        mutableStateOf<Bitmap?>(null)
+    }
+    var hasPhotoError by remember(photoUrl) {
+        mutableStateOf(false)
+    }
+
+    // load photo
+    LaunchedEffect(photoUrl) {
+        photoBitmap = null
+        hasPhotoError = false
+
+        if (photoUrl != null) {
+            val loadedBitmap = runCatching {
+                withContext(Dispatchers.IO) {
+                    URL(photoUrl).openStream().use { stream ->
+                        BitmapFactory.decodeStream(stream)
+                    }
+                }
+            }.getOrNull()
+
+            photoBitmap = loadedBitmap
+            hasPhotoError = loadedBitmap == null
+        }
+    }
+
+    val loadedPhoto = photoBitmap
+
+    if (loadedPhoto != null) {
+        Image(
+            bitmap = loadedPhoto.asImageBitmap(),
+            contentDescription = "Attraction photo",
+            modifier = modifier,
+            contentScale = ContentScale.Crop,
+        )
+    } else {
+        AttractionHeroPhotoFallback(
+            fallbackText = fallbackText,
+            isLoading = photoUrl != null && !hasPhotoError,
+            modifier = modifier,
+        )
+    }
+}
+
+// ---- photo fallback ----
+@Composable
+private fun AttractionHeroPhotoFallback(
+    fallbackText: String,
+    isLoading: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.background(RoamMateHeroBackground),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = fallbackText,
+                color = RoamMateText.copy(alpha = 0.62f),
+                fontSize = 88.sp,
+                lineHeight = 96.sp,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center,
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = if (isLoading) "Loading photo" else "Photo unavailable",
+                color = RoamMateMutedText,
+                fontSize = 14.sp,
+                lineHeight = 17.sp,
+                fontWeight = FontWeight.Bold,
             )
         }
     }
@@ -511,6 +605,7 @@ private fun AttractionDetailScreenPreview() {
                     AttractionOpeningHours("Wed", "10:00 am - 5:00 pm"),
                 ),
                 websiteUrl = "https://museumsvictoria.com.au/melbournemuseum/",
+                photoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Melbourne_Museum_exterior.jpg/1280px-Melbourne_Museum_exterior.jpg",
                 imageSymbol = "M",
             ),
             onBackClick = {},

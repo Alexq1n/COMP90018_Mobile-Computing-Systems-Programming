@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,6 +42,7 @@ import com.group5.roammate.ui.theme.RoamMateTheme
 
 // on-screen -> code:
 //   "Trip" + destination + weather pill  -> TripHeader / WeatherPill
+//   trip summary                         -> TripSummaryCard
 //   timeline (time · dot · title · tag)  -> TripTimeline > TripTimelineRow
 //   dot (done/current/upcoming)          -> TimelineDot
 //   "Hidden gem" tag                     -> HiddenStopTag
@@ -73,6 +75,12 @@ data class TripWeatherSummary(
     val condition: String,
 )
 
+// data: short trip summary
+data class TripSummary(
+    val title: String,
+    val description: String,
+)
+
 // stop status (dot style)
 enum class TripStopStatus {
     Done,
@@ -85,6 +93,7 @@ enum class TripStopStatus {
 fun TripScreen(
     destinationTitle: String,
     weatherSummary: TripWeatherSummary,
+    tripSummary: TripSummary? = null,
     stops: List<TripTimelineStop>,
     onStopClick: (TripTimelineStop) -> Unit,
     onEditItineraryClick: () -> Unit,
@@ -95,6 +104,7 @@ fun TripScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.White,
+        contentWindowInsets = WindowInsets(0.dp),
         // bottom: action buttons + tabs
         bottomBar = {
             Column {
@@ -120,7 +130,6 @@ fun TripScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 28.dp),
         ) {
-            Spacer(modifier = Modifier.height(28.dp))
 
             // header (title + weather)
             TripHeader(
@@ -128,7 +137,14 @@ fun TripScreen(
                 weatherSummary = weatherSummary,
             )
 
-            Spacer(modifier = Modifier.height(26.dp))
+            // summary
+            if (tripSummary != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                TripSummaryCard(summary = tripSummary)
+                Spacer(modifier = Modifier.height(22.dp))
+            } else {
+                Spacer(modifier = Modifier.height(26.dp))
+            }
 
             // TODO: 之后这里显示 Zewen 生成的真实行程顺序，以及 Sitao 提供的当前进度。
             // timeline
@@ -200,6 +216,43 @@ private fun WeatherPill(
             fontWeight = FontWeight.ExtraBold,
             maxLines = 1,
         )
+    }
+}
+
+// ---- summary card ("3 days in Melbourne" + day notes) ----
+@Composable
+private fun TripSummaryCard(
+    summary: TripSummary,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = RoamMateLightTeal.copy(alpha = 0.55f),
+        border = BorderStroke(1.dp, RoamMateTeal.copy(alpha = 0.15f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+        ) {
+            // summary title
+            Text(
+                text = summary.title,
+                color = RoamMateTeal,
+                fontSize = 17.sp,
+                lineHeight = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // summary text
+            Text(
+                text = summary.description,
+                color = RoamMateText.copy(alpha = 0.74f),
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
     }
 }
 
@@ -468,6 +521,10 @@ private fun TripScreenPreview() {
             weatherSummary = TripWeatherSummary(
                 temperature = "18°C",
                 condition = "Partly cloudy",
+            ),
+            tripSummary = TripSummary(
+                title = "3 days in Melbourne",
+                description = "Day 1: Melbourne Museum, State Library and ACMI. Day 2: Royal Botanic Gardens and Queen Victoria Market. Day 3: Brighton Beach and Southbank.",
             ),
             stops = listOf(
                 TripTimelineStop("09:00", "Federation Square", TripStopStatus.Done),

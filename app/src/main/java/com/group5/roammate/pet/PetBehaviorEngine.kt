@@ -23,7 +23,6 @@ enum class PetInteraction {
     DoubleTap,
     LongPress,
     Drag,
-    Shake,
     Treat,
 }
 
@@ -53,7 +52,7 @@ object PetBehaviorEngine {
         val action = when (interaction) {
             PetInteraction.TapHead, PetInteraction.LongPress -> PetAction.Petted
             PetInteraction.TapBody -> PetAction.Happy
-            PetInteraction.DoubleTap, PetInteraction.Shake -> PetAction.Surprised
+            PetInteraction.DoubleTap -> PetAction.Surprised
             PetInteraction.Drag -> PetAction.Dragged
             PetInteraction.Treat -> PetAction.Treat
         }
@@ -64,11 +63,64 @@ object PetBehaviorEngine {
             PetInteraction.DoubleTap -> "That woke Buddy up! Just for a moment."
             PetInteraction.LongPress -> "Buddy relaxes under your hand and almost falls asleep."
             PetInteraction.Drag -> "Easy does it—Buddy prefers the scenic route."
-            PetInteraction.Shake -> "Buddy hugs the eucalyptus branch and looks around."
             PetInteraction.Treat -> "Fresh leaves! Buddy takes a calm little nibble."
         }
 
         return PetBehaviorCue(action, message, durationFor(action))
+    }
+
+    /**
+     * A shake asks Buddy for context-aware help. It alternates between personal care and the next
+     * itinerary stop, while severe weather always wins over a generic travel suggestion.
+     */
+    fun weatherAdvice(
+        weather: PetWeatherSnapshot,
+        tripContext: PetTripContext = PetTripContext(),
+        variation: Int = 0,
+    ): PetBehaviorCue {
+        val nextStop = tripContext.nextStopName
+        val timedStop = when {
+            nextStop == null -> null
+            tripContext.nextStopTime.isNullOrBlank() -> nextStop
+            else -> "$nextStop at ${tripContext.nextStopTime}"
+        }
+        val itineraryEnding = timedStop?.let { " For $it, allow a little extra travel time." }
+            ?: " Keep the next part of your trip flexible."
+
+        val message = when {
+            weather.condition == PetWeatherCondition.Storm ->
+                "Thunderstorms are nearby—stay under cover and postpone exposed outdoor stops." +
+                    itineraryEnding
+            weather.condition == PetWeatherCondition.Snow || weather.temperatureC <= 9.0 ->
+                "It is ${weather.temperatureC.toInt()}°C—wear a warm layer and watch for slippery paths." +
+                    itineraryEnding
+            weather.condition == PetWeatherCondition.Rain ->
+                "Rain is around ${weather.locationLabel}—take an umbrella and choose a covered route." +
+                    itineraryEnding
+            weather.windSpeedKmh >= 25.0 ->
+                "Winds are near ${weather.windSpeedKmh.toInt()} km/h—secure loose items and check transport." +
+                    itineraryEnding
+            weather.condition == PetWeatherCondition.Fog ->
+                "Visibility may be low—slow down and leave earlier for your next stop." +
+                    itineraryEnding
+            weather.condition == PetWeatherCondition.Clear && weather.temperatureC >= 25.0 ->
+                "It is warm and sunny—bring water, sunscreen and a shady break." +
+                    itineraryEnding
+            variation % 2 == 0 ->
+                "${weather.label} today—Buddy thinks a light layer and a water bottle are a safe bet."
+            timedStop != null ->
+                "Next up: $timedStop. Conditions look manageable, so this is a good time to get moving."
+            else ->
+                "Conditions look comfortable. Buddy votes for a relaxed walk and a photo stop."
+        }
+
+        val action = when {
+            weather.condition == PetWeatherCondition.Storm -> PetAction.Surprised
+            weather.condition == PetWeatherCondition.Snow || weather.temperatureC <= 9.0 ->
+                PetAction.Curious
+            else -> PetAction.Happy
+        }
+        return PetBehaviorCue(action, message, 4_200L)
     }
 
     fun durationFor(action: PetAction): Long = when (action) {

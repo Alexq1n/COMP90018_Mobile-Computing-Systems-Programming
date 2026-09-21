@@ -8,14 +8,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.group5.roammate.pet.OpenMeteoPetWeatherRepository
 import com.group5.roammate.pet.PetPreferences
 import com.group5.roammate.pet.PetStateEngine
+import com.group5.roammate.pet.PetTripContext
+import com.group5.roammate.pet.PetWeatherSnapshot
 import com.group5.roammate.ui.screens.AdjustChangeTone
 import com.group5.roammate.ui.screens.AdjustItineraryPlan
 import com.group5.roammate.ui.screens.AdjustItineraryScreen
@@ -53,6 +57,9 @@ import com.group5.roammate.ui.screens.TripWeatherSummary
 import com.group5.roammate.ui.pet.CompanionsScreen
 import com.group5.roammate.ui.pet.PetCameraScreen
 import com.group5.roammate.ui.theme.RoamMateTheme
+import kotlinx.coroutines.delay
+
+private const val PET_WEATHER_REFRESH_MILLIS = 15 * 60 * 1_000L
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,10 +76,23 @@ class MainActivity : ComponentActivity() {
                 // This is a temporary page status.
                 var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.Login) }
 
-                // Jie pet feature state: one koala and one locally persisted outfit choice.
+                // Jie pet feature state: one koala, live weather gear and a persisted fashion choice.
                 val petPreferences = remember { PetPreferences(applicationContext) }
                 var petProfile by remember { mutableStateOf(petPreferences.loadProfile()) }
-                val petState = PetStateEngine.buildUiState(petProfile)
+                var petWeather by remember { mutableStateOf(PetWeatherSnapshot.demo()) }
+                val petWeatherRepository = remember { OpenMeteoPetWeatherRepository() }
+                LaunchedEffect(Unit) {
+                    while (true) {
+                        // TODO: Replace the Melbourne coordinates with Yan/Sitao's current location.
+                        petWeatherRepository.fetchCurrent(
+                            latitude = -37.8136,
+                            longitude = 144.9631,
+                            locationLabel = "Melbourne",
+                        ).onSuccess { petWeather = it }
+                        delay(PET_WEATHER_REFRESH_MILLIS)
+                    }
+                }
+                val petState = PetStateEngine.buildUiState(petProfile, petWeather)
 
                 // User name
                 // TODO: Replace with Yuxiang Firebase user profile.
@@ -620,13 +640,22 @@ class MainActivity : ComponentActivity() {
                     }
 
                     AuthScreen.Pet -> {
+                        val nextStop = tripTimelineStops.firstOrNull {
+                            it.status != TripStopStatus.Done
+                        }
                         CompanionsScreen(
                             state = petState,
-                            onOutfitSelected = { outfit ->
-                                val updatedProfile = petProfile.copy(selectedOutfit = outfit)
+                            onWardrobeSelected = { wardrobeChoice ->
+                                val updatedProfile = petProfile.copy(
+                                    wardrobeChoice = wardrobeChoice,
+                                )
                                 petProfile = updatedProfile
                                 petPreferences.saveProfile(updatedProfile)
                             },
+                            tripContext = PetTripContext(
+                                nextStopName = nextStop?.title,
+                                nextStopTime = nextStop?.time,
+                            ),
                             onOpenCamera = { currentScreen = AuthScreen.PetCamera },
                             onTabClick = { tab ->
                                 when (tab) {

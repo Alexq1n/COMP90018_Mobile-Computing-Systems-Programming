@@ -369,18 +369,11 @@ private fun CameraControls(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                GlassButton(
-                    label = if (trackFace) "Track on" else "Free move",
-                    enabled = petVisible,
-                    onClick = onToggleTracking,
-                )
-                Text(
-                    text = "Drag Buddy anytime",
-                    color = Color.White.copy(alpha = 0.74f),
-                    fontSize = 10.sp,
-                )
-            }
+            GlassButton(
+                label = if (trackFace) "Track on" else "Free move",
+                enabled = petVisible,
+                onClick = onToggleTracking,
+            )
 
             Button(
                 onClick = onCapture,

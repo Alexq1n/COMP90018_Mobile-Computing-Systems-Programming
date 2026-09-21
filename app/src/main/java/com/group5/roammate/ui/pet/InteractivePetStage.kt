@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -34,7 +35,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
@@ -49,6 +49,7 @@ import com.group5.roammate.pet.PetAction
 import com.group5.roammate.pet.PetBehaviorCue
 import com.group5.roammate.pet.PetBehaviorEngine
 import com.group5.roammate.pet.PetInteraction
+import com.group5.roammate.pet.PetTripContext
 import com.group5.roammate.pet.PetUiState
 import kotlinx.coroutines.delay
 import kotlin.math.abs
@@ -57,7 +58,6 @@ import kotlin.math.sqrt
 
 private val StageTeal = Color(0xFF008B8F)
 private val StageText = Color(0xFF17212B)
-private val StageMuted = Color(0xFF68777F)
 
 /**
  * The Pet tab's always-live companion. Mood selects one durable loop; direct input briefly
@@ -70,6 +70,7 @@ fun InteractivePetStage(
     treatTick: Int,
     onPreviousOutfit: () -> Unit,
     onNextOutfit: () -> Unit,
+    tripContext: PetTripContext = PetTripContext(),
     modifier: Modifier = Modifier,
 ) {
     var action by remember(state.companionStyle) {
@@ -80,15 +81,21 @@ fun InteractivePetStage(
     var behaviorVersion by remember { mutableIntStateOf(0) }
     var petOffset by remember(state.companionStyle) { mutableStateOf(Offset.Zero) }
     var lastTapAt by remember { mutableLongStateOf(0L) }
+    var shakeCount by remember { mutableIntStateOf(0) }
     val latestPreviousOutfit by rememberUpdatedState(onPreviousOutfit)
     val latestNextOutfit by rememberUpdatedState(onNextOutfit)
 
-    fun react(interaction: PetInteraction) {
-        queuedReaction = PetBehaviorEngine.reaction(interaction)
+    fun showCue(cue: PetBehaviorCue) {
+        queuedReaction = cue
         behaviorVersion += 1
     }
 
-    ShakeDetectorEffect { react(PetInteraction.Shake) }
+    fun react(interaction: PetInteraction) = showCue(PetBehaviorEngine.reaction(interaction))
+
+    ShakeDetectorEffect {
+        shakeCount += 1
+        showCue(PetBehaviorEngine.weatherAdvice(state.weather, tripContext, shakeCount))
+    }
 
     LaunchedEffect(treatTick) {
         if (treatTick > 0) react(PetInteraction.Treat)
@@ -98,6 +105,7 @@ fun InteractivePetStage(
         state.companionStyle,
         state.outfit,
         state.mood,
+        state.statusLine,
         behaviorVersion,
     ) {
         val cue = queuedReaction
@@ -119,16 +127,19 @@ fun InteractivePetStage(
         modifier = modifier
             .fillMaxWidth()
             .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFFDDF5F2), Color(0xFFF8FCFB), Color(0xFFFFF3E7)),
-                ),
+                Color(0xFFEAF7F5),
                 RoundedCornerShape(28.dp),
             ),
     ) {
+        AnimatedWeatherBackdrop(
+            weather = state.weather,
+            modifier = Modifier.fillMaxSize(),
+        )
+
         val avatarSize = minOf(
             286.dp,
             (maxWidth - 32.dp).coerceAtLeast(0.dp),
-            (maxHeight - 104.dp).coerceAtLeast(0.dp),
+            (maxHeight - 118.dp).coerceAtLeast(0.dp),
         )
 
         Surface(
@@ -189,7 +200,6 @@ fun InteractivePetStage(
                                 gestureMode = if (
                                     abs(totalDelta.x) > abs(totalDelta.y) * 1.2f
                                 ) {
-                                    message = "Swipe to try another outfit."
                                     GestureMode.OutfitSwipe
                                 } else {
                                     action = PetAction.Dragged
@@ -244,17 +254,6 @@ fun InteractivePetStage(
                     .offset { IntOffset(petOffset.x.roundToInt(), petOffset.y.roundToInt()) },
             )
         }
-
-        Text(
-            text = "Swipe outfit · tap · hold · drag up/down · shake",
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 18.dp, vertical = 13.dp),
-            color = StageMuted,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-        )
     }
 }
 

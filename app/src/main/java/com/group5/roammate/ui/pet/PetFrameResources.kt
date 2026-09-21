@@ -39,7 +39,7 @@ internal fun PetAction.spriteLoop(): PetSpriteLoop = when (this) {
 }
 
 /**
- * Resource names are deterministic: 4 companions × 5 fitted outfits × 6 loops × 4 frames.
+ * Resource names are deterministic: one companion × 9 fitted outfits × 6 loops × 4 frames.
  * Keeping this function pure makes the entire sprite catalogue easy to validate in unit tests.
  */
 internal fun CompanionStyle.frameResourceName(

@@ -30,13 +30,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.group5.roammate.pet.PetOutfit
 import com.group5.roammate.pet.PetProfile
 import com.group5.roammate.pet.PetStateEngine
+import com.group5.roammate.pet.PetTripContext
 import com.group5.roammate.pet.PetUiState
+import com.group5.roammate.pet.PetWardrobeChoice
 import com.group5.roammate.ui.screens.RoamMateBottomNavigation
 import com.group5.roammate.ui.screens.RoamMateMainTab
 import com.group5.roammate.ui.theme.RoamMateTheme
@@ -56,17 +58,18 @@ private val PetBorder = Color(0xFFDDE7E8)
 @Composable
 fun CompanionsScreen(
     state: PetUiState,
-    onOutfitSelected: (PetOutfit) -> Unit,
+    onWardrobeSelected: (PetWardrobeChoice) -> Unit,
     onOpenCamera: () -> Unit,
     onTabClick: (RoamMateMainTab) -> Unit,
+    tripContext: PetTripContext = PetTripContext(),
     modifier: Modifier = Modifier,
 ) {
     var treatTick by remember { mutableIntStateOf(0) }
     val previousOutfit = {
-        onOutfitSelected(PetStateEngine.outfitAfter(state.outfit, -1))
+        onWardrobeSelected(PetStateEngine.wardrobeAfter(state.wardrobeChoice, -1))
     }
     val nextOutfit = {
-        onOutfitSelected(PetStateEngine.outfitAfter(state.outfit, 1))
+        onWardrobeSelected(PetStateEngine.wardrobeAfter(state.wardrobeChoice, 1))
     }
 
     Scaffold(
@@ -87,7 +90,7 @@ fun CompanionsScreen(
         ) {
             Spacer(Modifier.height(12.dp))
 
-            PetHeader(outfit = state.outfit)
+            PetHeader(state = state)
 
             Spacer(Modifier.height(12.dp))
 
@@ -96,6 +99,7 @@ fun CompanionsScreen(
                 treatTick = treatTick,
                 onPreviousOutfit = previousOutfit,
                 onNextOutfit = nextOutfit,
+                tripContext = tripContext,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
@@ -104,7 +108,7 @@ fun CompanionsScreen(
             Spacer(Modifier.height(10.dp))
 
             OutfitSelector(
-                selectedOutfit = state.outfit,
+                state = state,
                 onPrevious = previousOutfit,
                 onNext = nextOutfit,
             )
@@ -144,13 +148,17 @@ fun CompanionsScreen(
 }
 
 @Composable
-private fun PetHeader(outfit: PetOutfit) {
+private fun PetHeader(state: PetUiState) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 8.dp),
+        ) {
             Text(
                 text = "Buddy",
                 color = PetTeal,
@@ -159,10 +167,12 @@ private fun PetHeader(outfit: PetOutfit) {
                 fontWeight = FontWeight.ExtraBold,
             )
             Text(
-                text = "Your pocket koala · ${outfit.label}",
+                text = "Your pocket weather buddy",
                 color = PetMuted,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
 
@@ -171,7 +181,11 @@ private fun PetHeader(outfit: PetOutfit) {
             color = PetLightTeal,
         ) {
             Text(
-                text = "KOALA",
+                text = if (state.weather.source == "Demo fallback") {
+                    "PREVIEW · ${state.weather.temperatureC.toInt()}°"
+                } else {
+                    "${state.weather.label.uppercase()} · ${state.weather.temperatureC.toInt()}°"
+                },
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 color = PetTeal,
                 fontSize = 11.sp,
@@ -183,7 +197,7 @@ private fun PetHeader(outfit: PetOutfit) {
 
 @Composable
 private fun OutfitSelector(
-    selectedOutfit: PetOutfit,
+    state: PetUiState,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
 ) {
@@ -207,19 +221,23 @@ private fun OutfitSelector(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    text = selectedOutfit.label,
+                    text = if (state.wardrobeChoice == PetWardrobeChoice.Weather) {
+                        "Weather · ${state.outfit.label}"
+                    } else {
+                        state.wardrobeChoice.label
+                    },
                     color = PetText,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.ExtraBold,
                 )
                 Spacer(Modifier.height(5.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    PetOutfit.entries.forEach { outfit ->
+                    PetWardrobeChoice.entries.forEach { choice ->
                         Box(
                             modifier = Modifier
-                                .size(if (outfit == selectedOutfit) 7.dp else 5.dp)
+                                .size(if (choice == state.wardrobeChoice) 7.dp else 5.dp)
                                 .background(
-                                    color = if (outfit == selectedOutfit) PetTeal else PetBorder,
+                                    color = if (choice == state.wardrobeChoice) PetTeal else PetBorder,
                                     shape = CircleShape,
                                 ),
                         )
@@ -290,7 +308,7 @@ private fun CompanionsScreenPreview() {
     RoamMateTheme {
         CompanionsScreen(
             state = PetStateEngine.buildUiState(profile),
-            onOutfitSelected = {},
+            onWardrobeSelected = {},
             onOpenCamera = {},
             onTabClick = {},
         )

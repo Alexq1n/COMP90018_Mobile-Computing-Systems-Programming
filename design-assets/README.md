@@ -1,48 +1,73 @@
-# RoamMate pixel companion artwork
+# RoamMate pixel koala artwork
 
-The production companion is a compact desktop-pet-style pixel koala designed for RoamMate's
-teal/coral UI. The Android app currently exposes its five fitted outfit sets only; the other source
-characters remain in the asset catalogue as unused prototypes.
+RoamMate ships one production companion: Buddy, a desktop-pet-style pixel koala designed for the
+app's teal/coral visual system. Every visible garment is baked into every animation frame so it
+stays fitted while Buddy walks, curls up, bounces, and reacts to touch.
 
-Each sheet has four frames per row:
+## Outfit catalogue
 
-1. Idle — breathing and tail/ear motion, with a natural blink in frames 3–4
-2. Walk — animal-specific paws, waddle, slow koala steps, or kangaroo hops
-3. Sleep — a continuous breathing loop
-4. Happy — a continuous bounce/wag loop
-5. Sad — lowered posture with slow breathing
-6. Petted — eyes-close, ear-squash and tail/flipper reaction
+The nine production outfits are split into two groups:
 
-The Android build uses 480 lossless transparent WebP cells in
-`app/src/main/res/drawable-nodpi/`, named
-`pet_pixel_<animal>_<outfit>_<loop>_<frame>.webp`. Each cell is 128 × 128 and is rendered with
-nearest-neighbour sampling to keep the pixels crisp.
+- **Automatic weather gear:** `everyday`, `sunshine`, `raincoat`, `windbreaker`, and `winter`.
+  Weather selects one of these while the wardrobe is in its default **Weather** mode.
+- **Manual fashion:** `explorer`, `streetwear`, `festival`, and `pajamas`. Swiping or using the
+  wardrobe controls selects these looks without changing Buddy's species or animation behaviour.
 
-## Behaviour model
+The weather background and weather-to-outfit rules are rendered in Compose. The artwork in this
+folder supplies only Buddy and the fitted clothes, which keeps the same sprites reusable across
+sunny, cloudy, rainy, stormy, foggy, and snowy scenes.
 
-`PetBehaviorEngine.restingAction()` selects one durable state from the current pet mood: Ready uses
-Idle, Excited uses Happy, Cozy uses Sleep, and Tired uses Sad. The pet does not randomly jump among
-those states. `PetAvatar` loops the four authored frames inside that state indefinitely. A real
-interaction (tap, hold, drag, shake or treat) temporarily selects another loop and then returns to
-the mood's durable state.
+## Animation contract
 
-Gear is baked into every animation frame rather than stretched over the character. The koala has
-pose-aware everyday, sunshine, raincoat, windbreaker and winter artwork for walking, curling up,
-bouncing and receiving a pat.
+Every outfit sheet is exactly **4 columns × 6 rows** (24 cells). Each cell is 128 × 128 pixels;
+the normalized sheet is therefore 512 × 768 pixels. Rows must stay in this order:
+
+1. `idle` — breathing and ear motion, including a natural blink in frames 3–4
+2. `walk` — a seamless in-place koala walk
+3. `sleep` — a continuous curled-up breathing loop
+4. `happy` — a continuous bounce loop
+5. `sad` — lowered posture with slow breathing
+6. `petted` — eyes-close and ear-squash reaction
+
+All six rows contain exactly four frames. The Android build therefore has
+**9 outfits × 6 loops × 4 frames = 216** production koala cells. Files use the deterministic name
+`pet_pixel_koala_<outfit>_<loop>_<frame>.webp`, where `<frame>` is `0` through `3`. They are stored
+as lossless transparent WebP in `app/src/main/res/drawable-nodpi/` and rendered with
+nearest-neighbour sampling so the pixels remain crisp.
+
+Older corgi, penguin, and kangaroo sheets are retained as design prototypes only; the current app
+does not expose them as selectable companions.
+
+## Normalizing and slicing a sheet
+
+Run `slice_pet_sheet.py` from the repository root after creating or editing a 4 × 6 source sheet.
+For example:
+
+```bash
+python design-assets/slice_pet_sheet.py path/to/koala_streetwear_source.png streetwear \
+  --sheet-output design-assets/pet-pixel-sheets/koala_streetwear_sheet.webp \
+  --frames-output app/src/main/res/drawable-nodpi
+```
+
+The script converts the source to RGBA, normalizes it to 512 × 768 with nearest-neighbour
+resampling, stores the lossless catalogue sheet, and exports all 24 Android frames. The lowercase
+outfit argument must match the corresponding `PetOutfit` enum name. After slicing, run the unit
+tests; `PetFrameResourcesTest` verifies the complete deterministic name matrix without requiring
+Android resource lookup.
 
 ## Base generation prompt
 
 > Create one production-ready transparent PNG sprite sheet for an Android virtual travel pet in
 > crisp hand-crafted desktop-pet pixel art. Use exactly 4 equal columns and 6 equal rows with no
-> grid, text, border, scenery, floor or shadow. Keep the same character, anchor and scale in every
-> cell. Rows are seamless four-frame loops: idle breathing with a blink, in-place walk, sleeping
+> grid, text, border, scenery, floor or shadow. Keep the same koala, anchor and scale in every cell.
+> Rows are seamless four-frame loops: idle breathing with a blink, in-place walk, sleeping
 > breathing, happy bounce, sad breathing, and happily petted. Use a dark navy pixel outline and
 > restrained RoamMate teal #009C9F and coral #FF6F61 accents.
 
 ## Outfit edit prompt
 
-> Edit the supplied 4 × 6 pixel-art sheet while preserving identity, species anatomy, all 24
-> poses, expressions, anchor, scale and transparent canvas. Add the specified garment to
-> every frame. Make it genuinely fitted and pose-aware for idle, walking, curled sleep, happy, sad
-> and petted rows; fabric must bend and compress with the body, never cover the eyes, float, or look
-> pasted on. Keep crisp hard pixel edges and output a transparent PNG only.
+> Edit the supplied 4 × 6 pixel-art sheet while preserving identity, koala anatomy, all 24 poses,
+> expressions, anchor, scale and transparent canvas. Add the specified garment to every frame.
+> Make it genuinely fitted and pose-aware for idle, walking, curled sleep, happy, sad and petted
+> rows; fabric must bend and compress with the body, never cover the eyes, float, or look pasted on.
+> Keep crisp hard pixel edges and output a transparent PNG only.

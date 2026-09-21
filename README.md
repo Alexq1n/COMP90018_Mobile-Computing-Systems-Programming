@@ -244,15 +244,21 @@ app/src/main/java/com/group5/roammate/
 
 ### Pet / Virtual Travel Companion
 
-- One koala Buddy with five fitted outfits: everyday, sunshine, raincoat, windbreaker and winter.
+- One pixel-art koala Buddy with five automatic weather outfits and four manual fashion outfits.
 - The entire Pet page fits one screen with no vertical scrolling.
-- Swipe left/right on Buddy, use the wardrobe arrows, or tap Outfit to change clothes.
+- **Weather** is the default wardrobe choice. It resolves to everyday, sunshine, raincoat,
+  windbreaker or winter gear from current temperature, rain/snow/storm and wind.
+- Swipe left/right on Buddy, use the wardrobe arrows, or tap Outfit to cycle Weather, Explorer,
+  Streetwear, Festival and Star pajamas.
+- A Compose-drawn animated scene behind Buddy covers clear, cloudy, fog, rain, storm and snow.
 - Desktop-pet pixel art continuously loops breathing, blinking and subtle body movement.
-- Head/body taps, holds, drags, treats and accelerometer shakes temporarily interrupt the current
-  idle loop and then return to it.
+- Head/body taps, holds, drags and treats temporarily interrupt the current idle loop and then
+  return to it. Shaking a physical phone displays weather care or next-stop itinerary advice.
 - All interaction happens directly on the Pet page; there is no separate Play with Buddy screen.
-- The selected outfit persists locally with `SharedPreferences`.
-- The pet experience has no weather dependency or weather network request.
+- The wardrobe choice persists locally with `SharedPreferences`; automatic weather gear itself is
+  always re-resolved from the latest weather snapshot.
+- The current MVP refreshes key-free Open-Meteo weather for Melbourne every 15 minutes. The
+  `PetWeatherSnapshot` seam is ready for Yan/Sitao's shared location/weather provider.
 
 ### Pet Camera
 
@@ -780,7 +786,7 @@ Jie/Xiajie: pet preference (implemented by `PetProfile`)
 
 ```kotlin
 data class PetProfile(
-    val selectedOutfit: PetOutfit,
+    val wardrobeChoice: PetWardrobeChoice,
 )
 ```
 
@@ -788,9 +794,24 @@ Example:
 
 ```json
 {
-  "selectedOutfit": "Raincoat"
+  "wardrobeChoice": "Weather"
 }
 ```
+
+Yan/Sitao -> Jie/Xiajie: current pet weather input
+
+```kotlin
+data class PetWeatherSnapshot(
+    val condition: PetWeatherCondition,
+    val label: String,
+    val temperatureC: Double,
+    val windSpeedKmh: Double,
+    val locationLabel: String,
+    val source: String,
+)
+```
+
+`condition` supports `Clear`, `Cloudy`, `Fog`, `Rain`, `Storm`, `Snow`, and `Unknown`.
 
 ### Adjust Itinerary
 
@@ -1048,10 +1069,13 @@ Optional local cache:
 - Temporary mock data is clearly marked with `TODO`.
 - Once backend is ready, replace mock lists and state in `MainActivity.kt`.
 - The UI already has callbacks for most buttons, so backend integration should mostly happen in callback blocks.
-- Pet is self-contained. `PetProfile.selectedOutfit` is the only persisted pet preference.
+- `PetProfile.wardrobeChoice` is the only persisted pet preference. Weather-resolved clothing is
+  derived state and is never written as a manual choice.
 
 ## Pet Integration Contract
 
-The pet feature is intentionally independent from weather and sensor providers. If Firebase later
-stores the wardrobe choice, mirror the `PetProfile.selectedOutfit` enum name. The UI, animation and
-camera all consume the same `PetUiState` built by `PetStateEngine`.
+The pet feature accepts weather through `PetWeatherSnapshot`; replace the temporary Open-Meteo
+repository with the team's provider without changing the UI. If Firebase later stores the wardrobe
+choice, mirror the `PetProfile.wardrobeChoice` enum name. The Pet page, Home card, animation and
+camera all consume the same resolved `PetUiState`. Shake input uses the phone accelerometer locally
+and combines that weather snapshot with the next incomplete itinerary stop.

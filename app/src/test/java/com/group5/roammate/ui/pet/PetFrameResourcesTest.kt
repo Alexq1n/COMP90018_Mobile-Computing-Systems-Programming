@@ -8,30 +8,56 @@ import org.junit.Test
 
 class PetFrameResourcesTest {
     @Test
-    fun idleBlinkLivesInsideTheIdleFrameSequence() {
-        assertEquals(
-            "pet_pixel_koala_raincoat_idle_2",
-            CompanionStyle.Koala.frameResourceName(
-                PetOutfit.Raincoat,
-                PetAction.Idle,
-                2,
-            ),
+    fun everyOutfitLoopAndFrameHasADeterministicResourceName() {
+        val expectedOutfitKeys = listOf(
+            "everyday",
+            "sunshine",
+            "raincoat",
+            "windbreaker",
+            "winter",
+            "explorer",
+            "streetwear",
+            "festival",
+            "pajamas",
         )
-        assertEquals(PetSpriteLoop.Idle, PetAction.Blink.spriteLoop())
+        val representativeActions = listOf(
+            PetAction.Idle to "idle",
+            PetAction.Walk to "walk",
+            PetAction.Sleep to "sleep",
+            PetAction.Happy to "happy",
+            PetAction.Sad to "sad",
+            PetAction.Petted to "petted",
+        )
+
+        assertEquals(expectedOutfitKeys, PetOutfit.values().map { it.name.lowercase() })
+
+        val actualNames = buildList {
+            PetOutfit.values().forEach { outfit ->
+                representativeActions.forEach { (action, loopKey) ->
+                    repeat(4) { frame ->
+                        val expected =
+                            "pet_pixel_koala_${outfit.name.lowercase()}_${loopKey}_$frame"
+                        val actual = CompanionStyle.Koala.frameResourceName(outfit, action, frame)
+                        assertEquals(expected, actual)
+                        add(actual)
+                    }
+                }
+            }
+        }
+
+        assertEquals(9 * 6 * 4, actualNames.size)
+        assertEquals(actualNames.size, actualNames.toSet().size)
     }
 
     @Test
-    fun reactionsSelectTheirAuthoredContinuousLoops() {
-        assertEquals(PetSpriteLoop.Happy, PetAction.Treat.spriteLoop())
-        assertEquals(PetSpriteLoop.Walk, PetAction.Dragged.spriteLoop())
-        assertEquals(PetSpriteLoop.Petted, PetAction.Petted.spriteLoop())
+    fun framePhaseWrapsWithinTheFourAuthoredFrames() {
         assertEquals(
-            "pet_pixel_koala_winter_happy_3",
-            CompanionStyle.Koala.frameResourceName(
-                PetOutfit.Winter,
-                PetAction.Surprised,
-                -1,
-            ),
+            "pet_pixel_koala_raincoat_idle_3",
+            CompanionStyle.Koala.frameResourceName(PetOutfit.Raincoat, PetAction.Blink, -1),
+        )
+        assertEquals(
+            "pet_pixel_koala_winter_happy_0",
+            CompanionStyle.Koala.frameResourceName(PetOutfit.Winter, PetAction.Surprised, 4),
         )
     }
 }

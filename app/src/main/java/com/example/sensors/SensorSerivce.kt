@@ -32,7 +32,7 @@ class SensorService : Service() {
         return locationSensor.getCurrentLocation()
     }
 
-    fun getStepsLastHour(): Float? {
+    fun getStepsLastHour(): Int? {
         return stepCounter.getStepsLastHour()
     }
 

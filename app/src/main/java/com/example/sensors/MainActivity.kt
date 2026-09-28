@@ -412,7 +412,7 @@ class MainActivity : ComponentActivity() {
                         sensorService?.getStepsLastHour()
 
                     Log.d(
-                        "STEP_TEST",
+                        "STEP_SENSOR",
                         "Steps last hour = $steps, type = ${steps?.let { it::class.simpleName }}"
                     )
 

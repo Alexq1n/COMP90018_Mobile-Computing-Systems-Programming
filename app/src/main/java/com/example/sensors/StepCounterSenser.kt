@@ -119,16 +119,13 @@ class StepCounterSensor(
         val timeDifferenceHours =
             (last.timestamp - first.timestamp) / 3_600_000f
 
-        if (timeDifferenceHours <= 0f) {
-            return null
-        }
 
         val stepsPerHour =
             stepDifference / timeDifferenceHours
 
         Log.d(
             "STEP_SENSOR",
-            "Step difference=$stepDifference, time difference=$timeDifferenceHours hours, steps/hour=$stepsPerHour"
+            "steps/hour=$stepsPerHour"
         )
 
         return stepsPerHour.toInt()
@@ -144,3 +141,6 @@ class StepCounterSensor(
     ) {
     }
 }
+
+
+

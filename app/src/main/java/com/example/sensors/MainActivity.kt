@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
 
     private var showCamera by mutableStateOf(false)
 
-    private val placeRepository = MockPOI()
+    private lateinit var placeRepository: MockPOI
 
 
     // Request for location permission ----------------
@@ -119,7 +119,7 @@ class MainActivity : ComponentActivity() {
 
         locationSensor = LocationSensor(this)
 
-
+        placeRepository = MockPOI(this)
         val places = placeRepository.getPlaces()
         setContent {
             if (showCamera) {

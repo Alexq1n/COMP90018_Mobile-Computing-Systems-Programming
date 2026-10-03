@@ -1,9 +1,28 @@
 package com.example.sensors
 
+data class Coordinates(
+    val latitude: Double,
+    val longitude: Double
+)
+
+data class OperatingHours(
+    val openTime: String,
+    val closeTime: String
+)
+
 data class Place(
+    val id: String,
     val name: String,
+    val baseScore: Double,
     val category: String,
-    val suburb: String
+    val environment: String,
+    val coordinates: Coordinates,
+    val recommendedVisitDuration: Int,
+    val operatingHours: OperatingHours,
+    val isFiller: Boolean,
+    val city: String,
+    val address: String,
+    val description: String?
 )
 
 data class SearchResult(
@@ -33,11 +52,11 @@ fun searchPlaces(
 
         val name = normalizeText(place.name)
         val category = normalizeText(place.category)
-        val suburb = normalizeText(place.suburb)
+        val city = normalizeText(place.city)
 
         val nameTokens = tokenize(name)
         val categoryTokens = tokenize(category)
-        val suburbTokens = tokenize(suburb)
+        val cityTokens = tokenize(city)
 
         var score = 0.0
 
@@ -126,19 +145,19 @@ fun searchPlaces(
             // Suburb Matching
             // ------------------------------------------
 
-            var bestSuburbScore = 0.0
+            var bestCityScore  = 0.0
 
-            for (suburbToken in suburbTokens) {
+            for (cityToken in cityTokens) {
 
                 val currentScore = when {
 
                     // Exact suburb token match
-                    suburbToken == queryToken -> {
+                    cityToken == queryToken -> {
                         50.0
                     }
 
                     // Partial suburb token match
-                    suburbToken.contains(queryToken) -> {
+                    cityToken.contains(queryToken) -> {
                         30.0
                     }
 
@@ -147,13 +166,13 @@ fun searchPlaces(
                     }
                 }
 
-                bestSuburbScore = maxOf(
-                    bestSuburbScore,
+                bestCityScore  = maxOf(
+                    bestCityScore ,
                     currentScore
                 )
             }
 
-            score += bestSuburbScore
+            score += bestCityScore
         }
 
         if (score > 0) {

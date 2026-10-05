@@ -45,7 +45,7 @@ class TripPlannerEngine(
         return if (includeFillers) {
             val fillerService = FillerService(poiRepository, userProfile)
             val enrichedDays = baseItinerary.days.map { dayItinerary ->
-                fillerService.injectFillers(dayItinerary, destination, weatherStatus)
+                fillerService.injectFillers(dayItinerary, destination, weatherStatus, dailyEndTime)
             }
 
             baseItinerary.copy(days = enrichedDays)

@@ -109,4 +109,18 @@ object TravelCostService : ITravelCostService {
 
         return expectedValue / travelTimeMinutes
     }
+
+    /**
+     * Normalize travel time according to business rules:
+     * - If travel time < 30 min, use 30 min
+     * - Otherwise, round up to nearest 30 min multiple
+     * Examples: 5->30, 15->30, 40->60, 61->90
+     */
+    fun normalizeTravelTime(travelTimeMinutes: Int): Int {
+        if (travelTimeMinutes < 30) {
+            return 30
+        }
+        // Round up to nearest 30-minute interval
+        return ((travelTimeMinutes + 29) / 30) * 30
+    }
 }

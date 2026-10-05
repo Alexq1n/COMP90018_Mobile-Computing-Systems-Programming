@@ -113,6 +113,7 @@ class RoutingEngine(
             startLocation = startLocation,
             currentTime = startTimeObj,
             availableMinutes = availableMinutes,
+            endTime = endTimeObj,
             rolloverQueue = rolloverQueue
         )
 
@@ -141,12 +142,14 @@ class RoutingEngine(
 
     /**
      * Select optimal route using greedy heuristic with preference-adjusted costs
+     * Special handling for restaurants: only one per day, scheduled between 11:00-14:00
      */
     private fun selectOptimalRoute(
         poisWithEV: List<Pair<POI, Double>>,
         startLocation: Coordinates,
         currentTime: LocalTime,
         availableMinutes: Int,
+        endTime: LocalTime,
         rolloverQueue: MutableList<POI>
     ): List<ItineraryPOI> {
         val selected = mutableListOf<ItineraryPOI>()
@@ -156,11 +159,38 @@ class RoutingEngine(
         var currentTimeObj = currentTime
         var remainingTime = availableMinutes
 
-        while (remaining.isNotEmpty() && remainingTime > 0) {
+        val maxPOIsPerDay = 5  // NEW: Limit to 5 POIs per day to create more gaps
+        var restaurantScheduled = false  // Track if restaurant already scheduled
+
+        while (remaining.isNotEmpty() && remainingTime > 0 && selected.size < maxPOIsPerDay && currentTimeObj < endTime) {
+            // Check if we should prioritize scheduling a restaurant (11:00-14:00 lunch window)
+            val lunchStartTime = LocalTime.of(11, 0)
+            val lunchEndTime = LocalTime.of(14, 0)
+            val shouldScheduleRestaurant = !restaurantScheduled &&
+                                          currentTimeObj >= lunchStartTime &&
+                                          currentTimeObj < lunchEndTime
+
+            // If in lunch window and no restaurant scheduled yet, try to prioritize restaurant
+            val eligiblePOIs = if (shouldScheduleRestaurant) {
+                // First try to get restaurants only
+                val restaurants = remaining.filter { (poi, _) -> poi.category == POICategory.RESTAURANT }
+                if (restaurants.isNotEmpty()) {
+                    restaurants  // Prioritize restaurants during lunch time
+                } else {
+                    // No restaurants available, fall back to normal POIs
+                    remaining.filter { (poi, _) -> poi.category != POICategory.RESTAURANT }
+                }
+            } else {
+                // Outside lunch window or restaurant already scheduled: exclude restaurants
+                remaining.filter { (poi, _) -> poi.category != POICategory.RESTAURANT }
+            }
+
+            if (eligiblePOIs.isEmpty()) break
+
             // Calculate travel time and EV/Cost ratio for each remaining POI
-            val candidates = remaining.map { (poi, ev) ->
+            val candidates = eligiblePOIs.map { (poi, ev) ->
                 // Try to use real duration data with preference adjustment first
-                val travelTime = if (currentLocationPoiId != null && travelDurationMatrix != null) {
+                val rawTravelTime = if (currentLocationPoiId != null && travelDurationMatrix != null) {
                     TravelCostService.calculateAdjustedTravelTime(
                         fromPoiId = currentLocationPoiId!!,
                         toPoiId = poi.id,
@@ -178,6 +208,9 @@ class RoutingEngine(
                     transportMode = userProfile.transportMode
                 )
 
+                // Apply normalization: <30min -> 30min, else round up to 30min multiple
+                val travelTime = TravelCostService.normalizeTravelTime(rawTravelTime)
+
                 val totalTime = travelTime + poi.recommendedVisitDuration
                 val ratio = if (travelTime > 0) ev / travelTime else ev * 100
 
@@ -186,7 +219,15 @@ class RoutingEngine(
                 // Only consider POIs we can reach and visit
                 val (travelTime, _) = times
                 val totalRequired = travelTime + poi.recommendedVisitDuration
-                totalRequired <= remainingTime
+
+                // Relative time check
+                val passesRelativeCheck = totalRequired <= remainingTime
+
+                // Absolute time check: ensure POI won't exceed daily end time
+                val projectedEndTime = currentTimeObj.plusMinutes(totalRequired.toLong())
+                val passesAbsoluteCheck = projectedEndTime <= endTime
+
+                passesRelativeCheck && passesAbsoluteCheck
             }
 
             if (candidates.isEmpty()) break
@@ -201,6 +242,12 @@ class RoutingEngine(
             currentTimeObj = currentTimeObj.plusMinutes(bestPOI.recommendedVisitDuration.toLong())
             val endTimeStr = currentTimeObj.format(timeFormatter)
 
+            // Safety check: verify we haven't exceeded daily end time
+            if (currentTimeObj > endTime) {
+                println("  [RoutingEngine] POI ${bestPOI.name} would end at $endTimeStr, exceeds daily end time ${endTime.format(timeFormatter)}")
+                break
+            }
+
             selected.add(
                 ItineraryPOI(
                     poi = bestPOI,
@@ -212,7 +259,12 @@ class RoutingEngine(
                 )
             )
 
+            println("  [RoutingEngine] Selected POI: ${bestPOI.name}, ${startTimeStr}-${endTimeStr}, travel: ${travelTime}min")
+
             // Update state
+            if (bestPOI.category == POICategory.RESTAURANT) {
+                restaurantScheduled = true
+            }
             currentLocation = bestPOI.coordinates
             currentLocationPoiId = bestPOI.id
             remainingTime -= (travelTime + bestPOI.recommendedVisitDuration)
@@ -220,10 +272,12 @@ class RoutingEngine(
         }
 
         // Add high-value unselected POIs to rollover queue
-        val highValueThreshold = 8.0
+        val highValueThreshold = 9.0  // Increased from 8.0 to 9.0 - only truly exceptional POIs rollover
         remaining
             .filter { it.first.baseScore >= highValueThreshold }
             .forEach { rolloverQueue.add(it.first) }
+
+        println("  [RoutingEngine] Rollover: ${rolloverQueue.size} POIs (threshold >= $highValueThreshold)")
 
         return selected
     }

@@ -2,14 +2,22 @@ package com.roammate.logic.utils
 
 import com.roammate.logic.interfaces.IPoiRepository
 import com.roammate.logic.models.*
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import java.io.File
 import kotlin.math.*
 
 /**
  * Mock in-memory POI repository for testing
+ * Can load from JSON file or use hardcoded data
  */
-class MockPoiRepository : IPoiRepository {
+class MockPoiRepository(private val useJsonData: Boolean = false) : IPoiRepository {
 
-    private val allPOIs: List<POI> = createMelbournePOIs()
+    private val allPOIs: List<POI> = if (useJsonData) {
+        loadPOIsFromJson()
+    } else {
+        createMelbournePOIs()
+    }
 
     override fun getPOIsByCity(city: String): List<POI> {
         return allPOIs.filter { it.city.equals(city, ignoreCase = true) && !it.isFiller }
@@ -44,7 +52,158 @@ class MockPoiRepository : IPoiRepository {
     }
 
     /**
-     * Create mock Melbourne POIs dataset
+     * Load POIs from JSON file (docs/pois.json or test resources)
+     */
+    private fun loadPOIsFromJson(): List<POI> {
+        return try {
+            // Try to load from test resources first (for unit tests)
+            val jsonString = try {
+                javaClass.classLoader?.getResourceAsStream("pois.json")?.bufferedReader()?.use { it.readText() }
+            } catch (e: Exception) {
+                null
+            } ?: run {
+                // Fallback to file system (for runtime)
+                val jsonFile = File("docs/pois.json")
+                if (!jsonFile.exists()) {
+                    println("Warning: docs/pois.json not found, using hardcoded data")
+                    return createMelbournePOIs()
+                }
+                jsonFile.readText()
+            }
+
+            val gson = Gson()
+
+            // Parse JSON array into JsonPOI objects
+            val listType = object : TypeToken<List<JsonPOI>>() {}.type
+            val jsonPois: List<JsonPOI> = gson.fromJson(jsonString, listType)
+
+            // Convert to POI objects with data validation
+            jsonPois.mapNotNull { json ->
+                try {
+                    POI(
+                        id = json.id,
+                        name = json.name,
+                        baseScore = json.baseScore,
+                        category = mapCategory(json.category),
+                        budgetLevel = BudgetLevel.MEDIUM, // Default as JSON doesn't have this
+                        environment = mapEnvironment(json.environment),
+                        coordinates = Coordinates(json.coordinates.latitude, json.coordinates.longitude),
+                        recommendedVisitDuration = json.recommendedVisitDuration,
+                        operatingHours = sanitizeOperatingHours(json.operatingHours),
+                        isFiller = json.isFiller,
+                        city = json.city,
+                        description = json.description
+                    )
+                } catch (e: Exception) {
+                    println("Warning: Skipping invalid POI ${json.id} (${json.name}): ${e.message}")
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            println("Error loading POIs from JSON: ${e.message}")
+            createMelbournePOIs()
+        }
+    }
+
+    /**
+     * Map JSON category string to POICategory enum
+     */
+    private fun mapCategory(category: String): POICategory {
+        return when (category.uppercase()) {
+            "MUSEUM" -> POICategory.MUSEUM
+            "PARK" -> POICategory.PARK
+            "RESTAURANT" -> POICategory.RESTAURANT
+            "SHOPPING" -> POICategory.SHOPPING
+            "ENTERTAINMENT" -> POICategory.ENTERTAINMENT
+            "HISTORICAL" -> POICategory.HISTORICAL
+            "NATURE" -> POICategory.NATURE
+            "BEACH" -> POICategory.BEACH
+            "SPORTS" -> POICategory.SPORTS
+            "CULTURAL" -> POICategory.CULTURAL
+            "NIGHTLIFE" -> POICategory.NIGHTLIFE
+            "CAFE" -> POICategory.CAFE
+            "LANDMARK" -> POICategory.LANDMARK
+            "SCENIC_SPOT" -> POICategory.SCENIC_SPOT
+            else -> POICategory.LANDMARK // Default fallback
+        }
+    }
+
+    /**
+     * Map JSON environment string to Environment enum
+     */
+    private fun mapEnvironment(environment: String): Environment {
+        return when (environment.uppercase()) {
+            "INDOOR" -> Environment.INDOOR
+            "OUTDOOR" -> Environment.OUTDOOR
+            "MIXED" -> Environment.MIXED
+            else -> Environment.MIXED // Default fallback
+        }
+    }
+
+    /**
+     * Sanitize operating hours to ensure valid time format
+     * Converts 24:00+ to 23:59, handles invalid times
+     */
+    private fun sanitizeOperatingHours(hours: JsonOperatingHours): OperatingHours {
+        fun sanitizeTime(time: String): String {
+            val parts = time.split(":")
+            if (parts.size != 2) return "00:00"
+
+            val hour = parts[0].toIntOrNull() ?: 0
+            val minute = parts[1].toIntOrNull() ?: 0
+
+            // Clamp hour to 0-23 range (convert 24:00+ to 23:59)
+            val validHour = when {
+                hour >= 24 -> 23
+                hour < 0 -> 0
+                else -> hour
+            }
+
+            val validMinute = when {
+                minute >= 60 -> 59
+                minute < 0 -> 0
+                else -> minute
+            }
+
+            return String.format("%02d:%02d", validHour, validMinute)
+        }
+
+        return OperatingHours(
+            openTime = sanitizeTime(hours.openTime),
+            closeTime = sanitizeTime(hours.closeTime)
+        )
+    }
+
+    /**
+     * Data class for JSON parsing
+     */
+    private data class JsonPOI(
+        val id: String,
+        val name: String,
+        val baseScore: Double,
+        val category: String,
+        val environment: String,
+        val coordinates: JsonCoordinates,
+        val recommendedVisitDuration: Int,
+        val operatingHours: JsonOperatingHours,
+        val isFiller: Boolean,
+        val city: String,
+        val address: String? = null,
+        val description: String? = null
+    )
+
+    private data class JsonCoordinates(
+        val latitude: Double,
+        val longitude: Double
+    )
+
+    private data class JsonOperatingHours(
+        val openTime: String,
+        val closeTime: String
+    )
+
+    /**
+     * Create mock Melbourne POIs dataset (fallback)
      */
     private fun createMelbournePOIs(): List<POI> {
         return listOf(

@@ -7,33 +7,28 @@ import android.os.IBinder
 
 class SensorService : Service() {
 
-    private lateinit var locationSensor: LocationSensor
-    private lateinit var stepCounter: StepCounterSensor
+    private val repository: SensorRepository
+        get() = (application as RoamMateApp).sensorRepository
 
     private val binder = LocalBinder()
 
     inner class LocalBinder : Binder() {
-        fun getService(): SensorService {
-            return this@SensorService
-        }
+        fun getService(): SensorService = this@SensorService
     }
 
     override fun onCreate() {
         super.onCreate()
 
-        locationSensor = LocationSensor(this)
-        stepCounter = StepCounterSensor(this)
-
-        locationSensor.enableLocation()
-        stepCounter.enableStepCounter()
+        // Do not automatically start every sensor here.
+        // Each sensor has its own lifecycle owner.
     }
 
     fun getCurrentLocation(): LocationMessage? {
-        return locationSensor.getCurrentLocation()
+        return repository.getCurrentLocation()
     }
 
     fun getStepsLastHour(): Int? {
-        return stepCounter.getStepsLastHour()
+        return repository.getStepsLastHour()
     }
 
     override fun onBind(intent: Intent?): IBinder {
@@ -41,9 +36,8 @@ class SensorService : Service() {
     }
 
     override fun onDestroy() {
-        locationSensor.disableLocation()
-        stepCounter.disableStepCounter()
-
+        // Do not stop shared sensors here.
+        // They may still be used by MainActivity or other screens.
         super.onDestroy()
     }
 }

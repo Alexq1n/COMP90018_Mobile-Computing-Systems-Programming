@@ -90,7 +90,7 @@ fun PetOverlay(
                             )
                         } else{
                         // Track off
-                        val newPosition =
+                            val newPosition =
                             IntOffset(
                                 currentManualPosition.x +
                                         dragAmount.x.toInt(),

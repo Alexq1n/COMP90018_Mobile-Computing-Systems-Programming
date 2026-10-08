@@ -6,7 +6,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-
+import kotlin.math.pow
 data class StepData(
     val steps: Float,
     val timestamp: Long
@@ -83,53 +83,124 @@ class StepCounterSensor(
         }
     }
 
+//    fun getStepsLastHour(): Int? {
+//
+//        Log.d(
+//            "STEP_SENSOR",
+//            "Total recorded points = ${stepHistory.size}"
+//        )
+//
+//        if (stepHistory.size < 2) {
+//
+//            Log.d(
+//                "STEP_SENSOR",
+//                "You need more data"
+//            )
+//
+//            return null
+//        }
+//
+//        val first = stepHistory.first()
+//        val last = stepHistory.last()
+//
+//        Log.d(
+//            "STEP_SENSOR",
+//            "First: steps=${first.steps}, timestamp=${first.timestamp}"
+//        )
+//
+//        Log.d(
+//            "STEP_SENSOR",
+//            "Last: steps=${last.steps}, timestamp=${last.timestamp}"
+//        )
+//
+//        val stepDifference =
+//            last.steps - first.steps
+//
+//        val timeDifferenceHours =
+//            (last.timestamp - first.timestamp) / 3_600_000f
+//
+//
+//        val stepsPerHour =
+//            stepDifference / timeDifferenceHours
+//
+//        Log.d(
+//            "STEP_SENSOR",
+//            "steps/hour=$stepsPerHour"
+//        )
+//
+//        return stepsPerHour.toInt()
+//    }
+
+
     fun getStepsLastHour(): Int? {
 
-        Log.d(
-            "STEP_SENSOR",
-            "Total recorded points = ${stepHistory.size}"
-        )
+        if (stepHistory.size < 2) return 0
 
-        if (stepHistory.size < 2) {
-
-            Log.d(
-                "STEP_SENSOR",
-                "You need more data"
-            )
-
-            return null
-        }
-
-        val first = stepHistory.first()
         val last = stepHistory.last()
 
-        Log.d(
-            "STEP_SENSOR",
-            "First: steps=${first.steps}, timestamp=${first.timestamp}"
-        )
+        val currentTime = System.currentTimeMillis()
+
+        val targetTime = currentTime - 3_600_000L
+
+        val first = stepHistory
+            .filter { it.timestamp < currentTime }
+            .minByOrNull {
+                kotlin.math.abs(it.timestamp - targetTime)
+            } ?: return null
+
+        val stepDifference = last.steps  - first.steps
+
+
+        // Filter out small step counts to prevent overestimation from short-duration data.
+        if (stepDifference <= 1f) return 0
+
+
+        val timeDifferenceMinutes =
+            (currentTime - first.timestamp) / 60_000f
+
+        if (timeDifferenceMinutes <= 0f) return 0
+
+        // Multiplier：0.3 → 1.0
+        val t = timeDifferenceMinutes.coerceIn(0f, 60f)
+
+        val multiplier = if (timeDifferenceMinutes >= 60f) {
+            1.0f
+        } else {
+            val t = timeDifferenceMinutes.coerceIn(0f, 60f)
+            0.5f + 0.5f * (t / 60f).pow(1.5f)
+        }
+
+        val estimatedSteps = stepDifference *
+                (1f + multiplier * (60f / t - 1f))
 
         Log.d(
             "STEP_SENSOR",
-            "Last: steps=${last.steps}, timestamp=${last.timestamp}"
+            "ActualSteps=$stepDifference, " +
+                    "Minutes=$timeDifferenceMinutes, " +
+                    "Multiplier=$multiplier, " +
+                    "EstimatedSteps=$estimatedSteps"
         )
 
-        val stepDifference =
-            last.steps - first.steps
-
-        val timeDifferenceHours =
-            (last.timestamp - first.timestamp) / 3_600_000f
 
 
-        val stepsPerHour =
-            stepDifference / timeDifferenceHours
+        Log.d("STEP_SENSOR", "===== Step History (${stepHistory.size} points) =====")
 
-        Log.d(
-            "STEP_SENSOR",
-            "steps/hour=$stepsPerHour"
-        )
+        stepHistory.forEachIndexed { index, data ->
+            Log.d(
+                "STEP_SENSOR",
+                "[$index] Steps=${data.steps}, Timestamp=${data.timestamp}"
+            )
+        }
 
-        return stepsPerHour.toInt()
+        Log.d("STEP_SENSOR", "===== End Step History =====")
+
+        return estimatedSteps.toInt()
     }
+
+
+
+
+
 
     fun disableStepCounter() {
         sensorManager.unregisterListener(this)

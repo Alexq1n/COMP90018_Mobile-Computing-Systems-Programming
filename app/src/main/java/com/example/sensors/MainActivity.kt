@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,6 +15,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -69,6 +72,17 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // Observe shake events only while this Activity is resumed.
+        // ShakeDetector is owned by the shared SensorRepository.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                sensorRepository.shakeEvents.collect {
+                    Log.d("SHAKE_SENSOR", "MainActivity received shake event")
+                    Toast.makeText(this@MainActivity, "Shake detected!", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
         placeRepository = MockPOI(this)
         val places = placeRepository.getPlaces()
 
@@ -116,6 +130,20 @@ class MainActivity : ComponentActivity() {
         } else {
             activityPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Temporary test: enable shake while MainActivity is interactive.
+        val started = sensorRepository.startShakeDetection()
+        Log.d("SHAKE_SENSOR", "MainActivity shake listener started = $started")
+    }
+
+    override fun onPause() {
+        // Stop accelerometer sampling while the Activity is not resumed.
+        sensorRepository.stopShakeDetection()
+        Log.d("SHAKE_SENSOR", "MainActivity shake listener stopped")
+        super.onPause()
     }
 
     override fun onStop() {

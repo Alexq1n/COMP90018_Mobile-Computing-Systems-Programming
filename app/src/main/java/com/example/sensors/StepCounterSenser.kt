@@ -83,55 +83,6 @@ class StepCounterSensor(
         }
     }
 
-//    fun getStepsLastHour(): Int? {
-//
-//        Log.d(
-//            "STEP_SENSOR",
-//            "Total recorded points = ${stepHistory.size}"
-//        )
-//
-//        if (stepHistory.size < 2) {
-//
-//            Log.d(
-//                "STEP_SENSOR",
-//                "You need more data"
-//            )
-//
-//            return null
-//        }
-//
-//        val first = stepHistory.first()
-//        val last = stepHistory.last()
-//
-//        Log.d(
-//            "STEP_SENSOR",
-//            "First: steps=${first.steps}, timestamp=${first.timestamp}"
-//        )
-//
-//        Log.d(
-//            "STEP_SENSOR",
-//            "Last: steps=${last.steps}, timestamp=${last.timestamp}"
-//        )
-//
-//        val stepDifference =
-//            last.steps - first.steps
-//
-//        val timeDifferenceHours =
-//            (last.timestamp - first.timestamp) / 3_600_000f
-//
-//
-//        val stepsPerHour =
-//            stepDifference / timeDifferenceHours
-//
-//        Log.d(
-//            "STEP_SENSOR",
-//            "steps/hour=$stepsPerHour"
-//        )
-//
-//        return stepsPerHour.toInt()
-//    }
-
-
     fun getStepsLastHour(): Int? {
 
         if (stepHistory.size < 2) return 0

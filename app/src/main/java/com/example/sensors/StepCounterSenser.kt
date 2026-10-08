@@ -6,6 +6,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import kotlin.math.abs
 import kotlin.math.pow
 data class StepData(
     val steps: Float,
@@ -96,7 +97,7 @@ class StepCounterSensor(
         val first = stepHistory
             .filter { it.timestamp < currentTime }
             .minByOrNull {
-                kotlin.math.abs(it.timestamp - targetTime)
+                abs(it.timestamp - targetTime)
             } ?: return null
 
         val stepDifference = last.steps  - first.steps

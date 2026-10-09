@@ -16,7 +16,8 @@ class StepCounterSensor(
     context: Context,
     private val intervalMillis: Long = 100L,
     private val maxPoints: Int = 100,
-    private val onStepsUpdated: (Int, Int?) -> Unit = { _, _ -> }
+    private val onStepsUpdated: (Int, Int?) -> Unit = { _, _ -> },
+    private val onHistoryRecorded: (StepData) -> Unit = {}
 ) : SensorEventListener {
 
     private val sensorManager =
@@ -25,6 +26,18 @@ class StepCounterSensor(
     private val stepHistory = mutableListOf<StepData>()
     private var lastRecordedTime = 0L
     private var listening = false
+
+    fun restoreHistory(savedHistory: List<StepData>) {
+        check(!listening) {
+            "Cannot restore history while sensor is listening"
+        }
+
+        stepHistory.clear()
+        stepHistory.addAll(
+            savedHistory.sortedBy { it.timestamp }.takeLast(maxPoints)
+        )
+        lastRecordedTime = stepHistory.lastOrNull()?.timestamp ?: 0L
+    }
 
     fun enableStepCounter(): Boolean {
         if (listening) return true
@@ -44,11 +57,26 @@ class StepCounterSensor(
         val totalSteps = event.values[0].toInt()
         val currentTime = System.currentTimeMillis()
 
+
+        // Detect step counter reset (e.g. device reboot)
+        val lastSteps = stepHistory.lastOrNull()?.steps
+
+        if (lastSteps != null && totalSteps.toFloat() < lastSteps) {
+            Log.d("STEP_SENSOR", "Step counter reset detected")
+
+            stepHistory.clear()
+            lastRecordedTime = 0L
+        }
+
         if (currentTime - lastRecordedTime >= intervalMillis) {
-            stepHistory.add(StepData(totalSteps.toFloat(), currentTime))
+            val record = StepData(totalSteps.toFloat(), currentTime)
+
+            stepHistory.add(record)
             lastRecordedTime = currentTime
             if (stepHistory.size > maxPoints) stepHistory.removeAt(0)
+            onHistoryRecorded(record)
         }
+
 
         // Send the latest cumulative count and the existing hourly estimate.
         onStepsUpdated(totalSteps, getStepsLastHour())

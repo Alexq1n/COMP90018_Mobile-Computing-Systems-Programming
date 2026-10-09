@@ -16,7 +16,16 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import com.group5.roammate.sensor.SensorService.Companion.TAG
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.cancel
+
 
 class SensorService : Service() {
 
@@ -34,6 +43,14 @@ class SensorService : Service() {
 
     private val binder = LocalBinder()
     private var ownsStepCounter = false
+
+
+    // Coroutine scope for asynchronous Step Counter startup
+    private val serviceScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Main.immediate
+    )
+    // Track the Step Counter startup coroutine
+    private var startJob: Job? = null
 
     inner class LocalBinder : Binder() {
         fun getService(): SensorService = this@SensorService
@@ -84,12 +101,7 @@ class SensorService : Service() {
         }
 
         // The Service itself owns Step Counter startup.
-        if (!startStepCounting()) {
-            Log.e(TAG, "Step Counter unavailable or registration failed")
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf(startId)
-            return START_NOT_STICKY
-        }
+        startStepCounting()
 
         // Log.d(TAG, "Foreground Step Counter running")
 
@@ -135,18 +147,39 @@ class SensorService : Service() {
     }
 
     // Existing API, now owned by this service.
-    fun startStepCounting(): Boolean {
-        if (ownsStepCounter) return true
+    fun startStepCounting() {
+        if (ownsStepCounter || startJob?.isActive == true) return
 
-        ownsStepCounter = repository.startStepCounter()
-        return ownsStepCounter
+        startJob = serviceScope.launch {
+            try {
+                // Wait until Room history has been restored
+                val started = repository.startStepCounter()
+
+                if (started) {
+                    ownsStepCounter = true
+                    Log.d(TAG, "Step Counter started successfully")
+                } else {
+                    Log.e(TAG, "Step Counter unavailable or registration failed")
+                    stopSelf()
+                }
+
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+
+                Log.e(TAG, "Failed to restore history or start Step Counter", e)
+                stopSelf()
+            }
+        }
     }
 
     fun stopStepCounting() {
-        if (!ownsStepCounter) return
+        startJob?.cancel()
+        startJob = null
 
-        repository.stopStepCounter()
-        ownsStepCounter = false
+        if (ownsStepCounter) {
+            repository.stopStepCounter()
+            ownsStepCounter = false
+        }
     }
 
     // Preserve your existing repository-backed APIs.
@@ -164,8 +197,13 @@ class SensorService : Service() {
         repository.getCurrentLocation()
 
     override fun onDestroy() {
+        startJob?.cancel()
+        serviceScope.cancel()
         stopStepCounting()
         Log.d(TAG, "SensorService destroyed")
         super.onDestroy()
     }
+
+
+
 }

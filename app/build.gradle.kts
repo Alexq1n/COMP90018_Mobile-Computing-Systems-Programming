@@ -37,6 +37,10 @@ android {
 
 dependencies {
     val cameraXVersion = "1.6.2"
+    // sensor dependence
+    implementation("com.google.code.gson:gson:2.13.2")
+    implementation("org.greenrobot:eventbus:3.3.1")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

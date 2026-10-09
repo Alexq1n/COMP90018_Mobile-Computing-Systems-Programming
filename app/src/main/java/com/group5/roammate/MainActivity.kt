@@ -55,14 +55,167 @@ import com.group5.roammate.ui.screens.TripStopStatus
 import com.group5.roammate.ui.screens.TripSummary
 import com.group5.roammate.ui.screens.TripTimelineStop
 import com.group5.roammate.ui.screens.TripWeatherSummary
+import com.group5.roammate.ui.sensor.SensorTestScreen
 import com.group5.roammate.ui.pet.CompanionsScreen
 import com.group5.roammate.ui.pet.PetCameraScreen
 import com.group5.roammate.ui.theme.RoamMateTheme
 
+import android.Manifest
+import android.content.ComponentName
+import android.content.Context
+import android.content.ServiceConnection
+import android.content.pm.PackageManager
+import android.os.IBinder
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.launch
+
+// [NEW] Sensor module
+import com.group5.roammate.sensor.RoamMateApp
+import com.group5.roammate.sensor.SensorRepository
+import com.group5.roammate.sensor.SensorService
+
+
+
+
 
 class MainActivity : ComponentActivity() {
+
+    // Use the ONE repository created by RoamMateApp.
+    private val sensorRepository: SensorRepository
+        get() = (application as RoamMateApp).sensorRepository
+
+    // Bound service for Step Counter.
+    private var sensorService: SensorService? = null
+    private var bindingRequested = false
+
+    private val sensorConnection = object : ServiceConnection {
+
+        override fun onServiceConnected(
+            name: ComponentName,
+            binder: IBinder
+        ) {
+            sensorService =
+                (binder as SensorService.LocalBinder).getService()
+
+            // Binding is for accessing the service.
+            // The Foreground Service starts Step Counter itself.
+            android.util.Log.d(
+                "RoamMateSensor",
+                "SensorService connected"
+            )
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            sensorService = null
+        }
+    }
+
+    // Request Android 10+ step recognition permission.
+    private val activityPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            if (
+                granted &&
+                lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+            ) {
+                startBackgroundStepTracking()
+                sensorRepository.startStepDetection()
+            }
+        }
+
+    // Request GPS permissions.
+    private val locationPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { result ->
+            if (result.values.any { it }) {
+                sensorRepository.startLocationTracking()
+            }
+        }
+
+    private fun hasActivityRecognitionPermission(): Boolean =
+        android.os.Build.VERSION.SDK_INT < 29 ||
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACTIVITY_RECOGNITION
+                ) == PackageManager.PERMISSION_GRANTED
+
+    private fun hasLocationPermission(): Boolean =
+        ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+    // Start persistent background step tracking.
+    private fun startBackgroundStepTracking() {
+        if (!hasActivityRecognitionPermission()) return
+
+        val intent = Intent(this, SensorService::class.java).apply {
+            action = SensorService.ACTION_START
+        }
+
+        try {
+            ContextCompat.startForegroundService(this, intent)
+        } catch (e: Exception) {
+            android.util.Log.e(
+                "RoamMateSensor",
+                "Unable to start background step tracking",
+                e
+            )
+        }
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
+        // Subscribe to the shared repository.
+        // Collection automatically stops/restarts with Activity lifecycle.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+
+                // GPS: Latest location
+                launch {
+                    sensorRepository.locationFlow.collect { location ->
+                        if (location != null) {
+//                            android.util.Log.d(
+//                                "RoamMateSensor",
+//                                "GPS: ${location.latitude}, ${location.longitude}"
+//                            )
+                        }
+                    }
+                }
+
+                // Step Counter: Cumulative steps since device reboot
+                launch {
+                    sensorRepository.stepCountFlow.collect { steps ->
+                        android.util.Log.d(
+                            "RoamMateSensor",
+                            "Total steps: $steps"
+                        )
+                    }
+                }
+
+                // Step Detector: Individual step events
+                launch {
+                    sensorRepository.stepEvents.collect { timestamp ->
+                        android.util.Log.d(
+                            "RoamMateSensor",
+                            "Step detected: $timestamp"
+                        )
+                    }
+                }
+            }
+        }
+
+
+
 
         // Enable the page to extend to the status bar and the bottom navigation bar area.
         enableEdgeToEdge()
@@ -73,7 +226,7 @@ class MainActivity : ComponentActivity() {
             // RoamMateTheme responsible for unifying colors, fonts and the overall visual style.
             RoamMateTheme(dynamicColor = false) {
                 // This is a temporary page status.
-                var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.Login) }
+                var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.SensorTest) }
 
                 // Jie pet feature state: one koala, live weather gear and a persisted fashion choice.
                 val petPreferences = remember { PetPreferences(applicationContext) }
@@ -104,6 +257,22 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
+                // Update existing UI location using GPS StateFlow.
+                LaunchedEffect(sensorRepository) {
+                    sensorRepository.locationFlow.collect { location ->
+                        if (location != null) {
+                            currentSensorLocation.value = SensorLocation(
+                                latitude = location.latitude,
+                                longitude = location.longitude,
+                                accuracyMeters = 0f,
+                                areaName = "Current location",
+                                isSample = false
+                            )
+                        }
+                    }
+                }
+
+
                 // Sensor trigger
                 // TODO: Alex should call this when shake is detected.
                 fun handleShakeTrigger() {
@@ -130,6 +299,19 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+
+
+                // Receive shake events from SensorRepository.
+                LaunchedEffect(sensorRepository) {
+                    sensorRepository.shakeEvents.collect {
+//                        android.util.Log.d(
+//                            "RoamMateSensor",
+//                            "Shake detected!"
+//                        )
+                        handleShakeTrigger()
+                    }
+                }
+
 
                 // Attraction detail 当前展示的景点。之后由 Explore/Trip 点击的真实景点数据替换。
                 var selectedAttractionDetail by remember {
@@ -843,10 +1025,122 @@ class MainActivity : ComponentActivity() {
                             },
                         )
                     }
+
+                    AuthScreen.SensorTest -> {
+                        SensorTestScreen(
+                            sensorRepository = sensorRepository,
+                            onBack = {
+                                currentScreen = AuthScreen.Login
+                            }
+                        )
+                    }
+
+
+
+
                 }
             }
         }
     }
+
+
+
+
+
+
+    // Start sensors when Activity becomes visible.
+    override fun onStart() {
+        super.onStart()
+
+        // Start persistent step tracking when permitted.
+        if (hasActivityRecognitionPermission()) {
+            startBackgroundStepTracking()
+        }
+
+        // Bind to SensorService.
+        if (!bindingRequested) {
+            bindingRequested = bindService(
+                Intent(this, SensorService::class.java),
+                sensorConnection,
+                Context.BIND_AUTO_CREATE
+            )
+        }
+
+        // Shake Detector.
+        sensorRepository.startShakeDetection()
+        val shakeStarted = sensorRepository.startShakeDetection()
+//        android.util.Log.d(
+//            "RoamMateSensor",
+//            "Shake start result: $shakeStarted"
+//        )
+
+
+        // Step Detector.
+        if (hasActivityRecognitionPermission()) {
+            sensorRepository.startStepDetection()
+//            android.util.Log.d(
+//                "RoamMateSensor",
+//                "Step Detector start requested"
+//            )
+        } else {
+            activityPermissionLauncher.launch(
+                Manifest.permission.ACTIVITY_RECOGNITION
+            )
+        }
+
+        // GPS
+        if (hasLocationPermission()) {
+            sensorRepository.startLocationTracking()
+//            android.util.Log.d(
+//                "RoamMateSensor",
+//                "GPS start requested"
+//            )
+        } else {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+
+
+
+
+    }
+
+    override fun onStop() {
+        android.util.Log.d(
+            "RoamMateSensor",
+            "MainActivity onStop: stopping foreground-only sensors"
+        )
+
+
+        // Foreground-only sensors stop.
+        sensorRepository.stopShakeDetection()
+        sensorRepository.stopStepDetection()
+        sensorRepository.stopLocationTracking()
+
+        android.util.Log.d(
+            "RoamMateSensor",
+            "Shake, Step Detector and GPS stopped"
+        )
+
+        // Do NOT stop Step Counter.
+        // The Foreground Service continues independently.
+
+        if (bindingRequested) {
+            unbindService(sensorConnection)
+            bindingRequested = false
+            sensorService = null
+        }
+
+        super.onStop()
+    }
+
+
+
+
 
     private fun rebalanceTripStopsAfterManualEdit(
         stops: List<TripTimelineStop>,
@@ -1353,4 +1647,5 @@ private enum class AuthScreen {
     SavedTrips,
     EditProfile,
     ProfileInterests,
+    SensorTest,
 }

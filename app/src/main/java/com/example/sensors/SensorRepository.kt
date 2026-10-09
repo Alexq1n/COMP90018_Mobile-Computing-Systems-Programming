@@ -6,18 +6,30 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** One repository shared by the app; individual screens control sensor registration. */
+/** One shared repository for sensor data and sensor control. */
 class SensorRepository(context: Context) {
     private val appContext = context.applicationContext
 
-    // Existing step counter functionality.
-    private val stepCounter = StepCounterSensor(appContext)
+    // ==================== Step Counter ====================
+
+    // Latest device cumulative steps (since reboot), null until first reading.
+    private val _stepCountFlow = MutableStateFlow<Int?>(null)
+    val stepCountFlow = _stepCountFlow.asStateFlow()
+
+    // Existing last-hour estimate, updated when a new sensor reading arrives.
+    private val _stepsLastHourFlow = MutableStateFlow<Int?>(null)
+    val stepsLastHourFlow = _stepsLastHourFlow.asStateFlow()
+
+    private val stepCounter = StepCounterSensor(appContext) { total, hourly ->
+        _stepCountFlow.value = total
+        _stepsLastHourFlow.value = hourly
+    }
     private var stepStarted = false
 
-    fun startStepCounter() {
-        if (stepStarted) return
-        stepCounter.enableStepCounter()
-        stepStarted = true
+    fun startStepCounter(): Boolean {
+        if (stepStarted) return true
+        stepStarted = stepCounter.enableStepCounter()
+        return stepStarted
     }
 
     fun stopStepCounter() {
@@ -26,11 +38,25 @@ class SensorRepository(context: Context) {
         stepStarted = false
     }
 
+    fun getCurrentSteps(): Int? = _stepCountFlow.value
+
+    // Keeps the original function-call API.
     fun getStepsLastHour(): Int? = stepCounter.getStepsLastHour()
 
-    // Existing GPS functionality.
+    // ==================== Step Detector ====================
+
+    private val stepDetector = StepDetector(appContext)
+    val stepEvents = stepDetector.stepEvents // SharedFlow: one event per step.
+
+    fun startStepDetection() = stepDetector.start()
+    fun stopStepDetection() = stepDetector.stop()
+    fun isStepDetectorAvailable(): Boolean = stepDetector.isAvailable()
+
+    // ==================== GPS Location ====================
+
     private val _locationFlow = MutableStateFlow<LocationMessage?>(null)
-    val locationFlow = _locationFlow.asStateFlow()
+    val locationFlow = _locationFlow.asStateFlow() // Latest cached location.
+
     private val locationSensor = LocationSensor(appContext) { location ->
         _locationFlow.value = location
     }
@@ -39,9 +65,11 @@ class SensorRepository(context: Context) {
     fun stopLocationTracking() = locationSensor.disableLocation()
     fun getCurrentLocation(): LocationMessage? = _locationFlow.value
 
-    // New shake event stream: each event represents one detected shake.
+    // ==================== Shake Detector ====================
+
     private val _shakeEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 16)
-    val shakeEvents = _shakeEvents.asSharedFlow()
+    val shakeEvents = _shakeEvents.asSharedFlow() // One event per shake.
+
     private val shakeDetector = ShakeDetector(appContext) {
         _shakeEvents.tryEmit(Unit)
     }

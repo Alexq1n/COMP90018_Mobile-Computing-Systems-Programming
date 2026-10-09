@@ -35,3 +35,19 @@ App 回到前台	没有运行中的追踪服务则重新监听	按需重新获�
 App 进程被终止	Listener 停止，Room 已写入的数据保留；Service 也可能被终止	停止	停止
 App 重新打开	读取 Room，恢复前台监听；检查是否需要恢复追踪	重新初始化	重新注册 Listener
 手机重启	之前的 Listener/Service 不再运行；需要重新建立追踪，并处理累计步数重置	不运行	不运行
+
+
+
+
+
+
+StateFlow(只保留一个最新值) / SharedFlow (EventBus)/ Function Call
+
+
+
+
+onCreate()：初始化 UI、注册 Flow 订阅。
+onStart()：只自动绑定 Service，不自动启动所有 Sensor。
+onResume()：不自动启动 Shake，仍由测试按钮控制。
+onStop()：停止本 Activity 启动的 GPS、Step Detector、Shake；解绑 Service。
+onDestroy()：作为最终清理，不作为正常页面退出时唯一的停止机制。

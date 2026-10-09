@@ -9,6 +9,7 @@ class DatabaseStepHistoryStorage : StepHistoryStorage {
 
     override suspend fun loadStepHistory(): List<StepData> {
         // load data from database
+        // Return emptyList() if database is empty
         Log.d("RoamMateSensor", "loadStepHistory() CALLED")
         return emptyList()
     }

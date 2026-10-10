@@ -46,6 +46,7 @@ import com.group5.roammate.ui.screens.InterestsSaveTarget
 import com.group5.roammate.ui.screens.InterestsScreen
 import com.group5.roammate.ui.screens.LoginScreen
 import com.group5.roammate.ui.screens.PlanMyTripScreen
+import com.group5.roammate.ui.screens.PlanMyTripRequest
 import com.group5.roammate.ui.screens.ProfileScreen
 import com.group5.roammate.ui.screens.RoamMateMainTab
 import com.group5.roammate.ui.screens.SavedTrip
@@ -77,6 +78,21 @@ import kotlinx.coroutines.launch
 import com.group5.roammate.sensor.RoamMateApp
 import com.group5.roammate.sensor.SensorRepository
 import com.group5.roammate.sensor.SensorService
+
+/*
+UI Integration Map
+Full contract: ui/RoamMate_UI_API_Guide.md
+Search "function:" in this file to find each teammate's integration point.
+
+Yuxiang: Firebase auth, user profile, saved trips.
+Alex: sensor GPS, shake events, fuzzy search trigger.
+Leyan: attraction list, attraction detail, indoor/outdoor, website, hours. weather summary and weather availability.
+Zewen: itinerary generation, edit/reorder/add stop, weather adjustment.
+Xiajie: pet state and pet screen.
+Yufei: UI wiring, navigation, loading/error display.
+Keep each owner in a small function below, then connect the screen callbacks to those functions.
+*/
+
 
 
 
@@ -236,16 +252,16 @@ class MainActivity : ComponentActivity() {
                 val petState = PetStateEngine.buildUiState(petProfile, petWeather)
 
                 // User name
-                // TODO: Replace with Yuxiang Firebase user profile.
+                // TODO(Yuxiang, function: uiLoadUserProfile): Replace with Firebase user profile.
                 var userName by rememberSaveable { mutableStateOf("Yufei") }
 
                 // Loading states
-                // TODO: Set true while backend / Firebase requests are running.
+                // TODO(Yufei, function: uiLoadingState): Set true while backend / Firebase requests are running.
                 var isGeneratingItinerary by rememberSaveable { mutableStateOf(false) }
                 var isSearchingPlaces by rememberSaveable { mutableStateOf(false) }
 
                 // Demonstration location for Yufei's Explore preview, not a measured GPS fix.
-                // TODO: Alex should update this and set isSample = false when GPS changes.
+                // TODO(Alex, function: uiGetCurrentLocation): Update this and set isSample = false when GPS changes.
                 val currentSensorLocation = remember {
                     mutableStateOf(
                         SensorLocation(
@@ -256,6 +272,13 @@ class MainActivity : ComponentActivity() {
                         ),
                     )
                 }
+
+                // Sensor refresh state
+                // function: uiObserveShakeEvents; owner: Alex; UI consumer: Yufei.
+                // Alex emits shake events; Yufei maps them to the current page action below.
+                var exploreShakeRefreshCount by rememberSaveable { mutableStateOf(0) }
+                var addStopShakeRefreshCount by rememberSaveable { mutableStateOf(0) }
+                var tripShakeProgressCount by rememberSaveable { mutableStateOf(0) }
 
                 // Update existing UI location using GPS StateFlow.
                 LaunchedEffect(sensorRepository) {
@@ -274,24 +297,28 @@ class MainActivity : ComponentActivity() {
 
 
                 // Sensor trigger
-                // TODO: Alex should call this when shake is detected.
+                // function: uiObserveShakeEvents; owner: Alex; UI consumer: Yufei.
+                // Alex emits one shake event; this handler updates the visible UI.
                 fun handleShakeTrigger() {
                     when (currentScreen) {
                         AuthScreen.Explore -> {
                             // Explore: shake refreshes nearby suggestions.
-                            Toast.makeText(this, "Shake: refresh nearby places", Toast.LENGTH_SHORT).show()
+                            exploreShakeRefreshCount += 1
+                            Toast.makeText(this, "Nearby places refreshed", Toast.LENGTH_SHORT).show()
                         }
 
                         AuthScreen.Trip -> {
                             // Trip: shake re-checks current progress.
-                            Toast.makeText(this, "Shake: update trip progress", Toast.LENGTH_SHORT).show()
+                            tripShakeProgressCount += 1
+                            Toast.makeText(this, "Trip progress updated", Toast.LENGTH_SHORT).show()
                         }
 
                         AuthScreen.PlanMyTrip,
                         AuthScreen.PlanAddStop,
                         AuthScreen.EditAddStop -> {
                             // Planning/search: shake can suggest one nearby place.
-                            Toast.makeText(this, "Shake: suggest a nearby stop", Toast.LENGTH_SHORT).show()
+                            addStopShakeRefreshCount += 1
+                            Toast.makeText(this, "Nearby stop suggestions refreshed", Toast.LENGTH_SHORT).show()
                         }
 
                         else -> {
@@ -324,31 +351,32 @@ class MainActivity : ComponentActivity() {
                 }
 
                 // Profile 入口使用：长期默认兴趣偏好。
-                // TODO: 之后这里接 Yuxiang 的 Firebase 用户偏好数据库，永久保存。
+                // TODO(Yuxiang, function: uiSaveProfileInterests): connect Firebase default interests, permanent save.
                 var profileDefaultInterests by rememberSaveable {
                     mutableStateOf(listOf("Museums", "Parks", "Food"))
                 }
 
                 // Plan My Trip 入口使用：只属于当前这次行程的兴趣。
-                // TODO: 之后这里交给 Zewen 的本次行程规划 request，不写入长期默认偏好。
+                // TODO(Zewen, function: uiSaveTripOnlyInterests): pass one-trip interests into itinerary request only.
                 var tripInterests by rememberSaveable {
                     mutableStateOf(listOf("Museums", "Parks", "Food"))
                 }
 
                 // Plan My Trip 入口添加的必去地点。
-                // TODO: 之后这里要作为 Zewen itinerary request 的 must-visit places。
+                // TODO(Zewen, function: uiGenerateItinerary): pass these as must-visit places.
                 var planRequiredPlaces by remember {
                     mutableStateOf(emptyList<AddStopPlace>())
                 }
 
                 // Saved trips
-                // TODO: Replace with Yuxiang Firebase saved trip history.
+                // TODO(Yuxiang, function: uiLoadSavedTrips): Load saved trips from Firebase.
+                // input provider: Zewen trip summary shape.
                 val savedTrips = remember {
                     sampleSavedTrips()
                 }
 
                 // TODO: 这组 Trip timeline 是临时演示假数据。
-                // TODO: 等 Zewen 的后端行程生成完成后，改成读取后端返回的真实 itinerary。
+                // TODO(Zewen, function: uiGenerateItinerary): Replace with real itinerary returned by backend.
                 var tripTimelineStops by remember {
                     mutableStateOf(
                         listOf(
@@ -383,11 +411,21 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
+                // Trip progress demo
+                // TODO(Zewen, function: uiUpdateTripProgress): Replace with real progress logic.
+                // input provider: Alex GPS location.
+                LaunchedEffect(tripShakeProgressCount) {
+                    if (tripShakeProgressCount > 0) {
+                        tripTimelineStops = tripTimelineStops.advanceCurrentStopForDemo()
+                    }
+                }
+
                 // Adjust itinerary 弹窗当前显示第几个候选方案。
-                // TODO: Zewen 现在只提供两个方案，所以这里最多切换 0 和 1。
+                // TODO(Zewen, function: uiAdjustItineraryForWeather): Backend currently provides two candidate plans.
                 var adjustPlanIndex by rememberSaveable { mutableStateOf(0) }
 
-                // TODO: 这是临时假数据；之后替换成 Zewen 根据天气重新生成的两个候选行程。
+                // TODO(Zewen, function: uiAdjustItineraryForWeather): Replace with weather-based candidate plans.
+                // input provider: LeYan weather and attraction suitability.
                 val adjustedItineraryPlans = remember {
                     sampleAdjustedItineraryPlans()
                 }
@@ -399,7 +437,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
 
                             // This will run when the user clicks "Log in".
-                            // TODO: 之后这里接 Yuxiang 的 Firebase 登录函数。
+                            // TODO(Yuxiang, function: uiLoginWithFirebase): connect Firebase login.
                             onLoginClick = { email, password ->
                                 if (email.isBlank() || password.isBlank()) {
                                     Toast.makeText(
@@ -409,7 +447,7 @@ class MainActivity : ComponentActivity() {
                                     ).show()
                                 } else {
                                     // 登录成功后进入 Home 页面。
-                                    // TODO: 之后这里要根据 Yuxiang 的 Firebase 登录结果决定是否跳转。
+                                    // TODO(Yuxiang, function: uiLoginWithFirebase): Navigate only after Firebase login success.
                                     currentScreen = AuthScreen.Home
                                 }
                             },
@@ -436,10 +474,10 @@ class MainActivity : ComponentActivity() {
                             },
 
                             // Received the name, email and password
-                            // TODO: 之后这里接 Yuxiang 的 Firebase 注册函数。
+                            // TODO(Yuxiang, function: uiCreateAccountWithFirebase): connect Firebase register.
                             onCreateAccountClick = { fullName, _, _ ->
                                 // 注册成功后进入 Home 页面。
-                                // TODO: 接入 Yuxiang 的 Firebase 注册后，再根据真实注册结果跳转。
+                                // TODO(Yuxiang, function: uiCreateAccountWithFirebase): Navigate only after Firebase register success.
                                 Toast.makeText(
                                     this,
                                     "Create account clicked for $fullName",
@@ -456,40 +494,37 @@ class MainActivity : ComponentActivity() {
                     }
 
                     AuthScreen.Home -> {
-                        // TODO: 这是 Home 顶部 Leave now 提醒的临时假数据。
-                        // TODO: 之后由 Zewen 提供当前/下一站行程，Sitao 提供当前位置、路线时间和是否迟到。
-                        val homeLeaveNowReminder = HomeLeaveNowReminder(
-                            placeName = "Melbourne Museum",
-                            scheduledTime = "10:00",
-                            delayMinutes = 3,
-                            navigationQuery = "Melbourne Museum",
+                        // Home page multi-owner integration.
+                        // Each teammate owns one small function below, then UI wires the result here.
+                        val homeUserName = uiLoadUserProfile()
+                        val homeCurrentLocation = uiLoadCurrentLocation(currentSensorLocation.value)
+                        val homeNextTripStop = uiLoadNextTripStop(tripTimelineStops)
+                        val homeTodayTripStops = uiBuildHomeTodayTripStops(tripTimelineStops)
+                        val homeLeaveNowReminder = uiBuildLeaveNowReminder(
+                            nextTripStop = homeNextTripStop,
+                            currentLocation = homeCurrentLocation,
                         )
-
-                        // TODO: 这是 Home 顶部 Smart suggestion 的临时假数据。
-                        // TODO: 之后由 Yan 提供天气变化，Zewen 根据建议触发行程调整。
-                        val homeSmartSuggestion = HomeSmartSuggestion(
-                            label = if (petWeather.isCurrent) petWeather.label else "Weather",
-                            message = if (petWeather.isCurrent) {
-                                "${petWeather.locationLabel}: ${petWeather.temperatureC.toInt()}°C · ${petState.statusLine}"
-                            } else "Live weather is unavailable. Open Buddy to refresh.",
+                        val homeSmartSuggestion = uiBuildHomeSmartSuggestion(
+                            weather = petWeather,
+                            petStatusLine = petState.statusLine,
                         )
 
                         HomeScreen(
                             modifier = Modifier.fillMaxSize(),
 
-                            // TODO: 这里之后换成 Yuxiang 从 Firebase 读到的真实用户姓名。
-                            userName = "Yufei",
+                            // function: uiLoadUserProfile; owner: Yuxiang.
+                            userName = homeUserName,
 
-                            // Home 的 Today's trip 跟 Trip/Edit itinerary 共用同一份 itinerary。
-                            // TODO: 等 Zewen/Yuxiang 提供真实行程数据后，tripTimelineStops 改成后端/Firebase 数据。
-                            todayTripStops = tripTimelineStops.toHomeTripStops(),
+                            // function: uiBuildHomeTodayTripStops; owner: Yufei; status: UI done.
+                            // input provider: Zewen itinerary.
+                            todayTripStops = homeTodayTripStops,
 
-                            // Home 顶部提醒现在从数据对象读取，不再在 HomeScreen 里写死文字。
-                            // 如果没有提醒，之后把这里传 null 即可隐藏卡片。
+                            // function: uiBuildLeaveNowReminder; owner: Yufei; status: UI done.
+                            // input providers: Zewen next stop, Alex location.
                             leaveNowReminder = homeLeaveNowReminder,
 
-                            // Home 顶部天气建议现在从数据对象读取。
-                            // 如果没有建议，之后把这里传 null 即可隐藏卡片。
+                            // function: uiBuildHomeSmartSuggestion; owner: Yufei; status: UI done.
+                            // input providers: LeYan weather, Xiajie pet status.
                             smartSuggestion = homeSmartSuggestion,
 
                             // Jie pet module: Home, Pet and Camera share the same koala outfit.
@@ -500,12 +535,15 @@ class MainActivity : ComponentActivity() {
                                 petState = petState,
                             ),
 
-                            // TODO: 之后这里用真实当前站点地址打开外部地图导航。
+                            // function: uiOpenExternalMap; owner: Yufei; status: UI done.
                             onNavigateReminderClick = {
-                                openExternalMap(homeLeaveNowReminder.navigationQuery)
+                                homeLeaveNowReminder?.let { reminder ->
+                                    openExternalMap(reminder.navigationQuery)
+                                }
                             },
 
-                            // TODO: 之后这里跳转到 Adjust itinerary 页面。
+                            // function: uiAdjustItineraryForWeather; owner: Zewen.
+                            // UI entry is wired by Yufei.
                             onSmartSuggestionClick = { currentScreen = AuthScreen.Pet },
 
                             onPetCardClick = {
@@ -581,23 +619,25 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             destinationTitle = "Today in Melbourne",
 
-                            // TODO: 这里之后接 Yan 的实时天气数据。
+                            // TODO(LeYan, function: uiLoadWeatherSummary): Connect real weather data.
                             weatherSummary = TripWeatherSummary(
                                 temperature = if (petWeather.isCurrent) "${petWeather.temperatureC.toInt()}°C" else "—",
                                 condition = if (petWeather.isCurrent) "${petWeather.label} · ${petWeather.locationLabel}" else "Weather unavailable",
                             ),
 
-                            // TODO: 这里之后接 Zewen 生成的多天行程 summary。
+                            // TODO(Zewen, function: uiLoadTripSummary): Connect generated multi-day trip summary.
                             // 例如：3 days in Melbourne + Day 1 / Day 2 / Day 3 简介。
                             tripSummary = TripSummary(
                                 title = "3 days in Melbourne",
                                 description = "Day 1: Melbourne Museum, State Library and ACMI. Day 2: Royal Botanic Gardens and Queen Victoria Market. Day 3: Brighton Beach and Southbank.",
                             ),
 
-                            // TODO: 等 Zewen 的行程列表和 Sitao 的进度状态完成后，替换成真实顺序/状态。
+                            // TODO(Zewen, function: uiUpdateTripProgress): Replace with real itinerary order and progress status.
+                            // input provider: Alex GPS location.
                             stops = tripTimelineStops,
 
-                            // TODO: 之后这里跳转 Attraction detail 页面。
+                            // TODO(Leyan, function: uiLoadAttractionDetail): Open detail with real attraction id.
+                            // storage provider: Yuxiang database if needed.
                             onStopClick = { stop ->
                                 selectedAttractionDetail = sampleAttractionDetail(stop.title)
                                 attractionDetailReturnScreen = AuthScreen.Trip
@@ -628,10 +668,10 @@ class MainActivity : ComponentActivity() {
                     }
 
                     AuthScreen.Explore -> {
-                        // TODO: 这是 Explore 页的临时假数据。
-                        // TODO: 之后 currentArea/places 由 Alex/Sitao 的 GPS + Yan/Leyan 的景点数据共同生成。
-                        val nearbyExplorePlaces = remember {
-                            sampleNearbyExplorePlaces()
+                        // TODO(Alex, function: uiExploreNearbyPlaces): Temporary Explore nearby mock data.
+                        // data provider: Leyan attraction list; GPS provider: Alex sensor.
+                        val nearbyExplorePlaces = remember(exploreShakeRefreshCount) {
+                            sampleNearbyExplorePlaces().rotateLeft(exploreShakeRefreshCount)
                         }
 
                         ExploreScreen(
@@ -641,7 +681,8 @@ class MainActivity : ComponentActivity() {
                             },
                             places = nearbyExplorePlaces,
 
-                            // TODO: 之后这里跳转 Attraction detail 页面。
+                            // TODO(Leyan, function: uiLoadAttractionDetail): Open detail with real attraction id.
+                            // storage provider: Yuxiang database if needed.
                             onPlaceClick = { place ->
                                 selectedAttractionDetail = place.toAttractionDetail()
                                 attractionDetailReturnScreen = AuthScreen.Explore
@@ -672,7 +713,7 @@ class MainActivity : ComponentActivity() {
                             },
 
                             // Add to trip: 先加入当前行程假数据，并回到 Trip。
-                            // TODO: 之后这里应把景点交给 Zewen，让后端决定插入位置和重新排序。
+                            // TODO(Zewen, function: uiAddAttractionToTrip): Send attraction id to backend for insert/reorder.
                             onAddToTripClick = { attraction ->
                                 tripTimelineStops = rebalanceTripStopsAfterManualEdit(
                                     tripTimelineStops.withAddedTemporaryAttraction(attraction),
@@ -711,7 +752,7 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.Trip
                             },
 
-                            // TODO: 之后这里把删除后的 stop list 发给 Zewen，重新生成/排序行程。
+                            // TODO(Zewen, function: uiUpdateItineraryAfterEdit): Send removed stop list for recalculation.
                             onRemoveStopClick = { removedStop ->
                                 tripTimelineStops = rebalanceTripStopsAfterManualEdit(
                                     tripTimelineStops.filterNot { stop ->
@@ -720,12 +761,14 @@ class MainActivity : ComponentActivity() {
                                 )
                             },
 
-                            // TODO: 之后这里跳转 Add a stop 搜索页面，并把新站点交给 Zewen 重新规划。
+                            // TODO(Zewen, function: uiUpdateItineraryAfterEdit): Add stop via search, then recalculate.
+                            // input provider: Alex place search.
                             onAddStopClick = {
                                 currentScreen = AuthScreen.EditAddStop
                             },
 
-                            // TODO: 之后这里把 reorderedStops 发给 Zewen 重新计算时间，再交给 Yuxiang 保存。
+                            // TODO(Zewen, function: uiUpdateItineraryAfterEdit): Recalculate reordered stops.
+                            // storage provider: Yuxiang saves final itinerary.
                             onSaveClick = { reorderedStops ->
                                 val doneStops = tripTimelineStops.filter { stop ->
                                     stop.status == TripStopStatus.Done
@@ -767,7 +810,7 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.PlanAddStop
                             },
 
-                            // TODO: 之后这里把 request 交给 Zewen 的规划算法，再跳转到 Trip 页面。
+                            // TODO(Zewen, function: uiGenerateItinerary): Send request to planning backend, then open Trip.
                             isGeneratingItinerary = isGeneratingItinerary,
                             onGenerateItineraryClick = { request ->
                                 isGeneratingItinerary = true
@@ -776,7 +819,7 @@ class MainActivity : ComponentActivity() {
                                     "Generate itinerary for ${request.destination}",
                                     Toast.LENGTH_SHORT,
                                 ).show()
-                                // TODO: Set false after Zewen returns the generated itinerary.
+                                // TODO(Zewen, function: uiGenerateItinerary): Set false after backend returns itinerary.
                                 isGeneratingItinerary = false
                                 currentScreen = AuthScreen.Trip
                             },
@@ -787,7 +830,9 @@ class MainActivity : ComponentActivity() {
                         AddStopScreen(
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
-                            places = melbournePopularAddStopPlaces(),
+                            places = remember(addStopShakeRefreshCount) {
+                                melbournePopularAddStopPlaces().rotateLeft(addStopShakeRefreshCount)
+                            },
                             isSearching = isSearchingPlaces,
 
                             // 从 Plan My Trip 进来，返回 Plan My Trip。
@@ -795,7 +840,7 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.PlanMyTrip
                             },
 
-                            // TODO: 之后这里把 query 传给 Alex 的景点搜索接口。
+                            // TODO(Alex, function: uiSearchPlacesByName): Send query only after confirm button; name match first.
                             // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
                             onSearchConfirmClick = { query ->
                                 isSearchingPlaces = true
@@ -804,11 +849,12 @@ class MainActivity : ComponentActivity() {
                                     "Search: $query",
                                     Toast.LENGTH_SHORT,
                                 ).show()
-                                // TODO: Set false after Alex/Yan returns search results.
+                                // TODO(Alex, function: uiSearchPlacesByName): Set false after search results return.
+                                // data provider: Leyan attraction names.
                                 isSearchingPlaces = false
                             },
 
-                            // TODO: 之后这里把 added place 放进 Zewen 的 itinerary request。
+                            // TODO(Zewen, function: uiGenerateItinerary): Add selected place into must-visit request.
                             onAddPlaceClick = { place ->
                                 planRequiredPlaces = planRequiredPlaces.addUniquePlace(place)
                                 Toast.makeText(
@@ -825,7 +871,9 @@ class MainActivity : ComponentActivity() {
                         AddStopScreen(
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
-                            places = melbournePopularAddStopPlaces(),
+                            places = remember(addStopShakeRefreshCount) {
+                                melbournePopularAddStopPlaces().rotateLeft(addStopShakeRefreshCount)
+                            },
                             isSearching = isSearchingPlaces,
 
                             // 从 Edit itinerary 进来，返回 Edit itinerary。
@@ -833,7 +881,7 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.EditItinerary
                             },
 
-                            // TODO: 之后这里把 query 传给 Alex 的景点搜索接口。
+                            // TODO(Alex, function: uiSearchPlacesByName): Send query only after confirm button; name match first.
                             // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
                             onSearchConfirmClick = { query ->
                                 isSearchingPlaces = true
@@ -842,11 +890,12 @@ class MainActivity : ComponentActivity() {
                                     "Search: $query",
                                     Toast.LENGTH_SHORT,
                                 ).show()
-                                // TODO: Set false after Alex/Yan returns search results.
+                                // TODO(Alex, function: uiSearchPlacesByName): Set false after search results return.
+                                // data provider: Leyan attraction names.
                                 isSearchingPlaces = false
                             },
 
-                            // TODO: 之后这里把新增地点交给 Zewen，让后端插入合适位置并重新生成行程。
+                            // TODO(Zewen, function: uiUpdateItineraryAfterEdit): Send added place for insert and recalculation.
                             onAddPlaceClick = { place ->
                                 tripTimelineStops = rebalanceTripStopsAfterManualEdit(
                                     tripTimelineStops.withAddedTemporaryStop(place),
@@ -925,7 +974,7 @@ class MainActivity : ComponentActivity() {
                         ProfileScreen(
                             modifier = Modifier.fillMaxSize(),
 
-                            // TODO: 这里之后换成 Yuxiang 从 Firebase 读到的真实用户姓名。
+                            // TODO(Yuxiang, function: uiLoadUserProfile): Replace with Firebase display name.
                             userName = userName,
 
                             // 从 Profile 进入 Interests，保存为用户长期默认偏好。
@@ -943,7 +992,7 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.EditProfile
                             },
 
-                            // TODO: 这里之后接 Yuxiang 的 Firebase logout。
+                            // TODO(Yuxiang, function: uiLogout): connect Firebase logout.
                             onLogoutClick = {
                                 currentScreen = AuthScreen.Login
                             },
@@ -989,7 +1038,7 @@ class MainActivity : ComponentActivity() {
                             },
 
                             // Save button.
-                            // TODO: Send updatedName to Yuxiang Firebase user profile.
+                            // TODO(Yuxiang, function: uiSaveUserProfile): Send updatedName to Firebase user profile.
                             onSaveChangesClick = { updatedName ->
                                 userName = updatedName
                                 Toast.makeText(
@@ -1142,6 +1191,364 @@ class MainActivity : ComponentActivity() {
 
 
 
+
+    // ==================== UI integration functions ====================
+    // These functions are grouped by owner.
+    // Team members can search "function: xxx" and edit only their own function.
+    // Current returns are mock/sample data so the UI can still run before backend integration.
+
+
+    // ---- Home page split example ----
+
+    private fun uiLoadNextTripStop(
+        stops: List<TripTimelineStop>,
+    ): TripTimelineStop? {
+        // function: uiLoadNextTripStop
+        // owner: Zewen
+        // input: full itinerary stops
+        // output: next stop for Home reminder
+        // TODO(Zewen): Replace with backend current/next stop selection.
+        return stops.firstOrNull { stop ->
+            stop.status == TripStopStatus.Current
+        } ?: stops.firstOrNull { stop ->
+            stop.status == TripStopStatus.Upcoming
+        }
+    }
+
+    private fun uiLoadCurrentLocation(
+        latestLocation: SensorLocation,
+    ): SensorLocation {
+        // function: uiLoadCurrentLocation
+        // owner: Alex
+        // input: SensorRepository latest location
+        // output: current location used by Home / Explore / Add stop
+        // TODO(Alex): Pass real GPS location here from sensor module.
+        return latestLocation
+    }
+
+    private fun uiBuildLeaveNowReminder(
+        nextTripStop: TripTimelineStop?,
+        currentLocation: SensorLocation,
+    ): HomeLeaveNowReminder? {
+        // function: uiBuildLeaveNowReminder
+        // owner: Yufei
+        // input: Zewen next stop + Alex current location
+        // output: Home leave-now card data
+        // TODO(Yufei): Replace demo delay with route-time comparison after backend/sensor is ready.
+        if (nextTripStop == null) return null
+
+        val demoDelayMinutes = if (currentLocation.isSample) 3 else 3
+        return HomeLeaveNowReminder(
+            placeName = nextTripStop.title,
+            scheduledTime = nextTripStop.time,
+            delayMinutes = demoDelayMinutes,
+            navigationQuery = nextTripStop.title,
+        )
+    }
+
+    private fun uiBuildHomeTodayTripStops(
+        stops: List<TripTimelineStop>,
+    ): List<HomeTripStop> {
+        // function: uiBuildHomeTodayTripStops
+        // owner: Yufei
+        // input: Zewen itinerary stops
+        // output: Home compact trip list
+        return stops.toHomeTripStops()
+    }
+
+    private fun uiBuildHomeSmartSuggestion(
+        weather: PetWeatherSnapshot,
+        petStatusLine: String,
+    ): HomeSmartSuggestion {
+        // function: uiBuildHomeSmartSuggestion
+        // owner: Yufei
+        // input: LeYan weather + Xiajie pet status line
+        // output: Home smart suggestion card data
+        // status: UI card done
+        // TODO(Zewen): Open Adjust itinerary only when backend says weather affects the plan.
+        // input provider: LeYan weather.
+        return HomeSmartSuggestion(
+            label = if (weather.isCurrent) weather.label else "Weather",
+            message = if (weather.isCurrent) {
+                "${weather.locationLabel}: ${weather.temperatureC.toInt()}°C · $petStatusLine"
+            } else {
+                "Live weather is unavailable. Open Buddy to refresh."
+            },
+        )
+    }
+
+    // ---- Yuxiang: Firebase auth + user database ----
+
+    private fun uiLoginWithFirebase(
+        email: String,
+        password: String,
+    ): Boolean {
+        // function: uiLoginWithFirebase
+        // owner: Yuxiang
+        // input: email, password
+        // output: login success
+        // TODO(Yuxiang): Replace with Firebase Auth signIn.
+        return email.isNotBlank() && password.isNotBlank()
+    }
+
+    private fun uiCreateAccountWithFirebase(
+        fullName: String,
+        email: String,
+        password: String,
+    ): Boolean {
+        // function: uiCreateAccountWithFirebase
+        // owner: Yuxiang
+        // input: fullName, email, password
+        // output: register success
+        // TODO(Yuxiang): Replace with Firebase Auth createUser + user profile save.
+        return fullName.isNotBlank() && email.isNotBlank() && password.isNotBlank()
+    }
+
+    private fun uiLoadUserProfile(): String {
+        // function: uiLoadUserProfile
+        // owner: Yuxiang
+        // output: displayName
+        // TODO(Yuxiang): Load user display name from Firebase.
+        return "Yufei"
+    }
+
+    private fun uiSaveUserProfile(updatedName: String): String {
+        // function: uiSaveUserProfile
+        // owner: Yuxiang
+        // input: updatedName
+        // output: saved displayName
+        // TODO(Yuxiang): Save updated name to Firebase user profile.
+        return updatedName.trim()
+    }
+
+    private fun uiSaveProfileInterests(interests: List<String>): List<String> {
+        // function: uiSaveProfileInterests
+        // owner: Yuxiang
+        // input: long-term interest ids
+        // output: saved interest ids
+        // TODO(Yuxiang): Save default interests permanently.
+        return interests
+    }
+
+    private fun uiLoadSavedTrips(): List<SavedTrip> {
+        // function: uiLoadSavedTrips
+        // owner: Yuxiang
+        // contributor: Zewen trip summary shape
+        // output: saved trip cards
+        // TODO(Yuxiang): Load saved trip summaries from Firebase/backend.
+        return sampleSavedTrips()
+    }
+
+    // ---- Alex: sensor + fuzzy search trigger ----
+
+    private fun uiGetCurrentLocation(): SensorLocation {
+        // function: uiGetCurrentLocation
+        // owner: Alex
+        // output: current latitude/longitude/area
+        // TODO(Alex): Replace sample location with SensorRepository latest GPS value.
+        return SensorLocation(
+            latitude = -37.8039,
+            longitude = 144.9717,
+            accuracyMeters = 12f,
+            areaName = "Carlton",
+        )
+    }
+
+    private fun uiObserveShakeEvents(screen: AuthScreen): String? {
+        // function: uiObserveShakeEvents
+        // owner: Alex
+        // UI consumer: Yufei
+        // input: current screen
+        // output: UI action label
+        // TODO(Alex): Connect real ShakeDetector event to this UI action mapping.
+        return when (screen) {
+            AuthScreen.Explore -> "refresh nearby places"
+            AuthScreen.Trip -> "refresh trip progress"
+            AuthScreen.PlanMyTrip,
+            AuthScreen.PlanAddStop,
+            AuthScreen.EditAddStop -> "refresh stop suggestions"
+            else -> null
+        }
+    }
+
+    private fun uiSearchPlacesByName(
+        query: String,
+        currentCity: String?,
+        userLatitude: Double?,
+        userLongitude: Double?,
+        limit: Int,
+    ): List<AddStopPlace> {
+        // function: uiSearchPlacesByName
+        // owner: Alex
+        // data provider: Leyan attraction list
+        // input: query, city, GPS, limit
+        // output: name-match places
+        // TODO(Alex): Replace with fuzzy name search; name relevance first.
+        val source = melbournePopularAddStopPlaces()
+        val result = if (query.isBlank()) {
+            source
+        } else {
+            source.filter { place ->
+                place.name.contains(query, ignoreCase = true)
+            }
+        }
+
+        return result.take(limit)
+    }
+
+    // ---- Leyan: attraction data ----
+
+    private fun uiExploreNearbyPlaces(
+        category: ExplorePlaceCategory,
+        userLatitude: Double?,
+        userLongitude: Double?,
+        limit: Int,
+    ): List<ExplorePlace> {
+        // function: uiExploreNearbyPlaces
+        // owner: Alex
+        // data provider: Leyan attraction list
+        // input: category, GPS, limit
+        // output: nearby places
+        // TODO(Alex): Rank by location/category; UI displays name + indoor/outdoor only.
+        return sampleNearbyExplorePlaces()
+            .filter { place -> place.category == category }
+            .take(limit)
+    }
+
+    private fun uiLoadAttractionDetail(attractionIdOrName: String): AttractionDetail {
+        // function: uiLoadAttractionDetail
+        // owner: Leyan
+        // storage provider: Yuxiang database if needed
+        // input: attraction id or name
+        // output: detail data
+        // TODO(Leyan): Load photo, hours, indoor/outdoor, website from real database.
+        return sampleAttractionDetail(attractionIdOrName)
+    }
+
+    // ---- Zewen: itinerary planning ----
+
+    private fun uiGenerateItinerary(
+        request: PlanMyTripRequest,
+    ): List<TripTimelineStop> {
+        // function: uiGenerateItinerary
+        // owner: Zewen
+        // input: destination/date/time/interests/transport/required places
+        // output: generated itinerary stops
+        // TODO(Zewen): Replace with itinerary algorithm result.
+        return listOf(
+            TripTimelineStop("09:00", "Federation Square", TripStopStatus.Done),
+            TripTimelineStop("10:00", "Melbourne Museum", TripStopStatus.Current),
+            TripTimelineStop("12:00", "Lunch nearby", TripStopStatus.Upcoming),
+            TripTimelineStop("14:00", "Royal Botanic Gardens", TripStopStatus.Upcoming),
+        )
+    }
+
+    private fun uiLoadTripSummary(): TripSummary {
+        // function: uiLoadTripSummary
+        // owner: Zewen
+        // output: short trip summary for Trip screen
+        // TODO(Zewen): Return real multi-day summary with itinerary.
+        return TripSummary(
+            title = "3 days in Melbourne",
+            description = "Day 1: Melbourne Museum, State Library and ACMI. Day 2: gardens and markets. Day 3: beach and riverside walk.",
+        )
+    }
+
+    private fun uiUpdateItineraryAfterEdit(
+        editedStops: List<TripTimelineStop>,
+    ): List<TripTimelineStop> {
+        // function: uiUpdateItineraryAfterEdit
+        // owner: Zewen
+        // storage provider: Yuxiang saves final itinerary
+        // input: added/removed/reordered stops
+        // output: recalculated itinerary
+        // TODO(Zewen): Recalculate time/order after manual edit.
+        return rebalanceTripStopsAfterManualEdit(editedStops)
+    }
+
+    private fun uiAdjustItineraryForWeather(
+        reason: String,
+    ): List<AdjustItineraryPlan> {
+        // function: uiAdjustItineraryForWeather
+        // owner: Zewen
+        // input provider: LeYan weather forecast
+        // input: weather reason
+        // output: alternative itinerary plans
+        // TODO(Zewen): Generate alternatives based on weather forecast.
+        return sampleAdjustedItineraryPlans()
+    }
+
+    // ---- LeYan: weather ----
+
+    private fun uiLoadWeatherSummary(): TripWeatherSummary {
+        // function: uiLoadWeatherSummary
+        // owner: LeYan
+        // output: current weather summary
+        // TODO(LeYan): Replace with one-week weather API result.
+        return TripWeatherSummary(
+            temperature = "18°C",
+            condition = "Partly cloudy",
+        )
+    }
+
+    private fun uiIsWeatherAvailableForDate(dateText: String): Boolean {
+        // function: uiIsWeatherAvailableForDate
+        // owner: LeYan
+        // UI consumer: Yufei
+        // input: selected date
+        // output: weather available or unavailable
+        // TODO(LeYan): Return false when selected date is more than one week away.
+        return true
+    }
+
+    // ---- Xiajie: pet ----
+
+    private fun uiPetStatusCard(): String {
+        // function: uiPetStatusCard
+        // owner: Xiajie
+        // UI consumer: Yufei
+        // output: pet card source label
+        // TODO(Xiajie): Home should read pet state from pet module.
+        return "Pet module"
+    }
+
+    // ---- Yufei: UI navigation helpers ----
+
+    private fun uiLoadingState(isLoading: Boolean): Boolean {
+        // function: uiLoadingState
+        // owner: Yufei
+        // input: backend request running
+        // output: show loading UI
+        return isLoading
+    }
+
+    private fun List<TripTimelineStop>.advanceCurrentStopForDemo(): List<TripTimelineStop> {
+        // Demo progress
+        // TODO(Zewen): Replace with real progress logic; input provider is Alex GPS.
+        val currentIndex = indexOfFirst { stop ->
+            stop.status == TripStopStatus.Current
+        }
+
+        if (currentIndex == -1 || currentIndex >= lastIndex) return this
+
+        val nextIndex = currentIndex + 1
+        return mapIndexed { index, stop ->
+            when {
+                index < nextIndex -> stop.copy(status = TripStopStatus.Done)
+                index == nextIndex -> stop.copy(status = TripStopStatus.Current)
+                else -> stop.copy(status = TripStopStatus.Upcoming)
+            }
+        }
+    }
+
+    private fun <T> List<T>.rotateLeft(steps: Int): List<T> {
+        // Demo reorder
+        if (isEmpty()) return this
+
+        val offset = ((steps % size) + size) % size
+        return drop(offset) + take(offset)
+    }
+
     private fun rebalanceTripStopsAfterManualEdit(
         stops: List<TripTimelineStop>,
     ): List<TripTimelineStop> {
@@ -1269,7 +1676,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun melbournePopularAddStopPlaces(): List<AddStopPlace> {
-        // TODO: 之后替换为 Yan 的景点搜索/景点类型数据 + Sitao 的距离定位数据。
+        // TODO: 之后替换为 LeYan 的景点搜索/景点类型数据 + Alex 的距离定位数据。
         return listOf(
             AddStopPlace(
                 name = "Melbourne Museum",
@@ -1306,7 +1713,7 @@ class MainActivity : ComponentActivity() {
 
     private fun sampleNearbyExplorePlaces(): List<ExplorePlace> {
         // TODO: 之后这里替换为真实附近景点列表。
-        // Alex/Sitao 提供当前 GPS，Yan/Leyan 提供景点坐标/类型，再由前端或后端计算距离后显示。
+        // Alex 提供当前 GPS，LeYan/Leyan 提供景点坐标/类型，再由前端或后端计算距离后显示。
         return listOf(
             ExplorePlace(
                 name = "Melbourne Museum",
@@ -1414,8 +1821,8 @@ class MainActivity : ComponentActivity() {
         name: String,
     ): AttractionDetail {
         // TODO: 之后替换为真实景点详情：
-        // Leyan/Yan 提供名称、图片、室内外、天气适配、营业时间、官网；
-        // Alex/Sitao sensor/GPS 提供用户当前位置，再计算 distanceText。
+        // Leyan 提供名称、图片、室内外、天气适配、营业时间、官网；
+        // Alex sensor/GPS 提供用户当前位置，再计算 distanceText。
         val defaultWeeklyHours = listOf(
             AttractionOpeningHours("Mon", "10:00 am - 5:00 pm"),
             AttractionOpeningHours("Tue", "10:00 am - 5:00 pm"),
@@ -1592,6 +1999,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openExternalMap(placeName: String) {
+        // function: uiOpenExternalMap
+        // owner: Yufei
         // 外部地图统一入口：Home 提醒条和 Trip 的 Start navigation 都调用这里。
         val mapUri = Uri.parse("geo:0,0?q=${Uri.encode(placeName)}")
         val mapIntent = Intent(Intent.ACTION_VIEW, mapUri)

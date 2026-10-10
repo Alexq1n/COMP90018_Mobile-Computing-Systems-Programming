@@ -257,6 +257,12 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
+                // Sensor refresh state
+                // TODO: Replace demo refresh with real GPS / backend results.
+                var exploreShakeRefreshCount by rememberSaveable { mutableStateOf(0) }
+                var addStopShakeRefreshCount by rememberSaveable { mutableStateOf(0) }
+                var tripShakeProgressCount by rememberSaveable { mutableStateOf(0) }
+
                 // Update existing UI location using GPS StateFlow.
                 LaunchedEffect(sensorRepository) {
                     sensorRepository.locationFlow.collect { location ->
@@ -274,24 +280,27 @@ class MainActivity : ComponentActivity() {
 
 
                 // Sensor trigger
-                // TODO: Alex should call this when shake is detected.
+                // Called when Alex's ShakeDetector emits one shake event.
                 fun handleShakeTrigger() {
                     when (currentScreen) {
                         AuthScreen.Explore -> {
                             // Explore: shake refreshes nearby suggestions.
-                            Toast.makeText(this, "Shake: refresh nearby places", Toast.LENGTH_SHORT).show()
+                            exploreShakeRefreshCount += 1
+                            Toast.makeText(this, "Nearby places refreshed", Toast.LENGTH_SHORT).show()
                         }
 
                         AuthScreen.Trip -> {
                             // Trip: shake re-checks current progress.
-                            Toast.makeText(this, "Shake: update trip progress", Toast.LENGTH_SHORT).show()
+                            tripShakeProgressCount += 1
+                            Toast.makeText(this, "Trip progress updated", Toast.LENGTH_SHORT).show()
                         }
 
                         AuthScreen.PlanMyTrip,
                         AuthScreen.PlanAddStop,
                         AuthScreen.EditAddStop -> {
                             // Planning/search: shake can suggest one nearby place.
-                            Toast.makeText(this, "Shake: suggest a nearby stop", Toast.LENGTH_SHORT).show()
+                            addStopShakeRefreshCount += 1
+                            Toast.makeText(this, "Nearby stop suggestions refreshed", Toast.LENGTH_SHORT).show()
                         }
 
                         else -> {
@@ -381,6 +390,14 @@ class MainActivity : ComponentActivity() {
                             ),
                         ),
                     )
+                }
+
+                // Trip progress demo
+                // TODO: Replace with Sitao/Zewen real progress update.
+                LaunchedEffect(tripShakeProgressCount) {
+                    if (tripShakeProgressCount > 0) {
+                        tripTimelineStops = tripTimelineStops.advanceCurrentStopForDemo()
+                    }
                 }
 
                 // Adjust itinerary 弹窗当前显示第几个候选方案。
@@ -630,8 +647,8 @@ class MainActivity : ComponentActivity() {
                     AuthScreen.Explore -> {
                         // TODO: 这是 Explore 页的临时假数据。
                         // TODO: 之后 currentArea/places 由 Alex/Sitao 的 GPS + Yan/Leyan 的景点数据共同生成。
-                        val nearbyExplorePlaces = remember {
-                            sampleNearbyExplorePlaces()
+                        val nearbyExplorePlaces = remember(exploreShakeRefreshCount) {
+                            sampleNearbyExplorePlaces().rotateLeft(exploreShakeRefreshCount)
                         }
 
                         ExploreScreen(
@@ -787,7 +804,9 @@ class MainActivity : ComponentActivity() {
                         AddStopScreen(
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
-                            places = melbournePopularAddStopPlaces(),
+                            places = remember(addStopShakeRefreshCount) {
+                                melbournePopularAddStopPlaces().rotateLeft(addStopShakeRefreshCount)
+                            },
                             isSearching = isSearchingPlaces,
 
                             // 从 Plan My Trip 进来，返回 Plan My Trip。
@@ -825,7 +844,9 @@ class MainActivity : ComponentActivity() {
                         AddStopScreen(
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
-                            places = melbournePopularAddStopPlaces(),
+                            places = remember(addStopShakeRefreshCount) {
+                                melbournePopularAddStopPlaces().rotateLeft(addStopShakeRefreshCount)
+                            },
                             isSearching = isSearchingPlaces,
 
                             // 从 Edit itinerary 进来，返回 Edit itinerary。
@@ -1141,6 +1162,33 @@ class MainActivity : ComponentActivity() {
 
 
 
+
+    private fun List<TripTimelineStop>.advanceCurrentStopForDemo(): List<TripTimelineStop> {
+        // Demo progress
+        // TODO: Replace with real progress from GPS / backend.
+        val currentIndex = indexOfFirst { stop ->
+            stop.status == TripStopStatus.Current
+        }
+
+        if (currentIndex == -1 || currentIndex >= lastIndex) return this
+
+        val nextIndex = currentIndex + 1
+        return mapIndexed { index, stop ->
+            when {
+                index < nextIndex -> stop.copy(status = TripStopStatus.Done)
+                index == nextIndex -> stop.copy(status = TripStopStatus.Current)
+                else -> stop.copy(status = TripStopStatus.Upcoming)
+            }
+        }
+    }
+
+    private fun <T> List<T>.rotateLeft(steps: Int): List<T> {
+        // Demo reorder
+        if (isEmpty()) return this
+
+        val offset = ((steps % size) + size) % size
+        return drop(offset) + take(offset)
+    }
 
     private fun rebalanceTripStopsAfterManualEdit(
         stops: List<TripTimelineStop>,

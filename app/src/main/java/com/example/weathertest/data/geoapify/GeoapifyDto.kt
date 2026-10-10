@@ -32,5 +32,19 @@ data class GeoapifyProperties(
     @SerialName("opening_hours") val openingHours: String? = null,
     val description: String? = null,
     val website: String? = null,
+    val phone: String? = null,
+    val contact: GeoapifyContact? = null,
+
+    @SerialName("wiki_and_media")
+    val wikiAndMedia: GeoapifyWikiAndMedia? = null
+)
+
+@Serializable
+data class GeoapifyContact(
     val phone: String? = null
+)
+
+@Serializable
+data class GeoapifyWikiAndMedia(
+    val image: String? = null
 )

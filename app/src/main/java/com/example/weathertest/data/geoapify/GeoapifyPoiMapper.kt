@@ -28,10 +28,12 @@ object GeoapifyPoiMapper {
             // Geoapify place_id is already a unique place identifier.
             id = merged.placeId ?: fallbackId(name, lat, lon),
             name = name,
+            photoUrl = merged.wikiAndMedia?.image,
+            website = merged.website,
+            phone = merged.contact?.phone ?: merged.phone,
 
-            // IMPORTANT: Geoapify does not provide a user rating / quality score.
-            // Keep this as a neutral prototype value until your team defines scoring.
-            baseScore = 7.0,
+            // Geoapify does not provide a user rating / quality score.
+            baseScore = null,
 
             category = targetCategory,
             environment = environmentFor(targetCategory),
@@ -65,7 +67,9 @@ object GeoapifyPoiMapper {
             openingHours = details.openingHours ?: place.openingHours,
             description = details.description ?: place.description,
             website = details.website ?: place.website,
-            phone = details.phone ?: place.phone
+            phone = details.phone ?: place.phone,
+            contact = details.contact ?: place.contact,
+            wikiAndMedia = details.wikiAndMedia ?: place.wikiAndMedia
         )
     }
 
@@ -114,7 +118,7 @@ object GeoapifyPoiMapper {
         POICategory.SPORTS -> 90
         POICategory.CULTURAL -> 90
         POICategory.NIGHTLIFE -> 150
-        POICategory.CAFE -> 60
+        POICategory.CAFE -> 5
         POICategory.LANDMARK -> 45
         POICategory.SCENIC_SPOT -> 45
     }

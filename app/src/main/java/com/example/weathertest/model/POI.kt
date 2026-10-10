@@ -6,7 +6,13 @@ import kotlinx.serialization.Serializable
 data class POI(
     val id: String,
     val name: String,
-    val baseScore: Double,
+
+    // Optional enrichment fields. Null means the source did not provide a value.
+    val photoUrl: String? = null,
+    val website: String? = null,
+    val phone: String? = null,
+
+    val baseScore: Double? = null,
     val category: POICategory,
     val environment: Environment,
     val coordinates: Coordinates,

@@ -14,6 +14,9 @@ import org.json.JSONObject
 import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 
 /** Real-time weather returned for the user's current location. */
 data class CurrentWeather(
@@ -21,10 +24,12 @@ data class CurrentWeather(
     val temperature: Double?
 )
 
-/** Hourly forecast used internally for weather-change detection. */
+/** Hourly forecast used for weather-change detection. */
 data class HourlyWeather(
     val time: LocalDateTime,
-    val status: WeatherStatus?
+    val status: WeatherStatus?,
+    val precipitationType: String?,
+    val precipitationTotal: Double?
 )
 
 /**
@@ -43,19 +48,33 @@ class WeatherApiManager {
     private val client = OkHttpClient()
     private val apiKey = "vnbcxa1687l84gf6lxlwm2saghv1lam998r8zc4v"
 
+    private val _currentWeather = MutableLiveData<CurrentWeather>()
+
+    val currentWeather: LiveData<CurrentWeather> get() = _currentWeather
+
     private val handler = Handler(Looper.getMainLooper())
     private var monitoring = false
-    private val notified = mutableSetOf<String>()
+    private val notifiedDates = mutableSetOf<LocalDate>()
 
     var onWeatherChange: ((WeatherChangeEvent) -> Unit)? = null
 
-    /** Fetch current weather and temperature for the given location. */
+    /**
+     * Fetch current weather for the given GPS location.
+     *
+     * Every successful request updates currentWeather LiveData,
+     * allowing the UI to automatically receive the latest weather.
+     */
     fun getCurrentWeather(
         latitude: Double,
         longitude: Double,
-        callback: (CurrentWeather?) -> Unit
+        callback: (CurrentWeather?) -> Unit = {}
     ) {
-        request(latitude, longitude, "current") { json ->
+
+        request(
+            latitude,
+            longitude,
+            "current"
+        ) { json ->
 
             if (json == null) {
                 callback(null)
@@ -63,18 +82,39 @@ class WeatherApiManager {
             }
 
             try {
-                val current = json.getJSONObject("current")
 
-                callback(
+                val current =
+                    json.getJSONObject("current")
+
+                val weather =
                     CurrentWeather(
                         status = getStatus(current),
+
                         temperature = current
-                            .optDouble("temperature", Double.NaN)
-                            .takeUnless { it.isNaN() }
+                            .optDouble(
+                                "temperature",
+                                Double.NaN
+                            )
+                            .takeUnless {
+                                it.isNaN()
+                            }
                     )
-                )
+
+                // Update LiveData for UI / downstream components.
+                _currentWeather.postValue(weather)
+
+                // Still support callback if someone wants
+                // the result directly.
+                callback(weather)
+
             } catch (e: Exception) {
-                Log.e("WeatherAPI", "Current parse error", e)
+
+                Log.e(
+                    "WeatherAPI",
+                    "Current parse error",
+                    e
+                )
+
                 callback(null)
             }
         }
@@ -85,20 +125,38 @@ class WeatherApiManager {
      *
      * Dates outside the API forecast range are returned with a null status.
      */
+
     fun getPlannedWeather(
         latitude: Double,
         longitude: Double,
         startDate: LocalDate,
-        tripDays: Int,
+        endDate: LocalDate,
         callback: (List<DailyWeatherForecast>?) -> Unit
     ) {
-        if (tripDays <= 0) {
+
+        val tripDays =
+            ChronoUnit.DAYS
+                .between(startDate, endDate)
+                .toInt() + 1
+
+        // Invalid date range
+        if (tripDays < 0) {
+            Log.e(
+                "WeatherAPI",
+                "Invalid trip dates: endDate is before startDate"
+            )
+            callback(null)
+            return
+        }
+
+        // Same start/end date -> duration = 0
+        if (tripDays == 0) {
             callback(emptyList())
             return
         }
 
-        val dates = List(tripDays) {
-            startDate.plusDays(it.toLong())
+        val dates = List(tripDays) { dayIndex ->
+            startDate.plusDays(dayIndex.toLong())
         }
 
         request(latitude, longitude, "daily") { json ->
@@ -109,6 +167,7 @@ class WeatherApiManager {
             }
 
             try {
+
                 val data = json
                     .getJSONObject("daily")
                     .getJSONArray("data")
@@ -117,16 +176,19 @@ class WeatherApiManager {
                     mutableMapOf<LocalDate, WeatherStatus>()
 
                 for (i in 0 until data.length()) {
+
                     val day = data.getJSONObject(i)
 
                     val date = try {
-                        LocalDate.parse(day.getString("day"))
+                        LocalDate.parse(
+                            day.getString("day")
+                        )
                     } catch (_: Exception) {
                         continue
                     }
 
-                    getStatus(day)?.let {
-                        weatherByDate[date] = it
+                    getStatus(day)?.let { status ->
+                        weatherByDate[date] = status
                     }
                 }
 
@@ -140,7 +202,13 @@ class WeatherApiManager {
                 )
 
             } catch (e: Exception) {
-                Log.e("WeatherAPI", "Daily parse error", e)
+
+                Log.e(
+                    "WeatherAPI",
+                    "Daily parse error",
+                    e
+                )
+
                 callback(null)
             }
         }
@@ -175,10 +243,25 @@ class WeatherApiManager {
                         continue
                     }
 
+                    val precipitation =
+                        hour.optJSONObject("precipitation")
+
+                    val precipitationType =
+                        precipitation
+                            ?.optString("type", "none")
+                            ?.takeIf { it.isNotBlank() }
+
+                    val precipitationTotal =
+                        precipitation
+                            ?.optDouble("total", Double.NaN)
+                            ?.takeUnless { it.isNaN() }
+
                     result.add(
                         HourlyWeather(
                             time = time,
-                            status = getStatus(hour)
+                            status = getStatus(hour),
+                            precipitationType = precipitationType,
+                            precipitationTotal = precipitationTotal
                         )
                     )
                 }
@@ -197,10 +280,10 @@ class WeatherApiManager {
      *
      * Example: SUNNY -> RAINY at 15:00.
      */
-    fun getWeatherChangesNext6Hours(
+    fun getRainChangeToday(
         latitude: Double,
         longitude: Double,
-        callback: (List<WeatherChangeEvent>?) -> Unit
+        callback: (WeatherChangeEvent?) -> Unit
     ) {
         getHourlyWeather(latitude, longitude) { hourly ->
 
@@ -214,33 +297,50 @@ class WeatherApiManager {
                 .withSecond(0)
                 .withNano(0)
 
-            val endTime = currentHour.plusHours(6)
+            val today = currentHour.toLocalDate()
 
-            val next = hourly
+            val todayWeather = hourly
                 .filter {
-                    !it.time.isBefore(currentHour) &&
-                            !it.time.isAfter(endTime)
+                    it.time.toLocalDate() == today &&
+                            !it.time.isBefore(currentHour)
                 }
                 .sortedBy { it.time }
 
-            val changes = mutableListOf<WeatherChangeEvent>()
+            for (i in 1 until todayWeather.size) {
 
-            for (i in 1 until next.size) {
-                val oldStatus = next[i - 1].status ?: continue
-                val newStatus = next[i].status ?: continue
+                val previous = todayWeather[i - 1]
+                val current = todayWeather[i]
 
-                if (oldStatus != newStatus) {
-                    changes.add(
+                val previousIsRain =
+                    previous.precipitationType.equals(
+                        "rain",
+                        ignoreCase = true
+                    )
+
+                val currentIsRain =
+                    current.precipitationType.equals(
+                        "rain",
+                        ignoreCase = true
+                    )
+
+                if (!previousIsRain && currentIsRain) {
+
+                    callback(
                         WeatherChangeEvent(
-                            time = next[i].time,
-                            from = oldStatus,
-                            to = newStatus
+                            time = current.time,
+                            from = previous.status ?: WeatherStatus.CLOUDY,
+                            to = WeatherStatus.RAINY
                         )
                     )
+
+                    // once today's first rain transition is found,
+                    // ignore all later changes
+                    return@getHourlyWeather
                 }
             }
 
-            callback(changes)
+            // No non-rain -> rain transition today
+            callback(null)
         }
     }
 
@@ -254,25 +354,23 @@ class WeatherApiManager {
         latitude: Double,
         longitude: Double
     ) {
-        if (monitoring) return
 
-        monitoring = true
+        val runnable = object : Runnable {
 
-        val task = object : Runnable {
             override fun run() {
-                if (!monitoring) return
 
-                getWeatherChangesNext6Hours(
+                getRainChangeToday(
                     latitude,
                     longitude
-                ) { changes ->
+                ) { event ->
 
-                    changes?.forEach { event ->
-                        val id =
-                            "${event.time}-${event.from}-${event.to}"
+                    if (event != null) {
 
-                        // Avoid sending the same weather change more than once.
-                        if (notified.add(id)) {
+                        val date =
+                            event.time.toLocalDate()
+
+                        if (notifiedDates.add(date)) {
+
                             handler.post {
                                 onWeatherChange?.invoke(event)
                             }
@@ -287,14 +385,13 @@ class WeatherApiManager {
             }
         }
 
-        handler.post(task)
+        handler.post(runnable)
     }
 
     /** Stop weather monitoring and clear previously reported changes. */
     fun stopWeatherMonitoring() {
         monitoring = false
         handler.removeCallbacksAndMessages(null)
-        notified.clear()
     }
 
     /** Send a Meteosource request for the requested section. */

@@ -91,7 +91,7 @@ class StepCounterSensor(
             "getStepsLastHour() CALLED! currentTime=${System.currentTimeMillis()}"
         )
 
-        if (stepHistory.size < 2) return 0
+        if (stepHistory.size < 2) return null
         val last = stepHistory.last()
         val currentTime = System.currentTimeMillis()
         val targetTime = currentTime - 3_600_000L
@@ -100,11 +100,12 @@ class StepCounterSensor(
             .minByOrNull { abs(it.timestamp - targetTime) } ?: return null
 
         val stepDifference = last.steps - first.steps
-        if (stepDifference <= 1f) return 0
+        if (stepDifference < 0f) return null
+        if (stepDifference == 0f) return 0
         val timeDifferenceMinutes = (currentTime - first.timestamp) / 60_000f
-        if (timeDifferenceMinutes <= 0f) return 0
+        if (timeDifferenceMinutes <= 0f) return null
         val t = timeDifferenceMinutes.coerceIn(0f, 60f)
-        if (t <= 0f) return 0
+        if (t <= 0f) return null
         val multiplier = if (timeDifferenceMinutes >= 60f) {
             1f
         } else {

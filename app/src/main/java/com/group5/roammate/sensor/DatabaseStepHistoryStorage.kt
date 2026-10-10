@@ -1,4 +1,3 @@
-
 package com.group5.roammate.sensor
 import android.util.Log
 /**
@@ -11,6 +10,8 @@ class DatabaseStepHistoryStorage : StepHistoryStorage {
         // load data from database
         // Return emptyList() if database is empty
         Log.d("RoamMateSensor", "loadStepHistory() CALLED")
+
+
         return emptyList()
     }
 

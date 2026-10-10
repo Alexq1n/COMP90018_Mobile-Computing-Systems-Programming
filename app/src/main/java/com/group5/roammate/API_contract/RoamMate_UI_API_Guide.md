@@ -253,7 +253,7 @@ Purpose: load full attraction content after clicking a place from Explore, Trip 
 Input:
 
 ```kotlin
-attractionId: String
+val attractionId: String
 ```
 
 Output:

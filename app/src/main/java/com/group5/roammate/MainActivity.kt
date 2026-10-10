@@ -15,6 +15,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.group5.roammate.backend_alex.MockPOI
+import com.group5.roammate.backend_alex.POISearchService
 import com.group5.roammate.ui.pet.rememberPetEnvironment
 import com.group5.roammate.pet.PetPreferences
 import com.group5.roammate.pet.PetStateEngine
@@ -198,6 +200,44 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
+        // ==================== Search Test ====================
+
+        val testResults = uiSearchPlacesByName(
+            context = this,
+            query = "museum",
+            currentCity = "M2",
+            userLatitude = -37.8136,
+            userLongitude = 144.9631,
+            limit = 10
+        )
+
+        android.util.Log.d(
+            "SearchTest",
+            "Total results: ${testResults.size}"
+        )
+
+        testResults.forEachIndexed { index, place ->
+            android.util.Log.d(
+                "SearchTest",
+                "${index + 1}. ${place.name} | " +
+                        "Distance: ${place.distanceText} | " +
+                        "Environment: ${place.environmentType}"
+            )
+        }
+
+// ==================== End Test ====================
+
+
+
+
+
+
+
+
+
+
 
 
         // Subscribe to the shared repository.
@@ -1100,8 +1140,19 @@ class MainActivity : ComponentActivity() {
                             sensorRepository = sensorRepository,
                             onBack = {
                                 currentScreen = AuthScreen.Login
+                            },
+                            searchPlacesByName = {query, latitude, longitude ->
+                                uiSearchPlacesByName(
+                                    context = this@MainActivity,
+                                    query = query,
+                                    currentCity = "Melbourne",
+                                    userLatitude = latitude,
+                                    userLongitude = longitude,
+                                    limit = 10
+                                )
                             }
                         )
+
                     }
 
 
@@ -1408,7 +1459,36 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+//    private fun uiSearchPlacesByName(
+//        query: String,
+//        currentCity: String?,
+//        userLatitude: Double?,
+//        userLongitude: Double?,
+//        limit: Int,
+//    ): List<AddStopPlace> {
+//        // function: uiSearchPlacesByName
+//        // owner: Alex
+//        // data source: Leyan POI source
+//        // storage: Yuxiang database if needed
+//        // input: query, city, GPS, limit
+//        // output: POI list mapped to AddStopPlace
+//        // TODO(Alex): Search POI repository by name; return POI list in final integration.
+//        val source = melbournePopularAddStopPlaces()
+//        val result = if (query.isBlank()) {
+//            source
+//        } else {
+//            source.filter { place ->
+//                place.name.contains(query, ignoreCase = true)
+//            }
+//        }
+//
+//        return result.take(limit)
+//    }
+
+
+
     private fun uiSearchPlacesByName(
+        context: Context,
         query: String,
         currentCity: String?,
         userLatitude: Double?,
@@ -1421,20 +1501,47 @@ class MainActivity : ComponentActivity() {
         // storage: Yuxiang database if needed
         // input: query, city, GPS, limit
         // output: POI list mapped to AddStopPlace
-        // TODO(Alex): Search POI repository by name; return POI list in final integration.
-        val source = melbournePopularAddStopPlaces()
-        val result = if (query.isBlank()) {
-            source
-        } else {
-            source.filter { place ->
-                place.name.contains(query, ignoreCase = true)
-            }
-        }
 
-        return result.take(limit)
+        // Connect to POI repository
+        val repository = MockPOI(context)
+
+        // Connect to search algorithm
+        val searchService = POISearchService(repository)
+
+        // Run search algorithm
+        val results = searchService.search(
+            query = query,
+            userLatitude = userLatitude,
+            userLongitude = userLongitude,
+            limit = limit
+        )
+
+        // Convert SearchResult to AddStopPlace
+        return results.map { result ->
+
+            AddStopPlace(
+                name = result.place.name,
+
+                distanceText = result.distanceMeters?.let { distance ->
+                    if (distance < 1000.0) {
+                        "${distance.toInt()} m"
+                    } else {
+                        String.format(
+                            java.util.Locale.US,
+                            "%.1f km",
+                            distance / 1000.0
+                        )
+                    }
+                } ?: "Distance unavailable",
+
+                environmentType = result.place.environment.name
+                    .lowercase()
+                    .replaceFirstChar { it.uppercase() }
+            )
+        }
     }
 
-    // ---- Leyan: attraction data ----
+
 
     private fun uiExploreNearbyPlaces(
         category: ExplorePlaceCategory,
@@ -1453,6 +1560,63 @@ class MainActivity : ComponentActivity() {
             .filter { place -> place.category == category }
             .take(limit)
     }
+
+
+
+
+
+
+//    // ---- Leyan: attraction data ----
+//
+//    private fun uiExploreNearbyPlaces(
+//        context: Context,
+//        category: ExplorePlaceCategory,
+//        userLatitude: Double?,
+//        userLongitude: Double?,
+//        limit: Int,
+//    ): List<PlaceBriefUiData> {
+//        // function: uiExploreNearbyPlaces
+//        // owner: Alex
+//        // data source: Leyan POI source
+//        // sensor source: Alex GPS
+//        // input: category filter, GPS, limit
+//        // output: POI list mapped to ExplorePlace
+//
+//        // Connect to POI repository
+//        val repository = MockPOI(context)
+//
+//        // Connect to search algorithm
+//        val searchService = POISearchService(repository)
+//
+//        // Run search algorithm
+//        val results = searchService.search(
+//            query = "",
+//            userLatitude = userLatitude,
+//            userLongitude = userLongitude,
+//            category = category,
+//            limit = limit
+//        )
+//
+//        // Convert SearchResult to AddStopPlace
+//        return results.map { result ->
+//
+//            val place = result.place
+//
+//            PlaceBriefUiData(
+//                id = place.id,
+//                name = place.name,
+//                category = place.category.name,
+//                environmentType = place.environment.name
+//                    .lowercase()
+//                    .replaceFirstChar { it.uppercase() },
+//                latitude = place.coordinates.latitude,
+//                longitude = place.coordinates.longitude,
+//                distanceMeters = result.distanceMeters?.toInt()
+//            )
+//        }
+//    }
+
+
 
     private fun uiLoadAttractionDetail(attractionIdOrName: String): AttractionDetail {
         // function: uiLoadAttractionDetail

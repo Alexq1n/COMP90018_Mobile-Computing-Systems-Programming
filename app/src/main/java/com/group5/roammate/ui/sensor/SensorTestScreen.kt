@@ -1,4 +1,3 @@
-
 package com.group5.roammate.ui.sensor
 
 import android.util.Log
@@ -14,11 +13,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import com.group5.roammate.sensor.SensorRepository
+import com.group5.roammate.ui.screens.AddStopPlace
+
 
 private const val TAG = "RoamMateSensor"
+private const val SEARCH_TAG = "SearchTest"
 
-// Display API values in a more visible way.
+// =====================================================
+// Display API values in a more visible way
+// =====================================================
+
 @Composable
 private fun SensorValue(value: String) {
     Column(
@@ -47,10 +53,25 @@ private fun SensorValue(value: String) {
     }
 }
 
+
+
+
+
+
+
+// =====================================================
+// Sensor Test Screen
+// =====================================================
+
 @Composable
 fun SensorTestScreen(
     sensorRepository: SensorRepository,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    searchPlacesByName: (
+        query: String,
+        latitude: Double?,
+        longitude: Double?
+    ) -> List<AddStopPlace>
 ) {
 
     // ==================== StateFlow APIs ====================
@@ -94,6 +115,7 @@ fun SensorTestScreen(
         sensorRepository.stepEvents.collect { timestamp ->
             stepEvents++
             lastStepTimestamp = timestamp
+
             Log.d(TAG, "Step detected: $timestamp")
         }
     }
@@ -108,9 +130,20 @@ fun SensorTestScreen(
     LaunchedEffect(sensorRepository) {
         sensorRepository.shakeEvents.collect {
             shakeEvents++
+
             Log.d(TAG, "Shake detected!")
         }
     }
+
+
+    // ==================== POI Search Test ====================
+
+    var searchQuery by remember { mutableStateOf("") }
+    var searchResults by remember {
+        mutableStateOf<List<AddStopPlace>>(emptyList())
+    }
+    var searchStatus by remember { mutableStateOf("Not searched") }
+    var searchLocationText by remember { mutableStateOf("Not searched") }
 
 
     // ==================== Sensor Test UI ====================
@@ -159,6 +192,7 @@ fun SensorTestScreen(
         Button(
             onClick = {
                 val result = sensorRepository.getCurrentSteps()
+
                 manualSteps = result?.toString() ?: "null"
 
                 Log.d(TAG, "getCurrentSteps(): $result")
@@ -198,6 +232,7 @@ fun SensorTestScreen(
         Button(
             onClick = {
                 val result = sensorRepository.getStepsLastHour()
+
                 manualLastHour = result?.toString() ?: "null"
 
                 Log.d(TAG, "getStepsLastHour(): $result")
@@ -313,5 +348,132 @@ fun SensorTestScreen(
 
         Text("Events Received: $shakeEvents")
         Text("Shake your phone to test.")
+
+        HorizontalDivider()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // =====================================================
+        // 6. POI Search Test
+        // =====================================================
+
+        Text(
+            text = "6. POI Search Test",
+            style = MaterialTheme.typography.titleLarge
+        )
+
+        Text("API: uiSearchPlacesByName()")
+        Text("Output: List<AddStopPlace>")
+
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            label = { Text("Search POI") },
+            placeholder = { Text("e.g. museum, park, cafe") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Button(
+            onClick = {
+                try {
+                    val latitude = location?.latitude ?: -37.8136
+                    val longitude = location?.longitude ?: 144.9631
+
+                    searchLocationText = if (location != null) {
+                        "Real GPS: $latitude, $longitude"
+                    } else {
+                        "Mock GPS (Melbourne CBD): $latitude, $longitude"
+                    }
+
+                    // Test MainActivity's existing UI integration function.
+                    val results = searchPlacesByName(
+                        searchQuery,
+                        latitude,
+                        longitude
+                    )
+
+                    searchResults = results
+                    searchStatus = "Found ${results.size} results"
+
+                    Log.d(SEARCH_TAG, "Query: '$searchQuery'")
+                    Log.d(SEARCH_TAG, "Location: $searchLocationText")
+                    Log.d(SEARCH_TAG, "Total results: ${results.size}")
+
+                    results.forEachIndexed { index, place ->
+                        Log.d(
+                            SEARCH_TAG,
+                            "${index + 1}. Name: ${place.name} | " +
+                                    "Distance: ${place.distanceText} | " +
+                                    "Environment: ${place.environmentType}"
+                        )
+                    }
+                } catch (e: Exception) {
+                    searchResults = emptyList()
+                    searchStatus = "Search Error: ${e.message}"
+                    Log.e(SEARCH_TAG, "POI UI search failed", e)
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Search")
+        }
+
+        Text(
+            text = searchStatus,
+            fontWeight = FontWeight.Bold
+        )
+
+        Text(
+            text = "Search Location: $searchLocationText",
+            style = MaterialTheme.typography.bodySmall
+        )
+
+        searchResults.forEachIndexed { index, place ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "${index + 1}. ${place.name}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text("Distance: ${place.distanceText}")
+                    Text("Environment: ${place.environmentType}")
+                }
+            }
+        }
+
+        if (searchResults.isEmpty() && searchStatus == "Found 0 results") {
+            Text(
+                text = "No matching POIs found.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Spacer(modifier = Modifier.height(300.dp))
     }
 }

@@ -1,0 +1,4372 @@
+[
+    {
+        "id": "51002a0b15d21e624059f9f884ecbce742c0f00103f9012693de300300000092031153686f7420546f776572204d757365756d",
+        "name": "Shot Tower Museum",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.810453,144.9631448&zoom=16&size=800x500&markers=-37.810453,144.9631448,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.1,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.810453,
+            "longitude": 144.9631448
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "McIntyre Alley, Melbourne Victoria 3000, Australia",
+        "description": "Small museum covering the ΓÇ£shot towerΓÇ¥ structure and more general history of Melbourne. Entrance is located inside the R.M. Williams shop."
+    },
+    {
+        "id": "510ef1b4a1c71e624059a9424d3e87e842c0f00103f901c8247a2400000000920312414e5a2042616e6b696e67204d757365756d",
+        "name": "ANZ Banking Museum",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8166273,144.9618691&zoom=16&size=800x500&markers=-37.8166273,144.9618691,red-pushpin",
+        "website": "https://www.anz.com/shareholder/centre/about/history/banking-museum/",
+        "phone": null,
+        "baseScore": 8.2,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8166273,
+            "longitude": 144.9618691
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:30",
+            "closeTime": "16:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "380 Collins Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51ccf09f6ea01e6240593be12538f5e742c0f00103f90121db41350300000092030f48656c6c656e6963204d757365756d",
+        "name": "Hellenic Museum",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.812171,144.957084&zoom=16&size=800x500&markers=-37.812171,144.957084,red-pushpin",
+        "website": "https://www.hellenic.org.au/",
+        "phone": "+61 3 8615 9016",
+        "baseScore": 9.2,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.812171,
+            "longitude": 144.957084
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "16:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "280 William Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51c6d33cc6031f6240596f9bec58c6e742c0f00102f90187ebc0020000000092030e4368696e657365204d757365756d",
+        "name": "Chinese Museum",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8107366,144.969209&zoom=16&size=800x500&markers=-37.8107366,144.969209,red-pushpin",
+        "website": "https://www.chinesemuseum.com.au/",
+        "phone": null,
+        "baseScore": 8.2,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8107366,
+            "longitude": 144.969209
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "16:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "22 Cohen Place, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51cf22f097bb1e624059e6fe5725d9e842c0f00102f901eb74d90000000000920312496d6d6967726174696f6e204d757365756d",
+        "name": "Immigration Museum",
+        "photoUrl": "https://www.pelago.com/img/products/AU-Australia/melbourne-immigration-museum-entry-ticket/3853ee760ad7496cbc1659e4ba546667_melbourne-immigration-museum-entry-ticket.jpg",
+        "website": "https://museumsvictoria.com.au/immigrationmuseum/",
+        "phone": "+61 3 9927 2709",
+        "baseScore": 8.8,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8191199,
+            "longitude": 144.9603977
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "400 Flinders Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5151c848e7021f624059da8978caa2e842c0f00102f9012c645e010000000092030441434d49",
+        "name": "ACMI",
+        "photoUrl": "https://misformelbourne.com/wp-content/uploads/2021/06/Things-to-do-in-Melbourne-with-kids-ACMI-2048x1366.jpg",
+        "website": "https://www.acmi.net.au/",
+        "phone": "+61 3 8663 2200",
+        "baseScore": 9.0,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8174356,
+            "longitude": 144.9690684
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Flinders Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "519f8f32e2021f624059bfbe315fb9e842c0f00103f90125673c55010000009203154b6f6f726965204865726974616765205472757374",
+        "name": "Koorie Heritage Trust",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8181571,144.969102&zoom=16&size=800x500&markers=-37.8181571,144.969102,red-pushpin",
+        "website": "https://kht.org.au/",
+        "phone": "+61 3 8662 6300",
+        "baseScore": 9.2,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8181571,
+            "longitude": 144.969102
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Birrarung Marr Walk, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5148345eea091f624059b004daafa5e842c0f00102f9012b645e010000000092032049616e20506f747465722043656e7472653a204e4756204175737472616c6961",
+        "name": "Ian Potter Centre: NGV Australia",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8175803,144.9699764&zoom=16&size=800x500&markers=-37.8175803,144.9699764,red-pushpin",
+        "website": "https://www.ngv.vic.gov.au/",
+        "phone": null,
+        "baseScore": 9.0,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8175803,
+            "longitude": 144.9699764
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Russell Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5162478897cc1e624059c1e7e2ca34e742c0f00103f9010661dab800000000920314524d49542044657369676e204172636869766573",
+        "name": "RMIT Design Archives",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8062986,144.9624746&zoom=16&size=800x500&markers=-37.8062986,144.9624746,red-pushpin",
+        "website": "https://www.designcollection.rmit.edu.au/",
+        "phone": null,
+        "baseScore": 8.2,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8062986,
+            "longitude": 144.9624746
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "154 Victoria Street, Melbourne Victoria 3053, Australia",
+        "description": null
+    },
+    {
+        "id": "51fb1e9a1ef91e624059a284f46ff2e842c0f00103f9016dc8f532030000009203244175737472616c69616e204d757365756d206f6620506572666f726d696e672041727473",
+        "name": "Australian Museum of Performing Arts",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8198986,144.9679101&zoom=16&size=800x500&markers=-37.8198986,144.9679101,red-pushpin",
+        "website": "https://www.artscentremelbourne.com.au/ampa",
+        "phone": null,
+        "baseScore": 8.2,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8198986,
+            "longitude": 144.9679101
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "100 St Kilda Road, Melbourne Victoria 3006, Australia",
+        "description": null
+    },
+    {
+        "id": "51a1b6b2e92d1f624059a75027ea16e842c0f00103f901514b6d230000000092031c4f6c64205472656173757279204275696c64696e67204d757365756d",
+        "name": "Old Treasury Building Museum",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8131993,144.9743546&zoom=16&size=800x500&markers=-37.8131993,144.9743546,red-pushpin",
+        "website": "https://www.oldtreasurybuilding.org.au/",
+        "phone": null,
+        "baseScore": 8.8,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8131993,
+            "longitude": 144.9743546
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "16:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "20 Spring Street, Melbourne Victoria 3002, Australia",
+        "description": null
+    },
+    {
+        "id": "513f5d9324fe1e624059bf000c152de942c0f00103f901921767cb000000009203164175737472616c69616e204d75736963205661756c74",
+        "name": "Australian Music Vault",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8216883,144.9685233&zoom=16&size=800x500&markers=-37.8216883,144.9685233,red-pushpin",
+        "website": "https://www.australianmusicvault.com.au/",
+        "phone": null,
+        "baseScore": 9.0,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8216883,
+            "longitude": 144.9685233
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "100 St Kilda Road, Melbourne Victoria 3006, Australia",
+        "description": null
+    },
+    {
+        "id": "517cca7be6361f6240592491c71d80e742c0f00103f901adae7e230000000092031446697265205365727669636573204d757365756d",
+        "name": "Fire Services Museum",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8085973,144.9754517&zoom=16&size=800x500&markers=-37.8085973,144.9754517,red-pushpin",
+        "website": "https://www.fsmv.net.au/",
+        "phone": "+61 3 9662 2907",
+        "baseScore": 9.2,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8085973,
+            "longitude": 144.9754517
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "15:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "39 Gisborne Street, Melbourne Victoria 3002, Australia",
+        "description": null
+    },
+    {
+        "id": "519c5b6992001f624059f25a1c807be942c0f00101f901fc8a050100000000920319427578746f6e20436f6e74656d706f72617279202838363829",
+        "name": "Buxton Contemporary (868)",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8240681,144.9688464&zoom=16&size=800x500&markers=-37.8240681,144.9688464,red-pushpin",
+        "website": "https://buxtoncontemporary.com/",
+        "phone": "+61 3 9035 9339",
+        "baseScore": 9.2,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8240681,
+            "longitude": 144.9688464
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "156 Southbank Boulevard, Melbourne Victoria 3006, Australia",
+        "description": "The museum is located in the heart of the Melbourne arts precinct where it provides a creative forum through which the University engages local, national and international audiences with the best of contemporary Australian and international art."
+    },
+    {
+        "id": "517240b3ca171f624059901fc9efd1e642c0f00102f901b2804900000000009203104d656c626f75726e65204d757365756d",
+        "name": "Melbourne Museum",
+        "photoUrl": "https://media.timeout.com/images/104724180/750/562/image.jpg",
+        "website": "https://museumsvictoria.com.au/melbournemuseum/",
+        "phone": "+61 3 8341 7777",
+        "baseScore": 9.2,
+        "category": "MUSEUM",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8032298,
+            "longitude": 144.9723488
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "11 Nicholson Street, Melbourne Victoria 3053, Australia",
+        "description": null
+    },
+    {
+        "id": "51fd36e78aba1e62405950d5f8f1ade842c0f00102f901c12eb035000000009203124d61726b657420537472656574205061726b",
+        "name": "Market Street Park",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8178279,144.96032&zoom=16&size=800x500&markers=-37.8178279,144.96032,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.0,
+        "category": "PARK",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8178279,
+            "longitude": 144.96032
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria, Australia",
+        "description": null
+    },
+    {
+        "id": "51556ce816e21e624059b015f7ea7ce742c0f00102f901f6b0ea0d0000000092030f556e6976657273697479204c61776e",
+        "name": "University Lawn",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8085006,144.9650988&zoom=16&size=800x500&markers=-37.8085006,144.9650988,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.0,
+        "category": "PARK",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8085006,
+            "longitude": 144.9650988
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "517e411dc1f91e6240597fbe30e2a3e742c0f00102f90190ef2e4b000000009203175765736c657920506c61636520557262616e205061726b",
+        "name": "Wesley Place Urban Park",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.809685,144.9679988&zoom=16&size=800x500&markers=-37.809685,144.9679988,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.0,
+        "category": "PARK",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.809685,
+            "longitude": 144.9679988
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria, Australia",
+        "description": null
+    },
+    {
+        "id": "512caac693e51e624059a7764fe753e742c0f00102f901df1ef30100000000920312456967687420486f75722052657365727665",
+        "name": "Eight Hour Reserve",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8073381,144.965543&zoom=16&size=800x500&markers=-37.8073381,144.965543,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.0,
+        "category": "PARK",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8073381,
+            "longitude": 144.965543
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria, Australia",
+        "description": null
+    },
+    {
+        "id": "5190e92a0bb41e624059bc98f7ddfbe842c0f00102f9012d2bf4390000000092030f456e7465727072697a65205061726b",
+        "name": "Enterprize Park",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8202003,144.9594271&zoom=16&size=800x500&markers=-37.8202003,144.9594271,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.0,
+        "category": "PARK",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8202003,
+            "longitude": 144.9594271
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria, Australia",
+        "description": null
+    },
+    {
+        "id": "515b046b41d41e624059c0cfb87020e842c0f00103f901a1df183c0300000092030c497a616b61796120446f6d6f",
+        "name": "Izakaya Domo",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.81349,144.9634101&zoom=16&size=800x500&markers=-37.81349,144.9634101,red-pushpin",
+        "website": "https://www.izakayadomo.com.au/",
+        "phone": null,
+        "baseScore": 9.6,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.81349,
+            "longitude": 144.9634101
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "350 Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51eaef00aad31e624059aafbb6161ce842c0f00103f901a0df183c0300000092030c4b68616f73616e204c616e65",
+        "name": "Khaosan Lane",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8133572,144.9633379&zoom=16&size=800x500&markers=-37.8133572,144.9633379,red-pushpin",
+        "website": "https://khaosanlane.com/",
+        "phone": null,
+        "baseScore": 9.0,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8133572,
+            "longitude": 144.9633379
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "350 Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51b10d260fd51e6240597aa86dc328e842c0f00103f9019f042a7a0100000092030943612044652056696e",
+        "name": "Ca De Vin",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.813744,144.9635082&zoom=16&size=800x500&markers=-37.813744,144.9635082,red-pushpin",
+        "website": "https://www.cadevin.com/",
+        "phone": "+61 3 9654 3639",
+        "baseScore": 9.0,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.813744,
+            "longitude": 144.9635082
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Postal Lane Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5103b5183ccc1e6240598f22c6c617e842c0f00103f90158e20d260300000092030f5368616e6768616920537472656574",
+        "name": "Shanghai Street",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8132256,144.962431&zoom=16&size=800x500&markers=-37.8132256,144.962431,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.6,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8132256,
+            "longitude": 144.962431
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:45",
+            "closeTime": "15:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "342 Little Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51cd5c3baccb1e624059118b187618e842c0f00103f9014e4ad4790100000092030c4d722052616d656e2053616e",
+        "name": "Mr Ramen San",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8132465,144.9623624&zoom=16&size=800x500&markers=-37.8132465,144.9623624,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 9.2,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8132465,
+            "longitude": 144.9623624
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:30",
+            "closeTime": "14:30"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "344 Little Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5105300a27ce1e6240595afc5c2338e842c0f00103f9013158f1790100000092030f5368616e6768616920537472656574",
+        "name": "Shanghai Street",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8142132,144.9626651&zoom=16&size=800x500&markers=-37.8142132,144.9626651,red-pushpin",
+        "website": null,
+        "phone": "+61 3 9078 8068",
+        "baseScore": 8.6,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8142132,
+            "longitude": 144.9626651
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51094a7611cb1e62405935bd1f1219e842c0f00103f9011b4daba10000000092030957616b752057616b75",
+        "name": "Waku Waku",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8132651,144.9622886&zoom=16&size=800x500&markers=-37.8132651,144.9622886,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.8,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8132651,
+            "longitude": 144.9622886
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "15:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "346 Little Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51c655c098c81e62405954e57b4622e842c0f00103f90101dd4ff8000000009203075469706f203030",
+        "name": "Tipo 00",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.813546,144.9619869&zoom=16&size=800x500&markers=-37.813546,144.9619869,red-pushpin",
+        "website": "https://tipo00.com.au/",
+        "phone": "+61 3 9942 3946",
+        "baseScore": 9.0,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.813546,
+            "longitude": 144.9619869
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:30",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "361 Little Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51a24e2fe7c81e624059055fe2d92fe842c0f00103f901467c524f0100000092030e506f7274656c6c6f20526f73736f",
+        "name": "Portello Rosso",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8139603,144.9620243&zoom=16&size=800x500&markers=-37.8139603,144.9620243,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.8,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8139603,
+            "longitude": 144.9620243
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Warburton Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51f5465277ca1e62405929aecf413ce842c0f00103f9013d7edf300300000092030a595820486f7420506f74",
+        "name": "YX Hot Pot",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8143389,144.9622151&zoom=16&size=800x500&markers=-37.8143389,144.9622151,red-pushpin",
+        "website": "https://hotpot.yxgroup.com.au/en",
+        "phone": null,
+        "baseScore": 10.0,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8143389,
+            "longitude": 144.9622151
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51c4a92050c71e62405991990b5c1ee842c0f00103f9019aa5e0300100000092030c2b33392050697a7a65726961",
+        "name": "+39 Pizzeria",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8134265,144.9618302&zoom=16&size=800x500&markers=-37.8134265,144.9618302,red-pushpin",
+        "website": "https://www.plus39.com.au/",
+        "phone": "+61 3 9642 0440",
+        "baseScore": 8.8,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8134265,
+            "longitude": 144.9618302
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "12:00",
+            "closeTime": "00:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "362 Little Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5188916f00c71e6240597567374426e842c0f00103f901caa60d260300000092030953757368692053686f",
+        "name": "Sushi Sho",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8136678,144.9617922&zoom=16&size=800x500&markers=-37.8136678,144.9617922,red-pushpin",
+        "website": "https://www.sushisho.com.au/",
+        "phone": null,
+        "baseScore": 9.0,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8136678,
+            "longitude": 144.9617922
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "369 Little Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51742f8be4c61e6240595f73582b24e842c0f00103f901c9a60d26030000009203044e617275",
+        "name": "Naru",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8136038,144.9617789&zoom=16&size=800x500&markers=-37.8136038,144.9617789,red-pushpin",
+        "website": "https://www.naruyakitori.com.au",
+        "phone": null,
+        "baseScore": 8.4,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8136038,
+            "longitude": 144.9617789
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "369 Little Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51b3caf1afca1e6240593eeb1a2d07e842c0f00103f901cf2a09fc0200000092030f58696e6a69616e67204c616d69656e",
+        "name": "Xinjiang Lamien",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.812719,144.9622421&zoom=16&size=800x500&markers=-37.812719,144.9622421,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.8,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.812719,
+            "longitude": 144.9622421
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "12:00",
+            "closeTime": "15:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "255 Elizabeth Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5103c5d9bed11e624059e6a7dd5449e842c0f00103f901f23eb4770200000092031342656c6c65277320486f7420436869636b6562",
+        "name": "Belle's Hot Chickeb",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8147379,144.9631037&zoom=16&size=800x500&markers=-37.8147379,144.9631037,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.2,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8147379,
+            "longitude": 144.9631037
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:30",
+            "closeTime": "21:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "385 Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51cf68ab92c81e6240590ad7a3703de842c0f00103f90130768e240000000092030b437572727920506f696e74",
+        "name": "Curry Point",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.814375,144.961984&zoom=16&size=800x500&markers=-37.814375,144.961984,red-pushpin",
+        "website": null,
+        "phone": "+61 3 9602 2550",
+        "baseScore": 7.0,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.814375,
+            "longitude": 144.961984
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "392 Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": "Indian Dhaba cuisine"
+    },
+    {
+        "id": "51d11e2fa4c31e624059fd33deb133e842c0f00103f901b5ef707e020000009203184c756c75e2809973204368617220416b6974612054656f77",
+        "name": "LuluΓÇÖs Char Akita Teow",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8140776,144.961382&zoom=16&size=800x500&markers=-37.8140776,144.961382,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.4,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8140776,
+            "longitude": 144.961382
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Hardware Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51f56adb8bc31e62405927fb422333e842c0f00103f901eada09fc0200000092030e486f74656c204e6163696f6e616c",
+        "name": "Hotel Nacional",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8140606,144.9613704&zoom=16&size=800x500&markers=-37.8140606,144.9613704,red-pushpin",
+        "website": "https://www.hotelnacional.co/",
+        "phone": "+61 3 9521 4209",
+        "baseScore": 8.4,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8140606,
+            "longitude": 144.9613704
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "12:00",
+            "closeTime": "24:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "23-25 Hardware Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5149dfff22c31e6240596ac82e0730e842c0f00103f90141fd00e500000000920305547269696d",
+        "name": "Triim",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8139657,144.9613204&zoom=16&size=800x500&markers=-37.8139657,144.9613204,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.8,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8139657,
+            "longitude": 144.9613204
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Hardware Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51f53cc967c31e6240592de68ccd33e842c0f00103f901a3839b4b020000009203154c756c7527732043686172204b6f6179205469616f",
+        "name": "Lulu's Char Koay Tiao",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8140809,144.9613532&zoom=16&size=800x500&markers=-37.8140809,144.9613532,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.4,
+        "category": "RESTAURANT",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8140809,
+            "longitude": 144.9613532
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Hardware Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5167c8783ed31e6240594e77b60724e842c0f00102f901e3f0ca020000000092030f4d656c626f75726e6527732047504f",
+        "name": "Melbourne's GPO",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8135922,144.9632736&zoom=16&size=800x500&markers=-37.8135922,144.9632736,red-pushpin",
+        "website": "https://www.melbournesgpo.com/",
+        "phone": "+61 3 9290 0200",
+        "baseScore": 8.2,
+        "category": "SHOPPING",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8135922,
+            "longitude": 144.9632736
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "350 Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5157a805bed71e624059bfee3cf41ee842c0f00102f901373cc102000000009203044d796572",
+        "name": "Myer",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8134493,144.9638445&zoom=16&size=800x500&markers=-37.8134493,144.9638445,red-pushpin",
+        "website": "https://www.myer.com.au/",
+        "phone": "+61 3 9661 1111",
+        "baseScore": 8.4,
+        "category": "SHOPPING",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8134493,
+            "longitude": 144.9638445
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:30",
+            "closeTime": "19:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "314-336 Bourke Street Mall, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51fa02af6bdc1e624059d60f9a2c1ae842c0f00102f90107ee06070000000092030b4461766964204a6f6e6573",
+        "name": "David Jones",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8131557,144.9643251&zoom=16&size=800x500&markers=-37.8131557,144.9643251,red-pushpin",
+        "website": "http://www.davidjones.com.au/",
+        "phone": "+61 3 9643 2222",
+        "baseScore": 8.4,
+        "category": "SHOPPING",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8131557,
+            "longitude": 144.9643251
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:30",
+            "closeTime": "19:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "310 Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51ade17f40d01e6240597f2becf44ee842c0f00102f9015ffdc3020000000092030847616c6c65726961",
+        "name": "Galleria",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8148852,144.9629018&zoom=16&size=800x500&markers=-37.8148852,144.9629018,red-pushpin",
+        "website": "https://www.galleria.com.au/",
+        "phone": null,
+        "baseScore": 6.9,
+        "category": "SHOPPING",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8148852,
+            "longitude": 144.9629018
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Elizabeth Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "512735bac9d71e62405900a38c27fde742c0f00102f901393cc10200000000920308456d706f7269756d",
+        "name": "Emporium",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8124148,144.9639161&zoom=16&size=800x500&markers=-37.8124148,144.9639161,red-pushpin",
+        "website": "https://www.emporiummelbourne.com.au/",
+        "phone": "+61 3 8609 8221",
+        "baseScore": 8.8,
+        "category": "SHOPPING",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8124148,
+            "longitude": 144.9639161
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "19:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "287 Lonsdale Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51a96d54eadd1e624059c99f5c413fe842c0f00102f90122805b120000000092030e4d656c626f75726e652057616c6b",
+        "name": "Melbourne Walk",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8142336,144.9644987&zoom=16&size=800x500&markers=-37.8142336,144.9644987,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.7,
+        "category": "SHOPPING",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8142336,
+            "longitude": 144.9644987
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Bourke Street Mall, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51d2a34ee5d91e6240595bde663bf0e742c0f00103f901d0b81028010000009203044d756a69",
+        "name": "Muji",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8120188,144.9640986&zoom=16&size=800x500&markers=-37.8120188,144.9640986,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.7,
+        "category": "SHOPPING",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8120188,
+            "longitude": 144.9640986
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "19:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "287 Lonsdale Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51e1883ea4dc1e6240598910f06865e842c0f00102f901dd5ec9020000000092030c426c6f636b20417263616465",
+        "name": "Block Arcade",
+        "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Melbourne_Block_Arcade_2014.jpg",
+        "website": "https://theblock.com.au/",
+        "phone": "+61 3 9654 5244",
+        "baseScore": 9.0,
+        "category": "SHOPPING",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8155831,
+            "longitude": 144.9643273
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "08:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "282 Collins Street, Melbourne Victoria 3000, Australia",
+        "description": "Heritage shopping arcade & tourist icon"
+    },
+    {
+        "id": "516c5be0b2e01e624059cf39aa115de842c0f00102f9018a5ec9020000000092030e436f6c6c696e7320417263616465",
+        "name": "Collins Arcade",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8151875,144.9648449&zoom=16&size=800x500&markers=-37.8151875,144.9648449,red-pushpin",
+        "website": "https://www.collinsarcade.com.au/",
+        "phone": null,
+        "baseScore": 6.9,
+        "category": "SHOPPING",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8151875,
+            "longitude": 144.9648449
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "260 Collins Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51fe9c82fcec1e62405996ce876709e842c0f00103f9012aca6d23000000009203054b6d617274",
+        "name": "Kmart",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.812787,144.966429&zoom=16&size=800x500&markers=-37.812787,144.966429,red-pushpin",
+        "website": "https://www.kmart.com.au",
+        "phone": null,
+        "baseScore": 7.2,
+        "category": "SHOPPING",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.812787,
+            "longitude": 144.966429
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "08:00",
+            "closeTime": "19:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "236 Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51390e1714e11e624059bce6fae362e842c0f00103f901825f9935030000009203074b696e6770696e",
+        "name": "Kingpin",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8155179,144.9649754&zoom=16&size=800x500&markers=-37.8155179,144.9649754,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.4,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8155179,
+            "longitude": 144.9649754
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "260 Collins Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "511ba9adc7f31e624059bb93f4d5fae742c0f00103f901653a7423000000009203104368696e61746f776e2043696e656d61",
+        "name": "Chinatown Cinema",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8123424,144.9672583&zoom=16&size=800x500&markers=-37.8123424,144.9672583,red-pushpin",
+        "website": "https://www.heroic-cinema.com/chinatown/",
+        "phone": null,
+        "baseScore": 8.0,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8123424,
+            "longitude": 144.9672583
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "200 Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51f3ba3434d41e624059c43ea65ab0e742c0f00103f90132835b1100000000920317486f797473204d656c626f75726e652043656e7472616c",
+        "name": "Hoyts Melbourne Central",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8100694,144.9634038&zoom=16&size=800x500&markers=-37.8100694,144.9634038,red-pushpin",
+        "website": "https://www.hoyts.com.au",
+        "phone": null,
+        "baseScore": 8.0,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8100694,
+            "longitude": 144.9634038
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Knox Place, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51886aa56b011f624059fcabc77dabe842c0f00103f901ee9c435b0100000092030641434d492d58",
+        "name": "ACMI-X",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8177335,144.9689234&zoom=16&size=800x500&markers=-37.8177335,144.9689234,red-pushpin",
+        "website": "https://www.acmi.net.au/acmi-x/",
+        "phone": null,
+        "baseScore": 8.0,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8177335,
+            "longitude": 144.9689234
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Flinders Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "516831676c1e1f6240591ff818ac38e842c0f00103f901815477b00000000092030c4b696e6f2043696e656d6173",
+        "name": "Kino Cinemas",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8142295,144.9724638&zoom=16&size=800x500&markers=-37.8142295,144.9724638,red-pushpin",
+        "website": "https://www.palacecinemas.com.au/cinemas/kino/",
+        "phone": "+61 3 9650 2100",
+        "baseScore": 8.4,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8142295,
+            "longitude": 144.9724638
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "45 Collins Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "516d3ce6f4aa1e624059b4f5b19b0ce942c0f00102f901f54e9d010000000092031b534541204c494645204d656c626f75726e6520417175617269756d",
+        "name": "SEA LIFE Melbourne Aquarium",
+        "photoUrl": "https://www.visitmelbourne.com/-/media/atdw/melbourne/see-and-do/nature-and-wildlife/sanctuaries-zoos-and-farms/b45c04e5e49ec73e7f1a66499f6811bd_1600x1200.jpeg?ts=20241211310459",
+        "website": "https://www.melbourneaquarium.com.au/",
+        "phone": null,
+        "baseScore": 8.6,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8206509,
+            "longitude": 144.9583468
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "17:30"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "King Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51cd446c0baa1e624059b1d58adb0de942c0f00103f901e9fb83270100000092031b536561204c696665204d656c626f75726e6520417175617269756d",
+        "name": "Sea Life Melbourne Aquarium",
+        "photoUrl": "https://www.visitmelbourne.com/-/media/atdw/melbourne/see-and-do/nature-and-wildlife/sanctuaries-zoos-and-farms/b45c04e5e49ec73e7f1a66499f6811bd_1600x1200.jpeg?ts=20241211310459",
+        "website": "https://www.melbourneaquarium.com.au/",
+        "phone": null,
+        "baseScore": 8.6,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8207354,
+            "longitude": 144.9582574
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:30",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "King Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "518423edeba51e62405917539f9a81e942c0f00103f901a7c19e1d0000000092031556696c6c6167652043696e656d61732043726f776e",
+        "name": "Village Cinemas Crown",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8242677,144.9577541&zoom=16&size=800x500&markers=-37.8242677,144.9577541,red-pushpin",
+        "website": "https://villagecinemas.com.au/cinemas/crown",
+        "phone": null,
+        "baseScore": 8.2,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8242677,
+            "longitude": 144.9577541
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "8 Whiteman Street, Melbourne Victoria 3006, Australia",
+        "description": null
+    },
+    {
+        "id": "51d44911740f1f62405991138145d9e642c0f00103f901f03bf5150000000092030e494d4158204d656c626f75726e65",
+        "name": "IMAX Melbourne",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8035056,144.9706364&zoom=16&size=800x500&markers=-37.8035056,144.9706364,red-pushpin",
+        "website": "https://imaxmelbourne.com.au/",
+        "phone": "+61 3 9663 5454",
+        "baseScore": 9.0,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8035056,
+            "longitude": 144.9706364
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Rathdowne Street, Melbourne Victoria 3053, Australia",
+        "description": null
+    },
+    {
+        "id": "513a82e01f8e1e6240596acd38ae7ae942c0f00102f9016c32145a0000000092031a536b796c696e652050726563696e6374204d656c626f75726e65",
+        "name": "Skyline Precinct Melbourne",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8240631,144.9546448&zoom=16&size=800x500&markers=-37.8240631,144.9546448,red-pushpin",
+        "website": "https://www.skylinemelbourne.com.au/",
+        "phone": null,
+        "baseScore": 8.0,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8240631,
+            "longitude": 144.9546448
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "South Wharf Promenade, Melbourne Victoria 3006, Australia",
+        "description": null
+    },
+    {
+        "id": "51eb0324f5f91e6240595639a39c1ee642c0f00103f901d12002120000000092030b43696e656d61204e6f7661",
+        "name": "Cinema Nova",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.7978092,144.9680124&zoom=16&size=800x500&markers=-37.7978092,144.9680124,red-pushpin",
+        "website": "https://www.cinemanova.com.au/",
+        "phone": null,
+        "baseScore": 9.2,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.7978092,
+            "longitude": 144.9680124
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "380 Lygon Street, Melbourne Victoria 3053, Australia",
+        "description": null
+    },
+    {
+        "id": "5112a516988e1f624059992359b966e742c0f00102f901535a5e390000000092030e45636c697073652043696e656d61",
+        "name": "Eclipse Cinema",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8078153,144.986166&zoom=16&size=800x500&markers=-37.8078153,144.986166,red-pushpin",
+        "website": "https://eclipse-cinema.com.au",
+        "phone": null,
+        "baseScore": 8.0,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8078153,
+            "longitude": 144.986166
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "32-34 Wellington Street, Melbourne Victoria 3066, Australia",
+        "description": null
+    },
+    {
+        "id": "515c8bbbe6fa1d6240597b42c06be1e742c0f00103f9010c93989e02000000920305486f797473",
+        "name": "Hoyts",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8115668,144.9368776&zoom=16&size=800x500&markers=-37.8115668,144.9368776,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.8,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8115668,
+            "longitude": 144.9368776
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "120 Pearl River Road, Melbourne Victoria 3008, Australia",
+        "description": null
+    },
+    {
+        "id": "51b23f9afbb51f62405957a87f5a56e642c0f00103f901a341bf2c01000000920326546865205669727475616c205265616c6974792043696e656d6120436f6c6c696e67776f6f64",
+        "name": "The Virtual Reality Cinema Collingwood",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.7995103,144.9909647&zoom=16&size=800x500&markers=-37.7995103,144.9909647,red-pushpin",
+        "website": "https://virtualrealitycinema.com.au/",
+        "phone": null,
+        "baseScore": 8.0,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.7995103,
+            "longitude": 144.9909647
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "178 Johnston Street, Melbourne Victoria 3066, Australia",
+        "description": null
+    },
+    {
+        "id": "51421c903d721e624059d8a4204263e442c0f00102f90113c653510000000092031c4d656c626f75726e65205a6f6f6c6f676963616c2047617264656e73",
+        "name": "Melbourne Zoological Gardens",
+        "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Melbourne_Zoo%2C_Victoria%2C_Australia_-22Jan2011.jpg",
+        "website": "https://www.zoo.org.au/MelbourneZoo",
+        "phone": null,
+        "baseScore": 9.0,
+        "category": "ENTERTAINMENT",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.7848032,
+            "longitude": 144.9515371
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "1 Elliott Avenue, Melbourne Victoria 3052, Australia",
+        "description": null
+    },
+    {
+        "id": "519ca20a59db1e624059d02446766fe842c0f00102f9013e1fd84c0000000092030f416c74736f6e277320436f726e6572",
+        "name": "Altson's Corner",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8159015,144.9642759&zoom=16&size=800x500&markers=-37.8159015,144.9642759,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.8,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8159015,
+            "longitude": 144.9642759
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Block Court, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "511edd088bca1e6240591e73e549d2e742c0f00103f901b712bbda0200000092030d4761727920526f792052616265",
+        "name": "Gary Roy Rabe",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.811105,144.9622245&zoom=16&size=800x500&markers=-37.811105,144.9622245,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.8,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.811105,
+            "longitude": 144.9622245
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Menzies Alley, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5111d32a9fca1e624059badb86f8d1e742c0f00103f901b612bbda0200000092030e5061756c204d634465726d6f7474",
+        "name": "Paul McDermott",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8110953,144.9622341&zoom=16&size=800x500&markers=-37.8110953,144.9622341,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.8,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8110953,
+            "longitude": 144.9622341
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Menzies Alley, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "511d7ae640ea1e6240596da71f204ee842c0f00103f9016512f3340300000092031356616c277320436f66666565204c6f756e6765",
+        "name": "Val's Coffee Lounge",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8148842,144.9660954&zoom=16&size=800x500&markers=-37.8148842,144.9660954,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.8,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8148842,
+            "longitude": 144.9660954
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Capitol Arcade, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "513c68896cf01e62405966e4af264fe842c0f00102f9017af60301000000009203134d656c626f75726e6520546f776e2048616c6c",
+        "name": "Melbourne Town Hall",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8149155,144.9668486&zoom=16&size=800x500&markers=-37.8149155,144.9668486,red-pushpin",
+        "website": "https://www.melbourne.vic.gov.au/",
+        "phone": null,
+        "baseScore": 8.4,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8149155,
+            "longitude": 144.9668486
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "90-120 Swanston Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51f393c558c11e624059c3335939b4e742c0f00103f901c67eb59501000000920310546865204175737472616c617369616e",
+        "name": "The Australasian",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8101875,144.9611019&zoom=16&size=800x500&markers=-37.8101875,144.9611019,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.8,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8101875,
+            "longitude": 144.9611019
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "369 Elizabeth Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "510127254eb81e624059b3c1caa3c0e742c0f00103f901e709bbda0200000092030c57656c736820436875726368",
+        "name": "Welsh Church",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8105664,144.9599982&zoom=16&size=800x500&markers=-37.8105664,144.9599982,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.8,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8105664,
+            "longitude": 144.9599982
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "La Trobe Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "510814fb15bc1e6240590ecde9fea0e842c0f00103f901342133b6020000009203134a6f686e20506173636f65204661776b6e6572",
+        "name": "John Pascoe Fawkner",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8174132,144.9604597&zoom=16&size=800x500&markers=-37.8174132,144.9604597,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.8,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8174132,
+            "longitude": 144.9604597
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "419-429 Collins Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5141c41737ff1e624059dd7ae17547e842c0f00103f90128bfaa260300000092031953636f74732043687572636820576172204d656d6f7269616c",
+        "name": "Scots Church War Memorial",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8146808,144.9686542&zoom=16&size=800x500&markers=-37.8146808,144.9686542,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.8,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8146808,
+            "longitude": 144.9686542
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Collins Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5121bd4d24bd1e624059c22805ceade842c0f00103f901dc4433b6020000009203174669727374205275737369616e20436f6e73756c617465",
+        "name": "First Russian Consulate",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8178041,144.9605886&zoom=16&size=800x500&markers=-37.8178041,144.9605886,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.8,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8178041,
+            "longitude": 144.9605886
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "60 Market Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51f1321e00cc1e624059edd6247abee842c0f00103f901e99134b60200000092030b416b69726120486f757365",
+        "name": "Akira House",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8183129,144.9624024&zoom=16&size=800x500&markers=-37.8183129,144.9624024,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.8,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8183129,
+            "longitude": 144.9624024
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "18 Queen Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5170bf50d3f11e6240595c1445ef9ee842c0f00102f90196a4830200000000920310596f756e672026204a61636b736f6e73",
+        "name": "Young & Jacksons",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8173503,144.9670197&zoom=16&size=800x500&markers=-37.8173503,144.9670197,red-pushpin",
+        "website": "https://www.youngandjacksons.com.au/",
+        "phone": "+61 3 9650 3884",
+        "baseScore": 7.0,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8173503,
+            "longitude": 144.9670197
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "24:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "1 Swanston Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51c973e341a01e62405968ae3da4f3e742c0f00102f901fda5fb020000000092030a526f79616c204d696e74",
+        "name": "Royal Mint",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8121228,144.9570627&zoom=16&size=800x500&markers=-37.8121228,144.9570627,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.8,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8121228,
+            "longitude": 144.9570627
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "280 William Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51a49e05a1bc1e624059e849c496c3e842c0f00103f901733c33b602000000920328546865204d656c626f75726e6520486172626f7220547275737420436f6d6d697373696f6e657273",
+        "name": "The Melbourne Harbor Trust Commissioners",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8184689,144.960526&zoom=16&size=800x500&markers=-37.8184689,144.960526,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.8,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8184689,
+            "longitude": 144.960526
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "29-31 Market Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51e617ca2ebd1e62405908dbfd76c8e842c0f00103f901415834b602000000920317506f727420417574686f72697479204275696c64696e67",
+        "name": "Port Authority Building",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8186177,144.9605936&zoom=16&size=800x500&markers=-37.8186177,144.9605936,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.8,
+        "category": "HISTORICAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8186177,
+            "longitude": 144.9605936
+        },
+        "recommendedVisitDuration": 60,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "29-31 Market Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51f7da70e5401e62405942ea493139e442c0f00102f901fc556516000000009203175768697465e280997320536b696e6b2048616269746174",
+        "name": "WhiteΓÇÖs Skink Habitat",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.7830975,144.9454337&zoom=16&size=800x500&markers=-37.7830975,144.9454337,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.2,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.7830975,
+            "longitude": 144.9454337
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3052, Australia",
+        "description": null
+    },
+    {
+        "id": "5155bebe0b192062405989aac867a7ea42c0f00102f9015cadf2020000000092032b48657272696e672049736c616e6420456e7669726f6e6d656e74616c205363756c7074757265205061726b",
+        "name": "Herring Island Environmental Sculpture Park",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8330209,145.0028788&zoom=16&size=800x500&markers=-37.8330209,145.0028788,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.3,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8330209,
+            "longitude": 145.0028788
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3121, Australia",
+        "description": null
+    },
+    {
+        "id": "5105b06066a71c6240598465d62fc1e342c0f00102f901e26ba9010000000092031646726f67277320486f6c6c6f77205765746c616e6473",
+        "name": "Frog's Hollow Wetlands",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.7791907,144.8954865&zoom=16&size=800x500&markers=-37.7791907,144.8954865,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.2,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.7791907,
+            "longitude": 144.8954865
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3032, Australia",
+        "description": null
+    },
+    {
+        "id": "51235452d96c1f624059628db50b1ae042c0f00102f90159a1832b000000009203105374726574746c65205765746c616e64",
+        "name": "Strettle Wetland",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.7508871,144.9821383&zoom=16&size=800x500&markers=-37.7508871,144.9821383,red-pushpin",
+        "website": "http://www.darebin.org/Directory/Agency.aspx?Mkey=547&S3Key=729",
+        "phone": null,
+        "baseScore": 7.4,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.7508871,
+            "longitude": 144.9821383
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3071, Australia",
+        "description": null
+    },
+    {
+        "id": "512db6d2b33321624059e88da88813e442c0f00102f90126682122000000009203154e61706965722057616c6c65722052657365727665",
+        "name": "Napier Waller Reserve",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.7818885,145.0373703&zoom=16&size=800x500&markers=-37.7818885,145.0373703,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.2,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.7818885,
+            "longitude": 145.0373703
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3079, Australia",
+        "description": null
+    },
+    {
+        "id": "5106fd1f158121624059a0b44190bce342c0f00102f901c99dbf010000000092030e57696c736f6e2052657365727665",
+        "name": "Wilson Reserve",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.7789574,145.0471543&zoom=16&size=800x500&markers=-37.7789574,145.0471543,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.2,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.7789574,
+            "longitude": 145.0471543
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3079, Australia",
+        "description": null
+    },
+    {
+        "id": "511a88aa3ed31f624059bde3d94f7af142c0f00102f9015e16a7010000000092031d59616c756b69742057696c6c616d204e61747572652052657365727665",
+        "name": "Yalukit Willam Nature Reserve",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8860372,144.9948957&zoom=16&size=800x500&markers=-37.8860372,144.9948957,red-pushpin",
+        "website": "https://www.bayside.vic.gov.au/council/projects/yalukit-willam-nature-reserve",
+        "phone": null,
+        "baseScore": 8.5,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8860372,
+            "longitude": 144.9948957
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3186, Australia",
+        "description": null
+    },
+    {
+        "id": "5146054ffc601c624059a1bacb0834e142c0f00102f9016ac31405000000009203214166746f6e2053747265657420436f6e736572766174696f6e2052657365727665",
+        "name": "Afton Street Conservation Reserve",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.7589175,144.886659&zoom=16&size=800x500&markers=-37.7589175,144.886659,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.2,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.7589175,
+            "longitude": 144.886659
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "100-98, Melbourne Victoria 3040, Australia",
+        "description": null
+    },
+    {
+        "id": "519de77c4b031c62405949c5354d78ee42c0f00101f9015e5209000000000092031f4a6177626f6e6520466c6f726120616e64204661756e612052657365727665",
+        "name": "Jawbone Flora and Fauna Reserve",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8630947,144.8745405&zoom=16&size=800x500&markers=-37.8630947,144.8745405,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.6,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8630947,
+            "longitude": 144.8745405
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3016, Australia",
+        "description": null
+    },
+    {
+        "id": "51046cc6f5111c6240599b732883d3ee42c0f00101f90130520900000000009203184a6177626f6e65204d6172696e652053616e637475617279",
+        "name": "Jawbone Marine Sanctuary",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8653703,144.8750528&zoom=16&size=800x500&markers=-37.8653703,144.8750528,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.6,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8653703,
+            "longitude": 144.8750528
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3016, Australia",
+        "description": null
+    },
+    {
+        "id": "51262dc1a2531b62405986e99e51e7ed42c0f00102f901f261bc0100000000920313416c746f6e6120436f617374616c205061726b",
+        "name": "Altona Coastal Park",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8589873,144.8572305&zoom=16&size=800x500&markers=-37.8589873,144.8572305,red-pushpin",
+        "website": "https://www.hobsonsbay.vic.gov.au/Community/Parks-and-reserves/Altona-Coastal-Park",
+        "phone": null,
+        "baseScore": 8.4,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8589873,
+            "longitude": 144.8572305
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3018, Australia",
+        "description": null
+    },
+    {
+        "id": "516d25f065a122624059caf17f494eed42c0f00102f901e5e035110000000092032757656c666172652050617261646520496e646967656e6f757320466c6f72612052657365727665",
+        "name": "Welfare Parade Indigenous Flora Reserve",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8540975,145.0823275&zoom=16&size=800x500&markers=-37.8540975,145.0823275,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.2,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8540975,
+            "longitude": 145.0823275
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3146, Australia",
+        "description": null
+    },
+    {
+        "id": "510cdbdc0ebc1a62405959035f3f1beb42c0f00102f901f72fbc430000000092031d4b6f726f726f697420437265656b204e61747572652052657365727665",
+        "name": "Kororoit Creek Nature Reserve",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8363078,144.8368276&zoom=16&size=800x500&markers=-37.8363078,144.8368276,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.2,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8363078,
+            "longitude": 144.8368276
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3025, Australia",
+        "description": null
+    },
+    {
+        "id": "517e7a5e3cb82262405992939cde24e342c0f00102f901c859c716000000009203165374616e6c6579205374726565742052657365727665",
+        "name": "Stanley Street Reserve",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.7744881,145.0850396&zoom=16&size=800x500&markers=-37.7744881,145.0850396,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.2,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.7744881,
+            "longitude": 145.0850396
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3105, Australia",
+        "description": null
+    },
+    {
+        "id": "514195d2d80b1d6240590fe83cb2d6db42c0f00102f9010dc31907000000009203135374726174686e617665722052657365727665",
+        "name": "Strathnaver Reserve",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.7175127,144.907693&zoom=16&size=800x500&markers=-37.7175127,144.907693,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.2,
+        "category": "NATURE",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.7175127,
+            "longitude": 144.907693
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3041, Australia",
+        "description": null
+    },
+    {
+        "id": "513b79fdae362062405953113b8cece642c0f00102f901f120b0010000000092030b486f727365204172656e61",
+        "name": "Horse Arena",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8040939,145.0066753&zoom=16&size=800x500&markers=-37.8040939,145.0066753,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 3.0,
+        "category": "BEACH",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8040939,
+            "longitude": 145.0066753
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Main Yarra Trail Capital City Trail, Melbourne Victoria 3067, Australia",
+        "description": null
+    },
+    {
+        "id": "511f52ead8461e62405905b573b175ec42c0f00102f901b759ba0200000000920315536f757468204d656c626f75726e65204265616368",
+        "name": "South Melbourne Beach",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8472962,144.9461648&zoom=16&size=800x500&markers=-37.8472962,144.9461648,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.4,
+        "category": "BEACH",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8472962,
+            "longitude": 144.9461648
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3206, Australia",
+        "description": null
+    },
+    {
+        "id": "51e47e4212f51d624059cf46c178e7eb42c0f00101f90194abd30000000000920314506f7274204d656c626f75726e65204265616368",
+        "name": "Port Melbourne Beach",
+        "photoUrl": "https://s1.at.atcdn.net/wp-content/uploads/2023/12/PortMelbourne2.jpg?quality=80&w=1200",
+        "website": null,
+        "phone": null,
+        "baseScore": 9.0,
+        "category": "BEACH",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.842468,
+            "longitude": 144.9343672
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3207, Australia",
+        "description": null
+    },
+    {
+        "id": "51bd7839efa41e624059d56641e821ed42c0f00102f901015aba02000000009203114d6964646c65205061726b204265616368",
+        "name": "Middle Park Beach",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8528135,144.9581107&zoom=16&size=800x500&markers=-37.8528135,144.9581107,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.6,
+        "category": "BEACH",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8528135,
+            "longitude": 144.9581107
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3206, Australia",
+        "description": null
+    },
+    {
+        "id": "51c5efd7d8771d62405944acfd538beb42c0f00102f9019371c61c0000000092030f53616e647269646765204265616368",
+        "name": "Sandridge Beach",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8409176,144.9149601&zoom=16&size=800x500&markers=-37.8409176,144.9149601,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.2,
+        "category": "BEACH",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8409176,
+            "longitude": 144.9149601
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3207, Australia",
+        "description": null
+    },
+    {
+        "id": "51b7c28a8fef1e624059f841dd13d8ed42c0f00102f9015a5aba020000000092030a57657374204265616368",
+        "name": "West Beach",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8578983,144.9668523&zoom=16&size=800x500&markers=-37.8578983,144.9668523,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.4,
+        "category": "BEACH",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8578983,
+            "longitude": 144.9668523
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3182, Australia",
+        "description": null
+    },
+    {
+        "id": "51628f48bd291f6240592f2e82201def42c0f00102f9013614af020000000092030e5374204b696c6461204265616368",
+        "name": "St Kilda Beach",
+        "photoUrl": "https://images.unsplash.com/photo-1583068514015-f3059c7b96c2?fm=jpg&ixlib=rb-4.1.0&q=80&w=1600",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.2,
+        "category": "BEACH",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.868107,
+            "longitude": 144.9742191
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3182, Australia",
+        "description": null
+    },
+    {
+        "id": "517b3afce4661f6240596903a2c784f142c0f00101f901b3acd3000000000092030c456c776f6f64204265616368",
+        "name": "Elwood Beach",
+        "photoUrl": "https://lp-cms-production.imgix.net/2021-06/Elwood_Beach_Melbourne.jpg?auto=format&q=75&w=1600",
+        "website": null,
+        "phone": null,
+        "baseScore": 9.0,
+        "category": "BEACH",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.889731,
+            "longitude": 144.9841654
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3184, Australia",
+        "description": null
+    },
+    {
+        "id": "514d5e8d4d861c6240595527bdc709ef42c0f00102f901904310020000000092031257696c6c69616d73746f776e204265616368",
+        "name": "Williamstown Beach",
+        "photoUrl": "https://www.visitvictoria.com/-/media/atdw/melbourne/see-and-do/nature-and-wildlife/beaches-and-coastlines/1a213038fd27c9ff084c4b8c2089a668_1600x1200.jpeg?ts=20251103350613",
+        "website": null,
+        "phone": null,
+        "baseScore": 9.2,
+        "category": "BEACH",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.867874,
+            "longitude": 144.8933168
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3016, Australia",
+        "description": null
+    },
+    {
+        "id": "51e52bd5a97d1f624059dbe45baefef342c0f00102f901977ef6260000000092031453616e646f776e20537472656574204265616368",
+        "name": "Sandown Street Beach",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.9060642,144.9840698&zoom=16&size=800x500&markers=-37.9060642,144.9840698,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.0,
+        "category": "BEACH",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.9060642,
+            "longitude": 144.9840698
+        },
+        "recommendedVisitDuration": 120,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Melbourne Victoria 3186, Australia",
+        "description": "Fenced dog excercise area. Sand with some dune plants"
+    },
+    {
+        "id": "511ac17d00c91e624059f796c3167ee742c0f00102f9015d13330b0000000092031b524d49542041274265636b65747420557262616e20537175617265",
+        "name": "RMIT A'Beckett Urban Square",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8085343,144.9620375&zoom=16&size=800x500&markers=-37.8085343,144.9620375,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.5,
+        "category": "SPORTS",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8085343,
+            "longitude": 144.9620375
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "24-46 A'Beckett Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5188fd54cbcc1e624059dffb1bb457e742c0f00103f90146eaf7c90000000092030848617264726f636b",
+        "name": "Hardrock",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.807364,144.9624993&zoom=16&size=800x500&markers=-37.807364,144.9624993,red-pushpin",
+        "website": "https://www.hardrock.com.au/",
+        "phone": "+61 3 9631 5300",
+        "baseScore": 7.7,
+        "category": "SPORTS",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.807364,
+            "longitude": 144.9624993
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "12:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "501 Swanston Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51dd6f5e32d41e6240596e5e3fef4be742c0f00102f90140579501000000009203144d656c626f75726e652043697479204261746873",
+        "name": "Melbourne City Baths",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8071077,144.963295&zoom=16&size=800x500&markers=-37.8071077,144.963295,red-pushpin",
+        "website": "https://www.melbourne.vic.gov.au/melbourne-city-baths",
+        "phone": "+61 3 9658 9011",
+        "baseScore": 8.4,
+        "category": "SPORTS",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8071077,
+            "longitude": 144.963295
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "420 Swanston Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51e46b3c31881e624059d524401d9de742c0f00102f9011d911c1e0000000092031c43697479206f66204d656c626f75726e6520426f776c7320436c7562",
+        "name": "City of Melbourne Bowls Club",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8094825,144.9540912&zoom=16&size=800x500&markers=-37.8094825,144.9540912,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.5,
+        "category": "SPORTS",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8094825,
+            "longitude": 144.9540912
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "3 Dudley Street, Melbourne Victoria 3003, Australia",
+        "description": null
+    },
+    {
+        "id": "510018c94c521e624059b5c5e1ce84e842c0f00102f90131845e010000000092030e4d617276656c205374616469756d",
+        "name": "Marvel Stadium",
+        "photoUrl": "https://www.ausleisure.com.au/img/asset/YXNzZXRzL2xlZ2FjeS9NYXJ2ZWxfU3RhZGl1bV9NZWxib3VybmVfMjAxOC5qcGc/Marvel_Stadium_Melbourne_2018.jpg?fit=crop&h=630&s=6bf6a98a26ec4c9e032813c111d18fc5&w=1200",
+        "website": "https://marvelstadium.com.au",
+        "phone": "+61 3 8625 7700",
+        "baseScore": 8.8,
+        "category": "SPORTS",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.816529,
+            "longitude": 144.947517
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "740 Bourke Street, Melbourne Victoria 3008, Australia",
+        "description": null
+    },
+    {
+        "id": "51bec29062431f6240595531dc9e0ee942c0f00101f901763a1a000000000092030a31353733204172656e61",
+        "name": "1573 Arena",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8207178,144.9767592&zoom=16&size=800x500&markers=-37.8207178,144.9767592,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.5,
+        "category": "SPORTS",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8207178,
+            "longitude": 144.9767592
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Tanderrum Bridge, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51b605f83d4d1f62405995f89d5ffde842c0f00101f901743a1a0000000000920309414e5a204172656e61",
+        "name": "ANZ Arena",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8202344,144.9784033&zoom=16&size=800x500&markers=-37.8202344,144.9784033,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.5,
+        "category": "SPORTS",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8202344,
+            "longitude": 144.9784033
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Garden Square, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51b5b35e5c491f624059d2e0a3a718e942c0f00102f901b07d8f07000000009203144d6172676172657420436f757274204172656e61",
+        "name": "Margaret Court Arena",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8211358,144.9776331&zoom=16&size=800x500&markers=-37.8211358,144.9776331,red-pushpin",
+        "website": "https://margaretcourtarena.com.au/",
+        "phone": null,
+        "baseScore": 8.8,
+        "category": "SPORTS",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8211358,
+            "longitude": 144.9776331
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "200 Batman Avenue, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51633274e8251f62405959c608a0b3e642c0f00102f901689ef7010000000092031b4361726c746f6e2047617264656e732054656e6e697320436c7562",
+        "name": "Carlton Gardens Tennis Club",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8024889,144.9733998&zoom=16&size=800x500&markers=-37.8024889,144.9733998,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.5,
+        "category": "SPORTS",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8024889,
+            "longitude": 144.9733998
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Nicholson Street, Melbourne Victoria 3053, Australia",
+        "description": null
+    },
+    {
+        "id": "51bbbacf8a501f6240597bc4b0502ae942c0f00102f901d4ebb9020000000092030f526f64204c61766572204172656e61",
+        "name": "Rod Laver Arena",
+        "photoUrl": "https://airial.travel/_next/image?q=70&url=https%3A%2F%2Fcoinventmediastorage.blob.core.windows.net%2Fmedia-storage-container%2Fgphoto_ChIJJc8qc7lC1moRYTElaEC226Y_1.jpg&w=3840",
+        "website": "https://rodlaverarena.com.au",
+        "phone": null,
+        "baseScore": 9.4,
+        "category": "SPORTS",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8215688,
+            "longitude": 144.9785875
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "200 Batman Avenue, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5111240049e21e624059a794cc4752e842c0f00103f9013df3177e0200000092031254686520427574746572666c7920436c7562",
+        "name": "The Butterfly Club",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.815011,144.9651227&zoom=16&size=800x500&markers=-37.815011,144.9651227,red-pushpin",
+        "website": "https://thebutterflyclub.com/",
+        "phone": null,
+        "baseScore": 9.4,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.815011,
+            "longitude": 144.9651227
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "5 Carson Place, Melbourne Victoria 3000, Australia",
+        "description": "Comedy / Theatre Club"
+    },
+    {
+        "id": "51f2f2cf67db1e624059f0f3029365e842c0f00103f9019ca5ee560200000092031354686520417274204f66204472205365757373",
+        "name": "The Art Of Dr Seuss",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8155998,144.9642829&zoom=16&size=800x500&markers=-37.8155998,144.9642829,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.8,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8155998,
+            "longitude": 144.9642829
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "282 Collins Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51238ff172e21e624059f791d61aefe742c0f00103f901f45e170a0100000092030e526f6f66746f702043696e656d61",
+        "name": "Rooftop Cinema",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8119844,144.9651427&zoom=16&size=800x500&markers=-37.8119844,144.9651427,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.6,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8119844,
+            "longitude": 144.9651427
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "252 Swanston Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51e589d640e91e624059649709c14fe842c0f00103f90174a6e32200000000920314524d49542043617069746f6c2054686561747265",
+        "name": "RMIT Capitol Theatre",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8149339,144.9659733&zoom=16&size=800x500&markers=-37.8149339,144.9659733,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.4,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8149339,
+            "longitude": 144.9659733
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Capitol Arcade, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51a9b5300bed1e6240590c89b4d947e842c0f00103f90128de466e010000009203164d656c626f75726e6520436974792047616c6c657279",
+        "name": "Melbourne City Gallery",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8146927,144.966436&zoom=16&size=800x500&markers=-37.8146927,144.966436,red-pushpin",
+        "website": "https://www.melbourne.vic.gov.au/arts-and-culture/city-gallery/Pages/city-gallery.aspx",
+        "phone": "+61 3 9658 9658",
+        "baseScore": 8.2,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8146927,
+            "longitude": 144.966436
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Swanston Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51aeaeaf1af01e624059c53180f21ce842c0f00103f901fd7275620200000092030f436f6d6564792052657075626c6963",
+        "name": "Comedy Republic",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8133834,144.9668096&zoom=16&size=800x500&markers=-37.8133834,144.9668096,red-pushpin",
+        "website": "http://comedyrepublic.com.au",
+        "phone": "+61 3 9654 6836",
+        "baseScore": 9.4,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8133834,
+            "longitude": 144.9668096
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "17:00",
+            "closeTime": "01:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "231 Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5148c44906f41e624059861a9c794de842c0f00102f9012cf9030100000000920311417468656e6165756d2054686561747265",
+        "name": "Athenaeum Theatre",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8148643,144.9672882&zoom=16&size=800x500&markers=-37.8148643,144.9672882,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.8,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8148643,
+            "longitude": 144.9672882
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Collins Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "513da4ce92f61e6240593642df7360e842c0f00103f901b4ae880a0000000092030e526567656e742054686561747265",
+        "name": "Regent Theatre",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8154435,144.9675993&zoom=16&size=800x500&markers=-37.8154435,144.9675993,red-pushpin",
+        "website": "https://marrinergroup.com.au/regent-theatre",
+        "phone": null,
+        "baseScore": 9.4,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8154435,
+            "longitude": 144.9675993
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "191 Collins Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5112d3cfe5d71e624059b54dd0728fe742c0f00103f901ebfb83270100000092030c524d49542047616c6c657279",
+        "name": "RMIT Gallery",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8090652,144.9638547&zoom=16&size=800x500&markers=-37.8090652,144.9638547,red-pushpin",
+        "website": "https://www.rmit.edu.au/about/schools-colleges/college-of-design-and-social-context/engagement/cultural-engagement/galleries",
+        "phone": "+61 3 9925 1717",
+        "baseScore": 8.4,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8090652,
+            "longitude": 144.9638547
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "344 Swanston Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51b254cd62d81e624059d3c8d7fb8de742c0f00103f901641f8d9700000000920317524d495420466972737420536974652047616c6c657279",
+        "name": "RMIT First Site Gallery",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8090205,144.9639143&zoom=16&size=800x500&markers=-37.8090205,144.9639143,red-pushpin",
+        "website": "https://www.rmit.edu.au/about/schools-colleges/college-of-design-and-social-context/engagement/cultural-engagement/galleries/first-site-gallery-eoi",
+        "phone": null,
+        "baseScore": 7.8,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8090205,
+            "longitude": 144.9639143
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "11:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "344 Swanston Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5133349e08a21e6240595c968dbf48e842c0f00103f901f6c694350300000092030f50696e6f742026205069636173736f",
+        "name": "Pinot & Picasso",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8147201,144.9572795&zoom=16&size=800x500&markers=-37.8147201,144.9572795,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.8,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8147201,
+            "longitude": 144.9572795
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Little Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51ce658522051f624059cb90482781e842c0f00102f901e026c2020000000092030f466f72756d204d656c626f75726e65",
+        "name": "Forum Melbourne",
+        "photoUrl": "https://media.cntraveler.com/photos/5b844acb0c5e123ef6ed3d4a/master/w_1200%2Cc_limit/Forum-Melbourne_GettyImages-691364156.jpg?mbid=social_retweet",
+        "website": "https://forummelbourne.com.au/",
+        "phone": null,
+        "baseScore": 9.6,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8164414,
+            "longitude": 144.9693768
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "154 Flinders Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51e2c1e123071f6240591827169fcce742c0f00102f9018fe55d0100000000920315486572204d616a6573747927732054686561747265",
+        "name": "Her Majesty's Theatre",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8109321,144.9696216&zoom=16&size=800x500&markers=-37.8109321,144.9696216,red-pushpin",
+        "website": "https://www.hmt.com.au/",
+        "phone": "+61 3 8643 3300",
+        "baseScore": 9.2,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8109321,
+            "longitude": 144.9696216
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "219 Exhibition Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5101adaf64fd1e624059c08bc681a1e842c0f00103f901cdcb3a2e03000000920319466c696e64657273c2a0537420416d70686974686561747265",
+        "name": "Flinders┬áSt Amphitheatre",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8174288,144.9684318&zoom=16&size=800x500&markers=-37.8174288,144.9684318,red-pushpin",
+        "website": "https://fedsquare.com/plan-your-event/flinders-st-amphitheatre",
+        "phone": null,
+        "baseScore": 8.0,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8174288,
+            "longitude": 144.9684318
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Flinders Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "516b0487bc0a1f6240595bb82a8b67e842c0f00103f9017d7677b000000000920315466c696e64657273204c616e652047616c6c657279",
+        "name": "Flinders Lane Gallery",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8156599,144.9700606&zoom=16&size=800x500&markers=-37.8156599,144.9700606,red-pushpin",
+        "website": "https://flg.com.au/",
+        "phone": "+61 3 9654 3332",
+        "baseScore": 8.2,
+        "category": "CULTURAL",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8156599,
+            "longitude": 144.9700606
+        },
+        "recommendedVisitDuration": 90,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "137-139 Flinders Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51bec74f99d11e624059f488d1730be842c0f00103f9019ed55a4b0200000092031342656e6561746820447269766572204c616e65",
+        "name": "Beneath Driver Lane",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8128495,144.9630858&zoom=16&size=800x500&markers=-37.8128495,144.9630858,red-pushpin",
+        "website": "https://www.driverlanebar.com/",
+        "phone": null,
+        "baseScore": 9.2,
+        "category": "NIGHTLIFE",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8128495,
+            "longitude": 144.9630858
+        },
+        "recommendedVisitDuration": 150,
+        "operatingHours": {
+            "openTime": "17:00",
+            "closeTime": "26:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Shop 3 Driver Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "519e16725bd11e62405978fd930909e842c0f00103f9013ace917d0200000092030b4261627920447269766572",
+        "name": "Baby Driver",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8127758,144.9630563&zoom=16&size=800x500&markers=-37.8127758,144.9630563,red-pushpin",
+        "website": "https://www.driverlanebar.com/baby-driver",
+        "phone": null,
+        "baseScore": 8.0,
+        "category": "NIGHTLIFE",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8127758,
+            "longitude": 144.9630563
+        },
+        "recommendedVisitDuration": 150,
+        "operatingHours": {
+            "openTime": "18:00",
+            "closeTime": "02:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "2 Driver Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5161037d7dc81e624059de1fef552be842c0f00103f901457c524f010000009203104d75726d7572205069616e6f20426172",
+        "name": "Murmur Piano Bar",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8138225,144.9619739&zoom=16&size=800x500&markers=-37.8138225,144.9619739,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.8,
+        "category": "NIGHTLIFE",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8138225,
+            "longitude": 144.9619739
+        },
+        "recommendedVisitDuration": 150,
+        "operatingHours": {
+            "openTime": "18:00",
+            "closeTime": "02:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Warburton Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51d8da560ec81e62405913c2590009e842c0f00103f9019c5926c00200000092030d57686974656861727420426172",
+        "name": "Whitehart Bar",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8127747,144.9619209&zoom=16&size=800x500&markers=-37.8127747,144.9619209,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.6,
+        "category": "NIGHTLIFE",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8127747,
+            "longitude": 144.9619209
+        },
+        "recommendedVisitDuration": 150,
+        "operatingHours": {
+            "openTime": "18:00",
+            "closeTime": "02:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Whitehart Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "516c843419c41e62405951b92ea127e842c0f00103f901941dfe270300000092030b42696e63686f20426f7373",
+        "name": "Bincho Boss",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8137094,144.9614378&zoom=16&size=800x500&markers=-37.8137094,144.9614378,red-pushpin",
+        "website": "https://binchoboss.com.au/",
+        "phone": "+61 466 555 123",
+        "baseScore": 8.0,
+        "category": "NIGHTLIFE",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8137094,
+            "longitude": 144.9614378
+        },
+        "recommendedVisitDuration": 150,
+        "operatingHours": {
+            "openTime": "12:00",
+            "closeTime": "14:30"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "383-385 Little Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51aba399ddc91e624059f4f5211400e842c0f00103f90192957d88000000009203044f636865",
+        "name": "Oche",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8125024,144.9621418&zoom=16&size=800x500&markers=-37.8125024,144.9621418,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.8,
+        "category": "NIGHTLIFE",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8125024,
+            "longitude": 144.9621418
+        },
+        "recommendedVisitDuration": 150,
+        "operatingHours": {
+            "openTime": "18:00",
+            "closeTime": "02:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Elizabeth Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5196a7bdd2c31e6240598fb5752623e842c0f00103f9012bcb65a4020000009203064c6520507562",
+        "name": "Le Pub",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8135727,144.9614042&zoom=16&size=800x500&markers=-37.8135727,144.9614042,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.8,
+        "category": "NIGHTLIFE",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8135727,
+            "longitude": 144.9614042
+        },
+        "recommendedVisitDuration": 150,
+        "operatingHours": {
+            "openTime": "18:00",
+            "closeTime": "02:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "380 Little Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51ffae74e3c21e624059e842f68b23e842c0f00103f90115106c3c0300000092030f4b69726b27732057696e6520426172",
+        "name": "Kirk's Wine Bar",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8135848,144.9612901&zoom=16&size=800x500&markers=-37.8135848,144.9612901,red-pushpin",
+        "website": "https://www.kirkswinebar.com/",
+        "phone": null,
+        "baseScore": 8.8,
+        "category": "NIGHTLIFE",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8135848,
+            "longitude": 144.9612901
+        },
+        "recommendedVisitDuration": 150,
+        "operatingHours": {
+            "openTime": "18:00",
+            "closeTime": "02:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Hardware Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51a2b0d8f9d81e6240598c7a85f450e842c0f00102f901ec61c90f0000000092030c436875636b6c65205061726b",
+        "name": "Chuckle Park",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8149322,144.963969&zoom=16&size=800x500&markers=-37.8149322,144.963969,red-pushpin",
+        "website": "https://www.chucklepark.com.au/",
+        "phone": "+61 3 9650 4494",
+        "baseScore": 9.0,
+        "category": "NIGHTLIFE",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8149322,
+            "longitude": 144.963969
+        },
+        "recommendedVisitDuration": 150,
+        "operatingHours": {
+            "openTime": "15:00",
+            "closeTime": "23:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "332 Little Collins Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5101a5a146e11e6240598a5759db14e842c0f00103f901cbbe153d03000000920313426c6f73736f6d20526f6f66746f7020426172",
+        "name": "Blossom Rooftop Bar",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8131365,144.9649995&zoom=16&size=800x500&markers=-37.8131365,144.9649995,red-pushpin",
+        "website": "https://www.pullmanmelbournecitycentre.com.au/restaurants-bars/blossom_rooftop_bar",
+        "phone": null,
+        "baseScore": 8.0,
+        "category": "NIGHTLIFE",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8131365,
+            "longitude": 144.9649995
+        },
+        "recommendedVisitDuration": 150,
+        "operatingHours": {
+            "openTime": "18:00",
+            "closeTime": "02:00"
+        },
+        "isFiller": false,
+        "city": "Melbourne",
+        "address": "Louden Place, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5159d130c6d11e62405984413e8d20e842c0f00103f901abdf183c030000009203154665646572616c20436f666665652050616c616365",
+        "name": "Federal Coffee Palace",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8134934,144.9631072&zoom=16&size=800x500&markers=-37.8134934,144.9631072,red-pushpin",
+        "website": "https://www.federalcoffee.com.au/",
+        "phone": null,
+        "baseScore": 8.4,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8134934,
+            "longitude": 144.9631072
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "350 Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51bd344580d31e62405994ff249930e842c0f00103f9012a95fcce000000009203144665646572616c20436f66666565204b696f736b",
+        "name": "Federal Coffee Kiosk",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8139831,144.963318&zoom=16&size=800x500&markers=-37.8139831,144.963318,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.3,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8139831,
+            "longitude": 144.963318
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "350 Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "518c64aa1acc1e6240598b3492742ce842c0f00102f901c9d91f100000000092032043617274656c20436f6666656520526f617374657273204d656c626f75726e65",
+        "name": "Cartel Coffee Roasters Melbourne",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8138563,144.9624151&zoom=16&size=800x500&markers=-37.8138563,144.9624151,red-pushpin",
+        "website": "https://www.coffeecartel.com.au/",
+        "phone": "+61 3 9670 4904",
+        "baseScore": 8.6,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8138563,
+            "longitude": 144.9624151
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "16:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "19 Somerset Place, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51c82f7205ca1e6240591ec18d942de842c0f00103f901d5065533010000009203104d616e63686573746572205072657373",
+        "name": "Manchester Press",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.813891,144.9621608&zoom=16&size=800x500&markers=-37.813891,144.9621608,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.6,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.813891,
+            "longitude": 144.9621608
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "8 Rankins Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51cf7c186bc91e624059c58cf0f620e842c0f00103f90155d44e420000000092031342726f7468657220427562626120427564616e",
+        "name": "Brother Bubba Budan",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.813506,144.9620872&zoom=16&size=800x500&markers=-37.813506,144.9620872,red-pushpin",
+        "website": "https://plus.google.com/111789823744998362867/about?gl=au&hl=en",
+        "phone": null,
+        "baseScore": 9.0,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.813506,
+            "longitude": 144.9620872
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "359 Little Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5198e0d407d21e624059b3aa6faaffe742c0f00103f901be0235360300000092030f5061726c616e636520436f66666565",
+        "name": "Parlance Coffee",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8124898,144.9631385&zoom=16&size=800x500&markers=-37.8124898,144.9631385,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.8,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8124898,
+            "longitude": 144.9631385
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Strand Arcade, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5102840f25da1e624059e023acd73ee842c0f00103f90189637702010000009203154b6f6b6fc2a0426c61636b2043686f636f6c617465",
+        "name": "Koko┬áBlack Chocolate",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8144178,144.964129&zoom=16&size=800x500&markers=-37.8144178,144.964129,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.6,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8144178,
+            "longitude": 144.964129
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "09:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Royal Arcade, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51df37bef6cc1e624059419df2e846e842c0f00103f9016339c87d000000009203134f6c692026204c6576692047616c6c65726961",
+        "name": "Oli & Levi Galleria",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.814664,144.96252&zoom=16&size=800x500&markers=-37.814664,144.96252,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.2,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.814664,
+            "longitude": 144.96252
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:30",
+            "closeTime": "16:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "385 Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51d3f88557d21e62405904d5f5fa49e842c0f00103f901d9947d8800000000920309537461726275636b73",
+        "name": "Starbucks",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8147577,144.9631765&zoom=16&size=800x500&markers=-37.8147577,144.9631765,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.6,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8147577,
+            "longitude": 144.9631765
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "19:30"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Galleria Arcade, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51593d1691d71e624059d6485c1146e842c0f00103f901bb52ee560200000092030c4b697420457370726573736f",
+        "name": "Kit Espresso",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8146383,144.9638143&zoom=16&size=800x500&markers=-37.8146383,144.9638143,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 9.0,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8146383,
+            "longitude": 144.9638143
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:30",
+            "closeTime": "17:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Royal Arcade, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51725875b1c41e624059b3ae76b92de842c0f00103f9013a75901b010000009203134c6120506574697465204372c3aa7065726965",
+        "name": "La Petite Cr├¬perie",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8138954,144.9615104&zoom=16&size=800x500&markers=-37.8138954,144.9615104,red-pushpin",
+        "website": "https://www.lapetitecreperie.com.au/",
+        "phone": null,
+        "baseScore": 9.2,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8138954,
+            "longitude": 144.9615104
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "32 Hardware Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "513a49a93ada1e624059d734ef3845e842c0f00103f901b652ee5602000000920310546865204c6974746c6520526f79616c",
+        "name": "The Little Royal",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8146125,144.9641393&zoom=16&size=800x500&markers=-37.8146125,144.9641393,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.3,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8146125,
+            "longitude": 144.9641393
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Royal Arcade, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51a8f0564cdb1e62405949c8f61043e842c0f00103f9019bb6ad690100000092030a476f72646f6ee2809973",
+        "name": "GordonΓÇÖs",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8145467,144.9642698&zoom=16&size=800x500&markers=-37.8145467,144.9642698,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.3,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8145467,
+            "longitude": 144.9642698
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "The Causeway, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5142bdcfa7c41e6240598160e9d731e842c0f00103f90170589b4b020000009203125468652043757063616b6520517565656e73",
+        "name": "The Cupcake Queens",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8140211,144.9615058&zoom=16&size=800x500&markers=-37.8140211,144.9615058,red-pushpin",
+        "website": "https://thecupcakequeens.com.au/",
+        "phone": null,
+        "baseScore": 7.5,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8140211,
+            "longitude": 144.9615058
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Hardware Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5152651877c31e62405915e3fc4d28e842c0f00103f901b6ef707e020000009203054d616b6572",
+        "name": "Maker",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.81373,144.9613605&zoom=16&size=800x500&markers=-37.81373,144.9613605,red-pushpin",
+        "website": "https://makercoffee.com.au/",
+        "phone": null,
+        "baseScore": 8.6,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.81373,
+            "longitude": 144.9613605
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "16:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "387 Little Bourke Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51ebda83b5d61e62405960b1e1444fe842c0f00103f901948b0e44020000009203074d696c6b736861",
+        "name": "Milksha",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8149191,144.9637096&zoom=16&size=800x500&markers=-37.8149191,144.9637096,red-pushpin",
+        "website": "https://milksha.com.au/",
+        "phone": null,
+        "baseScore": 8.0,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8149191,
+            "longitude": 144.9637096
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "134 Elizabeth Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5100975bb5c61e624059645ddc4603e842c0f00103f9016d831960010000009203184368c3a820566965746e616d657365204465737365727473",
+        "name": "Ch├¿ Vietnamese Desserts",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8126,144.9617564&zoom=16&size=800x500&markers=-37.8126,144.9617564,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.3,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8126,
+            "longitude": 144.9617564
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Lonsdale Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "515739590fc41e624059641e9eca0ee842c0f00103f901c052896002000000920308546f7269e2809973",
+        "name": "ToriΓÇÖs",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8129514,144.9614331&zoom=16&size=800x500&markers=-37.8129514,144.9614331,red-pushpin",
+        "website": "https://toris.com.au/",
+        "phone": null,
+        "baseScore": 8.8,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8129514,
+            "longitude": 144.9614331
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "18:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "28 Niagara Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51b4d771b2c31e624059c6fa062637e842c0f00103f901678f9b4b0200000092030444617269",
+        "name": "Dari",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.814183,144.9613888&zoom=16&size=800x500&markers=-37.814183,144.9613888,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.3,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.814183,
+            "longitude": 144.9613888
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Hardware Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51219628d6c41e624059b0fb33283fe842c0f00103f901946ea0240000000092030e4a6572656d79277320436166c3a9",
+        "name": "Jeremy's Caf├⌐",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8144274,144.9615279&zoom=16&size=800x500&markers=-37.8144274,144.9615279,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.0,
+        "category": "CAFE",
+        "environment": "INDOOR",
+        "coordinates": {
+            "latitude": -37.8144274,
+            "longitude": 144.9615279
+        },
+        "recommendedVisitDuration": 5,
+        "operatingHours": {
+            "openTime": "07:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "13 Hardware Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "513c68896cf01e62405966e4af264fe842c0f00102f9017af60301000000009203134d656c626f75726e6520546f776e2048616c6c",
+        "name": "Melbourne Town Hall",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8149155,144.9668486&zoom=16&size=800x500&markers=-37.8149155,144.9668486,red-pushpin",
+        "website": "https://www.melbourne.vic.gov.au/",
+        "phone": null,
+        "baseScore": 8.4,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8149155,
+            "longitude": 144.9668486
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "90-120 Swanston Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "511e88d118d21e624059b603d8ddbce742c0f00102f9012e26b62700000000920311436f6f7027732053686f7420546f776572",
+        "name": "Coop's Shot Tower",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8104512,144.9631466&zoom=16&size=800x500&markers=-37.8104512,144.9631466,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.1,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8104512,
+            "longitude": 144.9631466
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "McIntyre Alley, Melbourne Victoria 3000, Australia",
+        "description": "The tower produced six tonnes of lead shot for guns weekly up until 1961. Now incorporated into Melbourne Central complex in 1991 underneath an 84 m-high conical glass roof. Source: Wikipedia"
+    },
+    {
+        "id": "51ce658522051f624059cb90482781e842c0f00102f901e026c2020000000092030f466f72756d204d656c626f75726e65",
+        "name": "Forum Melbourne",
+        "photoUrl": "https://media.cntraveler.com/photos/5b844acb0c5e123ef6ed3d4a/master/w_1200%2Cc_limit/Forum-Melbourne_GettyImages-691364156.jpg?mbid=social_retweet",
+        "website": "https://forummelbourne.com.au/",
+        "phone": null,
+        "baseScore": 9.6,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8164414,
+            "longitude": 144.9693768
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "154 Flinders Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5180a9f293bb1e624059d424c0ebd8e842c0f00102f901eb74d90000000000920312496d6d6967726174696f6e204d757365756d",
+        "name": "Immigration Museum",
+        "photoUrl": "https://www.pelago.com/img/products/AU-Australia/melbourne-immigration-museum-entry-ticket/3853ee760ad7496cbc1659e4ba546667_melbourne-immigration-museum-entry-ticket.jpg",
+        "website": "https://museumsvictoria.com.au/immigrationmuseum/",
+        "phone": "+61 3 9927 2709",
+        "baseScore": 8.8,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8191199,
+            "longitude": 144.9603977
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "10:00",
+            "closeTime": "17:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "400 Flinders Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5148b6042aed1e62405989719ea27ee742c0f00103f901918080ce01000000920329466f726d65722052757373656c6c2053747265657420506f6c69636520486561647175617274657273",
+        "name": "Former Russell Street Police Headquarters",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8085521,144.9664507&zoom=16&size=800x500&markers=-37.8085521,144.9664507,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.0,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8085521,
+            "longitude": 144.9664507
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "68 La Trobe Street, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "5160f138e33d1f6240593c39369806e842c0f00102f901a0293d0b00000000920318537461746520476f7665726e6d656e74204f666669636573",
+        "name": "State Government Offices",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8127013,144.9763046&zoom=16&size=800x500&markers=-37.8127013,144.9763046,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.0,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8127013,
+            "longitude": 144.9763046
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "2 Treasury Place, Melbourne Victoria 3002, Australia",
+        "description": null
+    },
+    {
+        "id": "51f6f8d041161f6240592999c752ffe642c0f00102f901a380490000000000920319526f79616c2045786869626974696f6e204275696c64696e67",
+        "name": "Royal Exhibition Building",
+        "photoUrl": "https://photos.smugmug.com/Australia/Victoria/Victoria-2008/i-ktqMJxj/0/XL/2286519537_165682b26b_o-XL.jpg",
+        "website": "https://museumsvictoria.com.au/reb/",
+        "phone": null,
+        "baseScore": 9.2,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8046669,
+            "longitude": 144.9714669
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "9 Nicholson Street, Melbourne Victoria 3053, Australia",
+        "description": null
+    },
+    {
+        "id": "5110feea16661e624059f51fb2efd4e642c0f00103f9012793601a010000009203194e6f727468204d656c626f75726e6520546f776e2048616c6c",
+        "name": "North Melbourne Town Hall",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8033733,144.9499621&zoom=16&size=800x500&markers=-37.8033733,144.9499621,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.0,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8033733,
+            "longitude": 144.9499621
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "George Johnson Lane, Melbourne Victoria 3051, Australia",
+        "description": null
+    },
+    {
+        "id": "51c42819d2031f62405963410f1222e642c0f00102f9016afab82e0000000092031a4f6c64204361726c746f6e20506f6c6963652053746174696f6e",
+        "name": "Old Carlton Police Station",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.7979148,144.9692164&zoom=16&size=800x500&markers=-37.7979148,144.9692164,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.0,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.7979148,
+            "longitude": 144.9692164
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "334-344 Drummond Street, Melbourne Victoria 3053, Australia",
+        "description": null
+    },
+    {
+        "id": "5134382dc9591f62405916060bceaae642c0f00102f901a6f4a301000000009203114669747a726f7920546f776e2048616c6c",
+        "name": "Fitzroy Town Hall",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8020875,144.9797102&zoom=16&size=800x500&markers=-37.8020875,144.9797102,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.0,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8020875,
+            "longitude": 144.9797102
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Moor Street, Melbourne Victoria 3065, Australia",
+        "description": null
+    },
+    {
+        "id": "5112724908461f62405939aab631f6e942c0f00102f901b0eb830100000000920310476f7665726e6d656e7420486f757365",
+        "name": "Government House",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8278257,144.9772989&zoom=16&size=800x500&markers=-37.8278257,144.9772989,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.0,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8278257,
+            "longitude": 144.9772989
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Government House Drive, Melbourne Victoria 3004, Australia",
+        "description": null
+    },
+    {
+        "id": "5186dc4e60371f624059d4b38d7a2dea42c0f00102f90111884e02000000009203194f6c64204d656c626f75726e65204f627365727661746f7279",
+        "name": "Old Melbourne Observatory",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8295129,144.9755098&zoom=16&size=800x500&markers=-37.8295129,144.9755098,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 8.5,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8295129,
+            "longitude": 144.9755098
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Dallas Brooks Drive, Melbourne Victoria 3004, Australia",
+        "description": null
+    },
+    {
+        "id": "51907cecd1361f624059883ce4b240ea42c0f00102f901fe59b4090000000092030c4d61676e657420486f757365",
+        "name": "Magnet House",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8300995,144.9754419&zoom=16&size=800x500&markers=-37.8300995,144.9754419,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.0,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8300995,
+            "longitude": 144.9754419
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Birdwood Avenue, Melbourne Victoria 3004, Australia",
+        "description": null
+    },
+    {
+        "id": "5196aaf4e0391f62405975a67c9e3fea42c0f00102f9019e13b502000000009203114f627365727661746f727920486f757365",
+        "name": "Observatory House",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8300665,144.9758153&zoom=16&size=800x500&markers=-37.8300665,144.9758153,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.0,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8300665,
+            "longitude": 144.9758153
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Birdwood Avenue, Melbourne Victoria 3004, Australia",
+        "description": null
+    },
+    {
+        "id": "51bee91ceb431f624059aa7a56c359ea42c0f00102f90156f5ce170000000092031e4e6174696f6e616c2048657262617269756d206f6620566963746f726961",
+        "name": "National Herbarium of Victoria",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8308643,144.9770408&zoom=16&size=800x500&markers=-37.8308643,144.9770408,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 9.0,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8308643,
+            "longitude": 144.9770408
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Birdwood Avenue, Melbourne Victoria 3004, Australia",
+        "description": null
+    },
+    {
+        "id": "51d803b0d2b51e624059264c7256c4ea42c0f00102f9011ffda30100000000920319536f757468204d656c626f75726e6520546f776e2048616c6c",
+        "name": "South Melbourne Town Hall",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8341167,144.9596952&zoom=16&size=800x500&markers=-37.8341167,144.9596952,red-pushpin",
+        "website": "https://www.portphillip.vic.gov.au/town_hall_hire.htm",
+        "phone": null,
+        "baseScore": 7.2,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8341167,
+            "longitude": 144.9596952
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Fishley Street, Melbourne Victoria 3205, Australia",
+        "description": null
+    },
+    {
+        "id": "51722eccdfc61f624059ee43fd30e7e642c0f00102f9018f62ed0100000000920315436f6c6c696e67776f6f6420546f776e2048616c6c",
+        "name": "Collingwood Town Hall",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8039304,144.9930266&zoom=16&size=800x500&markers=-37.8039304,144.9930266,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.0,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8039304,
+            "longitude": 144.9930266
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "140 Hoddle Street, Melbourne Victoria 3067, Australia",
+        "description": null
+    },
+    {
+        "id": "51a5ff9bcd391e62405948f27323f6ea42c0f00102f901496da40100000000920318506f7274204d656c626f75726e6520546f776e2048616c6c",
+        "name": "Port Melbourne Town Hall",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8356366,144.9445561&zoom=16&size=800x500&markers=-37.8356366,144.9445561,red-pushpin",
+        "website": "https://www.portphillip.vic.gov.au/",
+        "phone": null,
+        "baseScore": 7.2,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8356366,
+            "longitude": 144.9445561
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "333 Bay Street, Melbourne Victoria 3207, Australia",
+        "description": null
+    },
+    {
+        "id": "51d1434fb806206240592f447921c2e842c0f00102f90144a5400200000000920312526963686d6f6e6420546f776e2048616c6c",
+        "name": "Richmond Town Hall",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8184244,145.0008203&zoom=16&size=800x500&markers=-37.8184244,145.0008203,red-pushpin",
+        "website": "https://www.yarracity.vic.gov.au/",
+        "phone": null,
+        "baseScore": 7.2,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.8184244,
+            "longitude": 145.0008203
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "325-333 Bridge Road, Melbourne Victoria 3121, Australia",
+        "description": null
+    },
+    {
+        "id": "51f6fa47abb71d624059e8ce5fea0ce542c0f00102f9014e7d8105000000009203144b656e73696e67746f6e20546f776e2048616c6c",
+        "name": "Kensington Town Hall",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.7894567,144.9286705&zoom=16&size=800x500&markers=-37.7894567,144.9286705,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 7.0,
+        "category": "LANDMARK",
+        "environment": "MIXED",
+        "coordinates": {
+            "latitude": -37.7894567,
+            "longitude": 144.9286705
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "30 Bellair Street, Melbourne Victoria 3031, Australia",
+        "description": null
+    },
+    {
+        "id": "51d3a5da02dd1e624059a16417b1f4e742c0f00103f9013c8c16b90000000092030a53747265657420417274",
+        "name": "Street Art",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8121549,144.9644789&zoom=16&size=800x500&markers=-37.8121549,144.9644789,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.7,
+        "category": "SCENIC_SPOT",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8121549,
+            "longitude": 144.9644789
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Caledonian Lane, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51592cea38e31e6240591aa4e029e4e842c0f00103f90161e356900000000092031a4576616e2057616c6b657220427269646765204c6f6f6b6f7574",
+        "name": "Evan Walker Bridge Lookout",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.819463,144.9652371&zoom=16&size=800x500&markers=-37.819463,144.9652371,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.7,
+        "category": "SCENIC_SPOT",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.819463,
+            "longitude": 144.9652371
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Les Erdi Plaza, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51e54d34fef31e6240595bb05417f0e842c0f00103f9017d3796460100000092030c536b796c696e652076696577",
+        "name": "Skyline view",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.819827,144.9672843&zoom=16&size=800x500&markers=-37.819827,144.9672843,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.7,
+        "category": "SCENIC_SPOT",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.819827,
+            "longitude": 144.9672843
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Southbank Promenade, Melbourne Victoria 3006, Australia",
+        "description": null
+    },
+    {
+        "id": "51d08657edf51e6240598e4f125cf6e842c0f00103f901ad31f8300300000092032548616d65722048616c6c202d20526f6f66746f702056696577696e6720506c6174666f726d",
+        "name": "Hamer Hall - Rooftop Viewing Platform",
+        "photoUrl": "https://media3.architecturemedia.net/site_media/media/cache/84/a3/84a303dcdaff8cb37e51ad0b91239757.jpg",
+        "website": null,
+        "phone": null,
+        "baseScore": 9.4,
+        "category": "SCENIC_SPOT",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8200183,
+            "longitude": 144.9675204
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Southgate Avenue, Melbourne Victoria 3006, Australia",
+        "description": null
+    },
+    {
+        "id": "519e67a2be1b1f62405994ef6316ebe742c0f00103f90155b99b120300000092030a53747265657420417274",
+        "name": "Street Art",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8118618,144.9721368&zoom=16&size=800x500&markers=-37.8118618,144.9721368,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.7,
+        "category": "SCENIC_SPOT",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8118618,
+            "longitude": 144.9721368
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Meyers Place, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51d1008349161f6240590968c7b205e742c0f00103f90126fa03b40200000092030e446f6d652050726f6d656e616465",
+        "name": "Dome Promenade",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8048614,144.9714706&zoom=16&size=800x500&markers=-37.8048614,144.9714706,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.7,
+        "category": "SCENIC_SPOT",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8048614,
+            "longitude": 144.9714706
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "9 Nicholson Street, Melbourne Victoria 3053, Australia",
+        "description": null
+    },
+    {
+        "id": "5104311a434a1f6240599d11a5bdc1e842c0f00103f901d55f3e3c0100000092031457696c6c69616d20426172616b20427269646765",
+        "name": "William Barak Bridge",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8184125,144.9778152&zoom=16&size=800x500&markers=-37.8184125,144.9778152,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.7,
+        "category": "SCENIC_SPOT",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8184125,
+            "longitude": 144.9778152
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "William Barak Bridge, Melbourne Victoria 3000, Australia",
+        "description": null
+    },
+    {
+        "id": "51101835a9321e624059a95cf28986e742c0f00103f901a6206514010000009203254d656c626f75726e6520476f6f647320596172642056696577696e6720506c6174666f726d",
+        "name": "Melbourne Goods Yard Viewing Platform",
+        "photoUrl": "https://staticmap.openstreetmap.de/staticmap.php?center=-37.8087933,144.9436842&zoom=16&size=800x500&markers=-37.8087933,144.9436842,red-pushpin",
+        "website": null,
+        "phone": null,
+        "baseScore": 6.7,
+        "category": "SCENIC_SPOT",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.8087933,
+            "longitude": 144.9436842
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Railway Place, Melbourne Victoria 3003, Australia",
+        "description": null
+    },
+    {
+        "id": "51d320bbc10620624059b80ec4680ce642c0f00103f901b3c28f170100000092030c4469676874732046616c6c73",
+        "name": "Dights Falls",
+        "photoUrl": "https://i.pinimg.com/originals/62/48/03/6248033af48da9c0ea334ee6f7170e57.jpg",
+        "website": null,
+        "phone": null,
+        "baseScore": 9.2,
+        "category": "SCENIC_SPOT",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.7972537,
+            "longitude": 145.0008248
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Main Yarra Trail Capital City Trail, Melbourne Victoria 3067, Australia",
+        "description": null
+    },
+    {
+        "id": "513151ce610820624059a1116c5cffe542c0f00103f901cfbe6ec80000000092030c4469676874732046616c6c73",
+        "name": "Dights Falls",
+        "photoUrl": "https://i.pinimg.com/originals/62/48/03/6248033af48da9c0ea334ee6f7170e57.jpg",
+        "website": null,
+        "phone": null,
+        "baseScore": 9.2,
+        "category": "SCENIC_SPOT",
+        "environment": "OUTDOOR",
+        "coordinates": {
+            "latitude": -37.7968555,
+            "longitude": 145.0010232
+        },
+        "recommendedVisitDuration": 45,
+        "operatingHours": {
+            "openTime": "06:00",
+            "closeTime": "22:00"
+        },
+        "isFiller": true,
+        "city": "Melbourne",
+        "address": "Main Yarra Trail Capital City Trail, Melbourne Victoria 3067, Australia",
+        "description": null
+    }
+]

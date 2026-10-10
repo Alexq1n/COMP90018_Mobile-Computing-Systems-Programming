@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "661418797608",
+    "project_id": "android-database-4aa91",
+    "storage_bucket": "android-database-4aa91.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:661418797608:android:057af799d336925657231d",
+        "android_client_info": {
+          "package_name": "com.example.localdatebase"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4oMjAFJkNsDYq7IQQarETaGaYGp5UiSo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,61 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['email', 'createdAt', 'updatedAt'])
+        && request.resource.data.email == request.auth.token.email;
+
+      match /preferences/{preferenceId} {
+        allow read: if isOwner(uid) && preferenceId == 'default';
+        allow create, update: if isOwner(uid)
+          && preferenceId == 'default'
+          && request.resource.data.keys().hasOnly([
+            'theme', 'language', 'preferredCategories',
+            'notificationsEnabled', 'updatedAt'
+          ])
+          && request.resource.data.theme is string
+          && request.resource.data.language is string
+          && request.resource.data.preferredCategories is list
+          && request.resource.data.notificationsEnabled is bool;
+        allow delete: if isOwner(uid) && preferenceId == 'default';
+      }
+
+      match /plannerProfile/{profileId} {
+        allow read: if isOwner(uid) && profileId == 'default';
+        allow create, update: if isOwner(uid)
+          && profileId == 'default'
+          && request.resource.data.keys().hasOnly([
+            'interests', 'budgetPreference', 'transportMode',
+            'transportPreference', 'updatedAt'
+          ])
+          && request.resource.data.interests is list
+          && request.resource.data.budgetPreference in ['LOW', 'MEDIUM', 'HIGH']
+          && request.resource.data.transportMode in [
+            'WALKING', 'PUBLIC_TRANSIT', 'DRIVING', 'CYCLING'
+          ]
+          && request.resource.data.transportPreference is number;
+        allow delete: if isOwner(uid) && profileId == 'default';
+      }
+
+      match /trips/{tripId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly([
+            'tripId', 'payloadJson', 'totalEstimatedCost',
+            'totalExpectedValue', 'updatedAt'
+          ])
+          && request.resource.data.tripId == tripId
+          && request.resource.data.payloadJson is string
+          && request.resource.data.totalEstimatedCost is number
+          && request.resource.data.totalExpectedValue is number;
+      }
+    }
+  }
+}

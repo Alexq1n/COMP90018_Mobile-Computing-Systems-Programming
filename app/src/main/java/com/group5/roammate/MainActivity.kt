@@ -294,16 +294,26 @@ class MainActivity : ComponentActivity() {
 
                     sensorRepository.locationFlow.collectLatest { location ->
 
-                        android.util.Log.d(
-                            "RoamMateGPS",
-                            "GPS received: $location"
-                        )
-
                         if (location != null) {
 
+                            // Get latest GPS + geocoding result
                             val result = uiGetCurrentLocation()
 
-                            currentSensorLocation.value = result
+                            // Keep previous area name if geocoding fails
+                            val previousArea = currentSensorLocation.value.areaName
+
+                            val finalResult = if (
+                                result.areaName == "Current location"
+                            ) {
+                                result.copy(
+                                    areaName = previousArea
+                                )
+                            } else {
+                                result
+                            }
+
+                            // Update UI state
+                            currentSensorLocation.value = finalResult
 
                         }
                     }

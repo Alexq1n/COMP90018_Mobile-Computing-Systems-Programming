@@ -58,7 +58,7 @@ class StepCounterSensor(
         val currentTime = System.currentTimeMillis()
 
 
-        // Detect step counter reset (e.g. device reboot)
+        // Detect step counter reset, clean step history(e.g. device reboot)
         val lastSteps = stepHistory.lastOrNull()?.steps
 
         if (lastSteps != null && totalSteps.toFloat() < lastSteps) {

@@ -1380,10 +1380,11 @@ class MainActivity : ComponentActivity() {
     ): List<AddStopPlace> {
         // function: uiSearchPlacesByName
         // owner: Alex
-        // data provider: Leyan attraction list
+        // data source: Leyan POI source
+        // storage: Yuxiang database if needed
         // input: query, city, GPS, limit
-        // output: name-match places
-        // TODO(Alex): Replace with fuzzy name search; name relevance first.
+        // output: POI list mapped to AddStopPlace
+        // TODO(Alex): Search POI repository by name; return POI list in final integration.
         val source = melbournePopularAddStopPlaces()
         val result = if (query.isBlank()) {
             source
@@ -1406,10 +1407,11 @@ class MainActivity : ComponentActivity() {
     ): List<ExplorePlace> {
         // function: uiExploreNearbyPlaces
         // owner: Alex
-        // data provider: Leyan attraction list
-        // input: category, GPS, limit
-        // output: nearby places
-        // TODO(Alex): Rank by location/category; UI displays name + indoor/outdoor only.
+        // data source: Leyan POI source
+        // sensor source: Alex GPS
+        // input: category filter, GPS, limit
+        // output: POI list mapped to ExplorePlace
+        // TODO(Alex): Rank POI repository by nearby/category; UI hides exact distance.
         return sampleNearbyExplorePlaces()
             .filter { place -> place.category == category }
             .take(limit)
@@ -1418,10 +1420,10 @@ class MainActivity : ComponentActivity() {
     private fun uiLoadAttractionDetail(attractionIdOrName: String): AttractionDetail {
         // function: uiLoadAttractionDetail
         // owner: Leyan
-        // storage provider: Yuxiang database if needed
-        // input: attraction id or name
-        // output: detail data
-        // TODO(Leyan): Load photo, hours, indoor/outdoor, website from real database.
+        // storage: Yuxiang database if needed
+        // input: attraction id
+        // output: POI detail mapped to AttractionDetail
+        // TODO(Leyan): Load POI photo, hours, indoor/outdoor, website from real database.
         return sampleAttractionDetail(attractionIdOrName)
     }
 

@@ -11,8 +11,8 @@ This guide is for **UI integration contracts**. It does not replace the real bac
 - Use `suspend` functions for Firebase/backend requests.
 - Use `Flow` / `StateFlow` for live sensor or loading updates.
 - Return an empty list when there are no results. Do not return fake UI text from backend.
-- `distanceMeters` may be used for sorting, but the current UI does **not** display exact distance.
-- Missing optional data should be nullable, for example `photoUrl: String?` or `todayHours: OpeningHoursUiData?`.
+- Exact `distanceMeters` is no longer displayed in the UI. It can still be used internally for ranking.
+- Missing optional data should be nullable, for example `photoUrl: String?` or `website: String?`.
 - Dates should use ISO format: `yyyy-MM-dd`. Time should use 24-hour format: `HH:mm`.
 
 ## 2. Ownership Table
@@ -28,9 +28,9 @@ This guide is for **UI integration contracts**. It does not replace the real bac
 | `uiLoadSavedTrips` | Yuxiang | Zewen trip summary shape | UI | Saved trips | Mock in `MainActivity` |
 | `uiGetCurrentLocation` | Alex | sensor GPS | UI | Explore, Add stop, Trip | Sensor connected |
 | `uiObserveShakeEvents` | Alex | ShakeDetector event | UI | Explore, Add stop, Trip | Sensor connected, UI action mapped |
-| `uiSearchPlacesByName` | Alex | Leyan attraction names | UI | Add stop | Mock in `MainActivity` |
-| `uiExploreNearbyPlaces` | Alex | Leyan attraction list + GPS | UI | Explore | Mock in `MainActivity` |
-| `uiLoadAttractionDetail` | Leyan | Yuxiang database if needed | UI | Attraction detail | Mock in `MainActivity` |
+| `uiSearchPlacesByName` | Alex | Leyan POI source, Yuxiang database if needed | UI | Add stop | Mock in `MainActivity` |
+| `uiExploreNearbyPlaces` | Alex | Leyan POI source, Alex GPS | UI | Explore | Mock in `MainActivity` |
+| `uiLoadAttractionDetail` | Leyan | POI detail, Yuxiang database if needed | UI | Attraction detail | Mock in `MainActivity` |
 | `uiGenerateItinerary` | Zewen | plan request | UI | Plan My Trip | Mock in `MainActivity` |
 | `uiUpdateItineraryAfterEdit` | Zewen | Yuxiang save after recalculation | UI | Edit itinerary, Add stop | Mock in `MainActivity` |
 | `uiAdjustItineraryForWeather` | Zewen | LeYan weather forecast | UI | Adjust itinerary | Mock in `MainActivity` |
@@ -38,9 +38,68 @@ This guide is for **UI integration contracts**. It does not replace the real bac
 | `uiOpenExternalMap` | Yufei | Android map intent | UI | Home, Trip, Attraction detail | Done |
 | `uiPetStatusCard` | Xiajie | pet module | UI | Home, Pet | In progress |
 
-## 3. Shared UI Data Types
+## 3. Latest POI Source Model
 
-These are suggested integration shapes. They can be implemented as Kotlin data classes or converted from Firebase/backend models.
+Leyan's latest attraction source uses `POI`. Search and detail functions should return this model directly, or return a model that can be mapped from it without losing fields.
+
+```kotlin
+@Serializable
+data class POI(
+    val id: String,
+    val name: String,
+    val photoUrl: String? = null,
+    val website: String? = null,
+    val phone: String? = null,
+    val baseScore: Double? = null,
+    val category: POICategory,
+    val environment: Environment,
+    val coordinates: Coordinates,
+    val recommendedVisitDuration: Int,
+    val operatingHours: OperatingHours,
+    val isFiller: Boolean,
+    val city: String,
+    val address: String?,
+    val description: String?,
+)
+
+@Serializable
+data class Coordinates(
+    val latitude: Double,
+    val longitude: Double,
+)
+
+@Serializable
+data class OperatingHours(
+    val openTime: String,
+    val closeTime: String,
+)
+
+@Serializable
+enum class POICategory {
+    MUSEUM, PARK, RESTAURANT, SHOPPING, ENTERTAINMENT,
+    HISTORICAL, NATURE, BEACH, SPORTS, CULTURAL,
+    NIGHTLIFE, CAFE, LANDMARK, SCENIC_SPOT
+}
+
+@Serializable
+enum class Environment {
+    INDOOR,
+    OUTDOOR,
+    MIXED
+}
+```
+
+Important notes:
+
+- `category` is `POICategory`, not a display `String`.
+- `environment` is `Environment`, not a display `String`.
+- UI can convert enums to display text, for example `MUSEUM -> Museum`, `INDOOR -> Indoor`.
+- `id` is the key used to open `AttractionDetailScreen` and add places to a trip.
+- `photoUrl`, `website`, `phone`, `address`, and `description` can be null.
+
+## 4. Shared UI Data Types
+
+These are suggested integration shapes for UI-only screens. Backend/search can return `POI` directly, then UI can map it into smaller display models.
 
 ```kotlin
 data class UserProfileUiData(
@@ -49,31 +108,18 @@ data class UserProfileUiData(
     val defaultInterestIds: List<String>,
 )
 
-data class PlaceBriefUiData(
-    val id: String,
-    val name: String,
-    val category: String,
-    val environmentType: String, // "Indoor" or "Outdoor"
-    val latitude: Double?,
-    val longitude: Double?,
-    val distanceMeters: Int? = null, // sorting only, not displayed
-)
-
 data class AttractionDetailUiData(
     val id: String,
     val name: String,
-    val environmentType: String,
+    val category: POICategory,
+    val environment: Environment,
     val photoUrl: String?,
-    val todayHours: OpeningHoursUiData?,
-    val weeklyHours: List<OpeningHoursUiData>,
     val websiteUrl: String?,
-    val latitude: Double?,
-    val longitude: Double?,
-)
-
-data class OpeningHoursUiData(
-    val dayLabel: String,
-    val timeRange: String,
+    val phone: String?,
+    val address: String?,
+    val description: String?,
+    val coordinates: Coordinates,
+    val operatingHours: OperatingHours,
 )
 
 data class ItineraryRequestUiData(
@@ -108,7 +154,7 @@ data class ItineraryUiData(
 )
 ```
 
-## 4. API Contracts by Function
+## 5. API Contracts by Function
 
 ### `uiSearchPlacesByName`
 
@@ -119,7 +165,7 @@ Purpose: user types a place name and taps the confirm/search button. The search 
 Input:
 
 ```kotlin
-data class PlaceNameSearchRequest(
+data class PoiNameSearchRequest(
     val query: String,
     val currentCity: String?,
     val userLatitude: Double?,
@@ -131,27 +177,38 @@ data class PlaceNameSearchRequest(
 Output:
 
 ```kotlin
-List<PlaceBriefUiData>
+List<POI>
 ```
 
 Notes:
 
 - UI does not search on every typed character.
-- UI calls this only after the user confirms search.
-- `distanceMeters` can be returned, but UI does not display it.
-- At minimum the UI needs `id`, `name`, and `environmentType`.
+- UI calls this only after the user taps the confirm/search button.
+- The search function should search the POI source or database. UI should not pass the full POI list.
+- If the search module cannot access the repository directly, an internal helper can accept `allPois: List<POI>`.
+- Ranking should prioritize name match first.
+- UI displays `name` and `environment` only in Add stop.
+- UI uses `id` to add the selected POI to the trip and to open detail later.
 
 Example:
 
 ```kotlin
-PlaceBriefUiData(
-    id = "melbourne_museum",
-    name = "Melbourne Museum",
-    category = "Museum",
-    environmentType = "Indoor",
-    latitude = -37.8033,
-    longitude = 144.9717,
-    distanceMeters = 820,
+POI(
+    id = "51002a0b15d21e624059f9f884ecbce742c0f00103f9012693de300300000092031153686f7420546f776572204d757365756d",
+    name = "Shot Tower Museum",
+    photoUrl = "https://staticmap.openstreetmap.de/staticmap.php?center=-37.810453,144.9631448&zoom=16&size=800x500&markers=-37.810453,144.9631448,red-pushpin",
+    website = null,
+    phone = null,
+    baseScore = 8.1,
+    category = POICategory.MUSEUM,
+    environment = Environment.INDOOR,
+    coordinates = Coordinates(latitude = -37.810453, longitude = 144.9631448),
+    recommendedVisitDuration = 120,
+    operatingHours = OperatingHours(openTime = "09:00", closeTime = "18:00"),
+    isFiller = false,
+    city = "Melbourne",
+    address = "McIntyre Alley, Melbourne Victoria 3000, Australia",
+    description = "Small museum covering the shot tower structure and Melbourne history.",
 )
 ```
 
@@ -159,15 +216,17 @@ PlaceBriefUiData(
 
 Used by: `ExploreScreen`
 
-Purpose: show nearby places based on GPS and selected category. This is **not** name search.
+Purpose: show recommended nearby places based on GPS and selected category. This is **not** name search.
 
 Input:
 
 ```kotlin
-data class NearbyPlacesRequest(
-    val userLatitude: Double,
-    val userLongitude: Double,
-    val categoryFilter: String, // Indoor, Outdoor, Cafes, Food
+data class NearbyPoiRequest(
+    val currentCity: String?,
+    val userLatitude: Double?,
+    val userLongitude: Double?,
+    val categoryFilter: POICategory?,
+    val environmentFilter: Environment?,
     val limit: Int,
 )
 ```
@@ -175,14 +234,15 @@ data class NearbyPlacesRequest(
 Output:
 
 ```kotlin
-List<PlaceBriefUiData>
+List<POI>
 ```
 
 Notes:
 
-- Ranking should be location/category relevance first.
-- UI displays `name` and `environmentType` only.
-- Distance can be used internally for sorting.
+- Ranking should prioritize nearby/category relevance.
+- Distance can be calculated internally, but UI does not display exact distance.
+- UI displays `name` and `environment` only.
+- The map was removed from Explore; the page only needs the nearby list.
 
 ### `uiLoadAttractionDetail`
 
@@ -192,14 +252,14 @@ Purpose: load full attraction content after clicking a place from Explore, Trip 
 
 Input:
 
-```text
+```kotlin
 attractionId: String
 ```
 
 Output:
 
 ```kotlin
-AttractionDetailUiData
+POI
 ```
 
 Required fields:
@@ -208,12 +268,20 @@ Required fields:
 |---|---|---|---|
 | `id` | `String` | Yes | Leyan / database |
 | `name` | `String` | Yes | Leyan |
-| `environmentType` | `String` | Yes | Leyan |
+| `category` | `POICategory` | Yes | Leyan |
+| `environment` | `Environment` | Yes | Leyan |
+| `coordinates` | `Coordinates` | Yes | Leyan |
+| `operatingHours` | `OperatingHours` | Yes | Leyan if available, fallback allowed |
 | `photoUrl` | `String?` | No | Leyan / database |
-| `todayHours` | `OpeningHoursUiData?` | No | Leyan |
-| `weeklyHours` | `List<OpeningHoursUiData>` | No | Leyan |
-| `websiteUrl` | `String?` | No | Leyan |
-| `latitude` / `longitude` | `Double?` | No | Leyan / database |
+| `website` | `String?` | No | Leyan / database |
+| `phone` | `String?` | No | Leyan / database |
+| `address` | `String?` | No | Leyan / database |
+| `description` | `String?` | No | Leyan / database |
+
+Notes:
+
+- Attraction detail no longer displays exact distance.
+- If opening hours are missing, UI should show unavailable content instead of crashing.
 
 ### `uiGenerateItinerary`
 
@@ -324,7 +392,25 @@ data class SavedTripSummaryUiData(
 
 Use `emptyList()` if there are no saved trips.
 
-## 5. Sensor Use in UI
+
+## 6. Search Edge Cases
+
+Recommended behavior for Alex/search integration:
+
+| Case | Expected output |
+|---|---|
+| `query` is blank | Return popular/current-city places or `emptyList()`; do not return null. |
+| `query` is too short | Return a small popular list, or wait until confirm button is tapped. |
+| `query` is very long | Trim input, cap length around 50 characters. |
+| `currentCity` is null | Search all supported Australia POIs, or default to Melbourne during demo. |
+| GPS is null | Skip distance ranking; use name/category/popularity. |
+| `limit <= 0` | Return `emptyList()`. |
+| `limit > 20` | Cap to 20 results. |
+| No result | Return `emptyList()` so UI can show "Not found". |
+| Missing optional fields | Keep nullable values as null. |
+| Missing location | The place can appear in name search, but should not be distance-ranked. |
+
+## 7. Sensor Use in UI
 
 See `sensor/RoamMate_Sensor_API_Guide.md` for the full sensor API.
 
@@ -335,7 +421,7 @@ UI currently uses:
 | `locationFlow` / `getCurrentLocation()` | `uiGetCurrentLocation` | Explore area, Add stop recommendations, Trip progress |
 | `shakeEvents` | `uiObserveShakeEvents` | Explore refresh, Add stop refresh, Trip progress refresh |
 
-## 6. Loading and Error States
+## 8. Loading and Error States
 
 Use these states in `MainActivity` or a future ViewModel:
 
@@ -353,7 +439,7 @@ Recommended behavior:
 - detail request failed: show fallback content and a toast/snackbar.
 - no search result: show an empty state, not a crash.
 
-## 7. Search Labels in `MainActivity.kt`
+## 9. Search Labels in `MainActivity.kt`
 
 Team members can search these exact labels:
 

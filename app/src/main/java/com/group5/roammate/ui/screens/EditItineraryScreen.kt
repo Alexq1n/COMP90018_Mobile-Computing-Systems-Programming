@@ -29,6 +29,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,8 +75,9 @@ fun EditItineraryScreen(
 
     // move row
     fun moveStop(fromIndex: Int, toIndex: Int) {
+        if (fromIndex !in editableStops.indices) return
         val safeToIndex = toIndex.coerceIn(editableStops.indices)
-        if (fromIndex == safeToIndex || fromIndex !in editableStops.indices) return
+        if (fromIndex == safeToIndex) return
 
         editableStops = editableStops.toMutableList().apply {
             add(safeToIndex, removeAt(fromIndex))
@@ -135,21 +138,23 @@ fun EditItineraryScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     editableStops.forEachIndexed { index, stop ->
-                        EditItineraryStopCard(
-                            stop = stop,
-                            onMoveUp = {
-                                moveStop(index, index - 1)
-                            },
-                            onMoveDown = {
-                                moveStop(index, index + 1)
-                            },
-                            onRemoveClick = {
-                                editableStops = editableStops.filterNot { currentStop ->
-                                    currentStop.sameStopKey(stop)
-                                }
-                                onRemoveStopClick(stop)
-                            },
-                        )
+                        key(stop.time, stop.title) {
+                            EditItineraryStopCard(
+                                stop = stop,
+                                onMoveUp = {
+                                    moveStop(index, index - 1)
+                                },
+                                onMoveDown = {
+                                    moveStop(index, index + 1)
+                                },
+                                onRemoveClick = {
+                                    editableStops = editableStops.filterNot { currentStop ->
+                                        currentStop.sameStopKey(stop)
+                                    }
+                                    onRemoveStopClick(stop)
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -194,6 +199,8 @@ private fun EditItineraryStopCard(
 ) {
     // drag state
     val dragThresholdPx = with(LocalDensity.current) { 54.dp.toPx() }
+    val moveUp by rememberUpdatedState(onMoveUp)
+    val moveDown by rememberUpdatedState(onMoveDown)
     var dragOffsetY by remember(stop.time, stop.title) {
         mutableStateOf(0f)
     }
@@ -222,16 +229,17 @@ private fun EditItineraryStopCard(
                         isDragging = false
                         dragOffsetY = 0f
                     },
-                    onDrag = { _, dragAmount ->
+                    onDrag = { change, dragAmount ->
+                        change.consume()
                         dragOffsetY += dragAmount.y
 
                         when {
                             dragOffsetY > dragThresholdPx -> {
-                                onMoveDown()
+                                moveDown()
                                 dragOffsetY = 0f
                             }
                             dragOffsetY < -dragThresholdPx -> {
-                                onMoveUp()
+                                moveUp()
                                 dragOffsetY = 0f
                             }
                         }

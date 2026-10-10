@@ -8,12 +8,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.group5.roammate.ui.pet.rememberPetEnvironment
+import com.group5.roammate.pet.PetPreferences
+import com.group5.roammate.pet.PetStateEngine
+import com.group5.roammate.pet.PetTripContext
+import com.group5.roammate.pet.PetWeatherSnapshot
 import com.group5.roammate.ui.screens.AdjustChangeTone
 import com.group5.roammate.ui.screens.AdjustItineraryPlan
 import com.group5.roammate.ui.screens.AdjustItineraryScreen
@@ -49,11 +55,167 @@ import com.group5.roammate.ui.screens.TripStopStatus
 import com.group5.roammate.ui.screens.TripSummary
 import com.group5.roammate.ui.screens.TripTimelineStop
 import com.group5.roammate.ui.screens.TripWeatherSummary
+import com.group5.roammate.ui.sensor.SensorTestScreen
+import com.group5.roammate.ui.pet.CompanionsScreen
+import com.group5.roammate.ui.pet.PetCameraScreen
 import com.group5.roammate.ui.theme.RoamMateTheme
 
+import android.Manifest
+import android.content.ComponentName
+import android.content.Context
+import android.content.ServiceConnection
+import android.content.pm.PackageManager
+import android.os.IBinder
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.launch
+
+// [NEW] Sensor module
+import com.group5.roammate.sensor.RoamMateApp
+import com.group5.roammate.sensor.SensorRepository
+import com.group5.roammate.sensor.SensorService
+
+
+
+
+
 class MainActivity : ComponentActivity() {
+
+    // Use the ONE repository created by RoamMateApp.
+    private val sensorRepository: SensorRepository
+        get() = (application as RoamMateApp).sensorRepository
+
+    // Bound service for Step Counter.
+    private var sensorService: SensorService? = null
+    private var bindingRequested = false
+
+    private val sensorConnection = object : ServiceConnection {
+
+        override fun onServiceConnected(
+            name: ComponentName,
+            binder: IBinder
+        ) {
+            sensorService =
+                (binder as SensorService.LocalBinder).getService()
+
+            // Binding is for accessing the service.
+            // The Foreground Service starts Step Counter itself.
+            android.util.Log.d(
+                "RoamMateSensor",
+                "SensorService connected"
+            )
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            sensorService = null
+        }
+    }
+
+    // Request Android 10+ step recognition permission.
+    private val activityPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            if (
+                granted &&
+                lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+            ) {
+                startBackgroundStepTracking()
+                sensorRepository.startStepDetection()
+            }
+        }
+
+    // Request GPS permissions.
+    private val locationPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { result ->
+            if (result.values.any { it }) {
+                sensorRepository.startLocationTracking()
+            }
+        }
+
+    private fun hasActivityRecognitionPermission(): Boolean =
+        android.os.Build.VERSION.SDK_INT < 29 ||
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACTIVITY_RECOGNITION
+                ) == PackageManager.PERMISSION_GRANTED
+
+    private fun hasLocationPermission(): Boolean =
+        ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+    // Start persistent background step tracking.
+    private fun startBackgroundStepTracking() {
+        if (!hasActivityRecognitionPermission()) return
+
+        val intent = Intent(this, SensorService::class.java).apply {
+            action = SensorService.ACTION_START
+        }
+
+        try {
+            ContextCompat.startForegroundService(this, intent)
+        } catch (e: Exception) {
+            android.util.Log.e(
+                "RoamMateSensor",
+                "Unable to start background step tracking",
+                e
+            )
+        }
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
+        // Subscribe to the shared repository.
+        // Collection automatically stops/restarts with Activity lifecycle.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+
+                // GPS: Latest location
+                launch {
+                    sensorRepository.locationFlow.collect { location ->
+                        if (location != null) {
+//                            android.util.Log.d(
+//                                "RoamMateSensor",
+//                                "GPS: ${location.latitude}, ${location.longitude}"
+//                            )
+                        }
+                    }
+                }
+
+                // Step Counter: Cumulative steps since device reboot
+                launch {
+                    sensorRepository.stepCountFlow.collect { steps ->
+                        android.util.Log.d(
+                            "RoamMateSensor",
+                            "Total steps: $steps"
+                        )
+                    }
+                }
+
+                // Step Detector: Individual step events
+                launch {
+                    sensorRepository.stepEvents.collect { timestamp ->
+                        android.util.Log.d(
+                            "RoamMateSensor",
+                            "Step detected: $timestamp"
+                        )
+                    }
+                }
+            }
+        }
+
+
+
 
         // Enable the page to extend to the status bar and the bottom navigation bar area.
         enableEdgeToEdge()
@@ -64,7 +226,14 @@ class MainActivity : ComponentActivity() {
             // RoamMateTheme responsible for unifying colors, fonts and the overall visual style.
             RoamMateTheme(dynamicColor = false) {
                 // This is a temporary page status.
-                var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.Login) }
+                var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.SensorTest) }
+
+                // Jie pet feature state: one koala, live weather gear and a persisted fashion choice.
+                val petPreferences = remember { PetPreferences(applicationContext) }
+                var petProfile by remember { mutableStateOf(petPreferences.loadProfile()) }
+                val petEnvironment = rememberPetEnvironment()
+                val petWeather = petEnvironment.weather
+                val petState = PetStateEngine.buildUiState(petProfile, petWeather)
 
                 // User name
                 // TODO: Replace with Yuxiang Firebase user profile.
@@ -75,8 +244,8 @@ class MainActivity : ComponentActivity() {
                 var isGeneratingItinerary by rememberSaveable { mutableStateOf(false) }
                 var isSearchingPlaces by rememberSaveable { mutableStateOf(false) }
 
-                // Sensor state
-                // TODO: Alex should update this when GPS changes.
+                // Demonstration location for Yufei's Explore preview, not a measured GPS fix.
+                // TODO: Alex should update this and set isSample = false when GPS changes.
                 val currentSensorLocation = remember {
                     mutableStateOf(
                         SensorLocation(
@@ -87,6 +256,22 @@ class MainActivity : ComponentActivity() {
                         ),
                     )
                 }
+
+                // Update existing UI location using GPS StateFlow.
+                LaunchedEffect(sensorRepository) {
+                    sensorRepository.locationFlow.collect { location ->
+                        if (location != null) {
+                            currentSensorLocation.value = SensorLocation(
+                                latitude = location.latitude,
+                                longitude = location.longitude,
+                                accuracyMeters = 0f,
+                                areaName = "Current location",
+                                isSample = false
+                            )
+                        }
+                    }
+                }
+
 
                 // Sensor trigger
                 // TODO: Alex should call this when shake is detected.
@@ -114,6 +299,19 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+
+
+                // Receive shake events from SensorRepository.
+                LaunchedEffect(sensorRepository) {
+                    sensorRepository.shakeEvents.collect {
+//                        android.util.Log.d(
+//                            "RoamMateSensor",
+//                            "Shake detected!"
+//                        )
+                        handleShakeTrigger()
+                    }
+                }
+
 
                 // Attraction detail 当前展示的景点。之后由 Explore/Trip 点击的真实景点数据替换。
                 var selectedAttractionDetail by remember {
@@ -270,8 +468,10 @@ class MainActivity : ComponentActivity() {
                         // TODO: 这是 Home 顶部 Smart suggestion 的临时假数据。
                         // TODO: 之后由 Yan 提供天气变化，Zewen 根据建议触发行程调整。
                         val homeSmartSuggestion = HomeSmartSuggestion(
-                            label = "Rain",
-                            message = "Smart suggestion · Rain 2-4 PM, tap to adjust your plan",
+                            label = if (petWeather.isCurrent) petWeather.label else "Weather",
+                            message = if (petWeather.isCurrent) {
+                                "${petWeather.locationLabel}: ${petWeather.temperatureC.toInt()}°C · ${petState.statusLine}"
+                            } else "Live weather is unavailable. Open Buddy to refresh.",
                         )
 
                         HomeScreen(
@@ -292,13 +492,12 @@ class MainActivity : ComponentActivity() {
                             // 如果没有建议，之后把这里传 null 即可隐藏卡片。
                             smartSuggestion = homeSmartSuggestion,
 
-                            // TODO: 这里现在先用吉祥物图片当 pet 占位。
-                            // TODO: 等 Jie/后端做好真正宠物后，把这组 HomePetStatus 换成真实 pet 数据。
+                            // Jie pet module: Home, Pet and Camera share the same koala outfit.
                             petStatus = HomePetStatus(
                                 name = "Buddy",
-                                description = "Rainy day · been walking a while",
-                                moodLabel = "Tired",
-                                imageRes = R.drawable.roammate_wombat,
+                                description = petState.statusLine,
+                                moodLabel = petState.mood.label,
+                                petState = petState,
                             ),
 
                             // TODO: 之后这里用真实当前站点地址打开外部地图导航。
@@ -307,14 +506,10 @@ class MainActivity : ComponentActivity() {
                             },
 
                             // TODO: 之后这里跳转到 Adjust itinerary 页面。
-                            onSmartSuggestionClick = {
-                                adjustPlanIndex = 0
-                                currentScreen = AuthScreen.AdjustItinerary
-                            },
+                            onSmartSuggestionClick = { currentScreen = AuthScreen.Pet },
 
-                            // TODO: 之后这里跳转到 Companions/Pet 页面。
                             onPetCardClick = {
-                                Toast.makeText(this, "Pet page is not ready yet", Toast.LENGTH_SHORT).show()
+                                currentScreen = AuthScreen.Pet
                             },
 
                             // 点击 Home 页底部按钮，进入 Plan My Trip 页面。
@@ -338,11 +533,7 @@ class MainActivity : ComponentActivity() {
                                     RoamMateMainTab.Trip -> currentScreen = AuthScreen.Trip
                                     RoamMateMainTab.Profile -> currentScreen = AuthScreen.Profile
                                     RoamMateMainTab.Explore -> currentScreen = AuthScreen.Explore
-                                    else -> Toast.makeText(
-                                        this,
-                                        "${tab.label} page is not ready yet",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
+                                    RoamMateMainTab.Pet -> currentScreen = AuthScreen.Pet
                                 }
                             },
                         )
@@ -392,8 +583,8 @@ class MainActivity : ComponentActivity() {
 
                             // TODO: 这里之后接 Yan 的实时天气数据。
                             weatherSummary = TripWeatherSummary(
-                                temperature = "18°C",
-                                condition = "Partly cloudy",
+                                temperature = if (petWeather.isCurrent) "${petWeather.temperatureC.toInt()}°C" else "—",
+                                condition = if (petWeather.isCurrent) "${petWeather.label} · ${petWeather.locationLabel}" else "Weather unavailable",
                             ),
 
                             // TODO: 这里之后接 Zewen 生成的多天行程 summary。
@@ -430,11 +621,7 @@ class MainActivity : ComponentActivity() {
                                     RoamMateMainTab.Trip -> Unit
                                     RoamMateMainTab.Explore -> currentScreen = AuthScreen.Explore
                                     RoamMateMainTab.Profile -> currentScreen = AuthScreen.Profile
-                                    else -> Toast.makeText(
-                                        this,
-                                        "${tab.label} page is not ready yet",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
+                                    RoamMateMainTab.Pet -> currentScreen = AuthScreen.Pet
                                 }
                             },
                         )
@@ -449,7 +636,9 @@ class MainActivity : ComponentActivity() {
 
                         ExploreScreen(
                             modifier = Modifier.fillMaxSize(),
-                            currentArea = currentSensorLocation.value.areaName,
+                            currentArea = currentSensorLocation.value.let { location ->
+                                if (location.isSample) "${location.areaName} · sample" else location.areaName
+                            },
                             places = nearbyExplorePlaces,
 
                             // TODO: 之后这里跳转 Attraction detail 页面。
@@ -466,11 +655,7 @@ class MainActivity : ComponentActivity() {
                                     RoamMateMainTab.Trip -> currentScreen = AuthScreen.Trip
                                     RoamMateMainTab.Explore -> Unit
                                     RoamMateMainTab.Profile -> currentScreen = AuthScreen.Profile
-                                    else -> Toast.makeText(
-                                        this,
-                                        "${tab.label} page is not ready yet",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
+                                    RoamMateMainTab.Pet -> currentScreen = AuthScreen.Pet
                                 }
                             },
                         )
@@ -695,6 +880,47 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    AuthScreen.Pet -> {
+                        val nextStop = tripTimelineStops.firstOrNull {
+                            it.status != TripStopStatus.Done
+                        }
+                        CompanionsScreen(
+                            state = petState,
+                            environment = petEnvironment,
+                            onWardrobeSelected = { wardrobeChoice ->
+                                val updatedProfile = petProfile.copy(
+                                    wardrobeChoice = wardrobeChoice,
+                                )
+                                petProfile = updatedProfile
+                                petPreferences.saveProfile(updatedProfile)
+                            },
+                            tripContext = PetTripContext(
+                                nextStopName = nextStop?.title,
+                                nextStopTime = nextStop?.time,
+                                isDemo = true, // Change only when real itinerary data replaces sample stops.
+                            ),
+                            onOpenCamera = { currentScreen = AuthScreen.PetCamera },
+                            onTabClick = { tab ->
+                                when (tab) {
+                                    RoamMateMainTab.Home -> currentScreen = AuthScreen.Home
+                                    RoamMateMainTab.Trip -> currentScreen = AuthScreen.Trip
+                                    RoamMateMainTab.Explore -> currentScreen = AuthScreen.Explore
+                                    RoamMateMainTab.Pet -> Unit
+                                    RoamMateMainTab.Profile -> currentScreen = AuthScreen.Profile
+                                }
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+
+                    AuthScreen.PetCamera -> {
+                        PetCameraScreen(
+                            state = petState,
+                            onBack = { currentScreen = AuthScreen.Pet },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+
                     AuthScreen.Profile -> {
                         ProfileScreen(
                             modifier = Modifier.fillMaxSize(),
@@ -729,11 +955,7 @@ class MainActivity : ComponentActivity() {
                                     RoamMateMainTab.Home -> currentScreen = AuthScreen.Home
                                     RoamMateMainTab.Trip -> currentScreen = AuthScreen.Trip
                                     RoamMateMainTab.Explore -> currentScreen = AuthScreen.Explore
-                                    else -> Toast.makeText(
-                                        this,
-                                        "${tab.label} page is not ready yet",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
+                                    RoamMateMainTab.Pet -> currentScreen = AuthScreen.Pet
                                 }
                             },
                         )
@@ -803,10 +1025,122 @@ class MainActivity : ComponentActivity() {
                             },
                         )
                     }
+
+                    AuthScreen.SensorTest -> {
+                        SensorTestScreen(
+                            sensorRepository = sensorRepository,
+                            onBack = {
+                                currentScreen = AuthScreen.Login
+                            }
+                        )
+                    }
+
+
+
+
                 }
             }
         }
     }
+
+
+
+
+
+
+    // Start sensors when Activity becomes visible.
+    override fun onStart() {
+        super.onStart()
+
+        // Start persistent step tracking when permitted.
+        if (hasActivityRecognitionPermission()) {
+            startBackgroundStepTracking()
+        }
+
+        // Bind to SensorService.
+        if (!bindingRequested) {
+            bindingRequested = bindService(
+                Intent(this, SensorService::class.java),
+                sensorConnection,
+                Context.BIND_AUTO_CREATE
+            )
+        }
+
+        // Shake Detector.
+        sensorRepository.startShakeDetection()
+        val shakeStarted = sensorRepository.startShakeDetection()
+//        android.util.Log.d(
+//            "RoamMateSensor",
+//            "Shake start result: $shakeStarted"
+//        )
+
+
+        // Step Detector.
+        if (hasActivityRecognitionPermission()) {
+            sensorRepository.startStepDetection()
+//            android.util.Log.d(
+//                "RoamMateSensor",
+//                "Step Detector start requested"
+//            )
+        } else {
+            activityPermissionLauncher.launch(
+                Manifest.permission.ACTIVITY_RECOGNITION
+            )
+        }
+
+        // GPS
+        if (hasLocationPermission()) {
+            sensorRepository.startLocationTracking()
+//            android.util.Log.d(
+//                "RoamMateSensor",
+//                "GPS start requested"
+//            )
+        } else {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+
+
+
+
+    }
+
+    override fun onStop() {
+        android.util.Log.d(
+            "RoamMateSensor",
+            "MainActivity onStop: stopping foreground-only sensors"
+        )
+
+
+        // Foreground-only sensors stop.
+        sensorRepository.stopShakeDetection()
+        sensorRepository.stopStepDetection()
+        sensorRepository.stopLocationTracking()
+
+        android.util.Log.d(
+            "RoamMateSensor",
+            "Shake, Step Detector and GPS stopped"
+        )
+
+        // Do NOT stop Step Counter.
+        // The Foreground Service continues independently.
+
+        if (bindingRequested) {
+            unbindService(sensorConnection)
+            bindingRequested = false
+            sensorService = null
+        }
+
+        super.onStop()
+    }
+
+
+
+
 
     private fun rebalanceTripStopsAfterManualEdit(
         stops: List<TripTimelineStop>,
@@ -1285,12 +1619,13 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Sensor data from Alex.
+// Location adapter for Alex; defaults are explicitly demonstration data.
 private data class SensorLocation(
     val latitude: Double,
     val longitude: Double,
     val accuracyMeters: Float,
     val areaName: String,
+    val isSample: Boolean = true,
 )
 
 private enum class AuthScreen {
@@ -1306,8 +1641,11 @@ private enum class AuthScreen {
     EditAddStop,
     PlanMyTrip,
     PlanTripInterests,
+    Pet,
+    PetCamera,
     Profile,
     SavedTrips,
     EditProfile,
     ProfileInterests,
+    SensorTest,
 }

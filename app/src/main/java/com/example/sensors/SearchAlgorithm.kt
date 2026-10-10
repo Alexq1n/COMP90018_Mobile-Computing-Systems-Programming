@@ -1,29 +1,55 @@
 package com.example.sensors
 
-data class Coordinates(
-    val latitude: Double,
-    val longitude: Double
-)
+import kotlinx.serialization.Serializable
 
-data class OperatingHours(
-    val openTime: String,
-    val closeTime: String
-)
-
+@Serializable
 data class Place(
     val id: String,
     val name: String,
-    val baseScore: Double,
-    val category: String,
-    val environment: String,
+
+    // Optional enrichment fields. Null means the source did not provide a value.
+    val photoUrl: String? = null,
+    val website: String? = null,
+    val phone: String? = null,
+
+    val baseScore: Double? = null,
+    val category: POICategory,
+    val environment: Environment,
     val coordinates: Coordinates,
     val recommendedVisitDuration: Int,
     val operatingHours: OperatingHours,
     val isFiller: Boolean,
     val city: String,
-    val address: String,
+    val address: String?,
     val description: String?
 )
+
+@Serializable
+data class Coordinates(
+    val latitude: Double,
+    val longitude: Double
+)
+
+@Serializable
+data class OperatingHours(
+    val openTime: String,
+    val closeTime: String
+)
+
+@Serializable
+enum class POICategory {
+    MUSEUM, PARK, RESTAURANT, SHOPPING, ENTERTAINMENT,
+    HISTORICAL, NATURE, BEACH, SPORTS, CULTURAL,
+    NIGHTLIFE, CAFE, LANDMARK, SCENIC_SPOT
+}
+
+@Serializable
+enum class Environment {
+    INDOOR,
+    OUTDOOR,
+    MIXED
+}
+
 
 data class SearchResult(
     val place: Place,
@@ -51,7 +77,7 @@ fun searchPlaces(
     val results = places.mapNotNull { place ->
 
         val name = normalizeText(place.name)
-        val category = normalizeText(place.category)
+        val category = normalizeText(place.category.name)
         val city = normalizeText(place.city)
 
         val nameTokens = tokenize(name)
@@ -185,7 +211,7 @@ fun searchPlaces(
     // 7. Ranking
     return results
         .sortedByDescending { it.score }
-        .take(maxResults)
+        .take(maxResults.coerceAtLeast(0))
 }
 
 
@@ -198,6 +224,7 @@ fun normalizeText(text: String): String {
     return text
         .lowercase()
         .trim()
+        .replace("_", " ")
         .replace(Regex("[^a-z0-9\\s]"), "")
         .replace(Regex("\\s+"), " ")
 }

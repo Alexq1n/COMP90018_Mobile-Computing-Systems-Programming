@@ -11,7 +11,7 @@ class MockPOI(
     fun getPlaces(): List<Place> {
 
         val json = context.resources
-            .openRawResource(R.raw.pois)
+            .openRawResource(R.raw.pois_enriched)
             .bufferedReader()
             .use { it.readText() }
 

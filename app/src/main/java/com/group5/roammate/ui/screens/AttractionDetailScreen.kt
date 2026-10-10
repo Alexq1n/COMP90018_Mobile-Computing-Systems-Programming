@@ -60,7 +60,7 @@ private val RoamMateMutedText = Color(0xFF8A949E)
 private val RoamMateFieldBorder = Color(0xFFE3E8EF)
 private val RoamMateHeroBackground = Color(0xFFCFECEF)
 
-// 景点详情页需要的数据。距离后面由 sensor/GPS 计算；营业时间/官网由 Leyan 提供。
+// 景点详情页需要的数据。营业时间/官网由 Leyan 提供；距离只给内部排序，不在 UI 显示。
 data class AttractionDetail(
     val name: String,
     val distanceText: String,
@@ -294,28 +294,6 @@ private fun AttractionBody(
             fontWeight = FontWeight.ExtraBold,
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "⌖",
-                color = RoamMateTeal,
-                fontSize = 19.sp,
-                fontWeight = FontWeight.ExtraBold,
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Text(
-                // TODO: 之后这里接 Alex/Sitao sensor/GPS 算出的当前位置距离。
-                text = "${attraction.distanceText} away",
-                color = RoamMateMutedText,
-                fontSize = 16.sp,
-                lineHeight = 19.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-
         Spacer(modifier = Modifier.height(18.dp))
 
         AttractionTagRow(attraction = attraction)
@@ -348,11 +326,8 @@ private fun AttractionTagRow(
             .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        // environment only; weather suitability can stay in data if needed later
         SmallInfoChip(text = attraction.environmentLabel)
-
-        attraction.weatherTag?.let { tag ->
-            SmallInfoChip(text = tag)
-        }
     }
 }
 

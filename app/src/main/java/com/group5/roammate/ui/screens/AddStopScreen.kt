@@ -339,8 +339,9 @@ private fun AddStopResultCard(
 
                 Spacer(modifier = Modifier.height(2.dp))
 
+                // environment only; search can still use distance internally
                 Text(
-                    text = "${place.distanceText} · ${place.environmentType}",
+                    text = place.environmentType,
                     color = RoamMateMutedText,
                     fontSize = 14.sp,
                     lineHeight = 17.sp,

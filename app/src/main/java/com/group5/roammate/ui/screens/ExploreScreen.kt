@@ -285,7 +285,7 @@ private fun NearbyResultsPanel(
     }
 }
 
-// ---- one place card (icon · name · distance · tag · >) ; tap = open detail ----
+// ---- one place card (icon · name · environment · >) ; tap = open detail ----
 @Composable
 private fun NearbyPlaceCard(
     place: ExplorePlace,
@@ -321,7 +321,7 @@ private fun NearbyPlaceCard(
 
             Spacer(modifier = Modifier.width(14.dp))
 
-            // name + distance + tag
+            // name + environment
             Column(modifier = Modifier.weight(1f)) {
                 // name
                 Text(
@@ -334,31 +334,14 @@ private fun NearbyPlaceCard(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // distance · environment
+                // environment only; distance stays internal for sorting
                 Text(
-                    text = "${place.distanceText} · ${place.environmentLabel}",
+                    text = place.environmentLabel,
                     color = RoamMateMutedText,
                     fontSize = 14.sp,
                     lineHeight = 16.sp,
                     fontWeight = FontWeight.Bold,
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // tag pill
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = RoamMateLightTeal,
-                ) {
-                    Text(
-                        text = place.tagText,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                        color = RoamMateTeal,
-                        fontSize = 12.sp,
-                        lineHeight = 14.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                    )
-                }
             }
 
             // chevron

@@ -20,6 +20,7 @@ import com.group5.roammate.pet.PetPreferences
 import com.group5.roammate.pet.PetStateEngine
 import com.group5.roammate.pet.PetTripContext
 import com.group5.roammate.pet.PetWeatherSnapshot
+import com.group5.roammate.sensor.GeocodingRepository
 import com.group5.roammate.ui.screens.AdjustChangeTone
 import com.group5.roammate.ui.screens.AdjustItineraryPlan
 import com.group5.roammate.ui.screens.AdjustItineraryScreen
@@ -72,7 +73,11 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+
 
 // [NEW] Sensor module
 import com.group5.roammate.sensor.RoamMateApp
@@ -99,6 +104,10 @@ Keep each owner in a small function below, then connect the screen callbacks to 
 
 
 class MainActivity : ComponentActivity() {
+
+    private val geocodingRepository by lazy {
+        GeocodingRepository(applicationContext)
+    }
 
     // Use the ONE repository created by RoamMateApp.
     private val sensorRepository: SensorRepository
@@ -282,15 +291,20 @@ class MainActivity : ComponentActivity() {
 
                 // Update existing UI location using GPS StateFlow.
                 LaunchedEffect(sensorRepository) {
-                    sensorRepository.locationFlow.collect { location ->
+
+                    sensorRepository.locationFlow.collectLatest { location ->
+
+                        android.util.Log.d(
+                            "RoamMateGPS",
+                            "GPS received: $location"
+                        )
+
                         if (location != null) {
-                            currentSensorLocation.value = SensorLocation(
-                                latitude = location.latitude,
-                                longitude = location.longitude,
-                                accuracyMeters = 0f,
-                                areaName = "Current location",
-                                isSample = false
-                            )
+
+                            val result = uiGetCurrentLocation()
+
+                            currentSensorLocation.value = result
+
                         }
                     }
                 }
@@ -330,11 +344,7 @@ class MainActivity : ComponentActivity() {
 
                 // Receive shake events from SensorRepository.
                 LaunchedEffect(sensorRepository) {
-                    sensorRepository.shakeEvents.collect {
-//                        android.util.Log.d(
-//                            "RoamMateSensor",
-//                            "Shake detected!"
-//                        )
+                    uiObserveShakeEvents {
                         handleShakeTrigger()
                     }
                 }
@@ -1117,7 +1127,7 @@ class MainActivity : ComponentActivity() {
 
         // Shake Detector.
         sensorRepository.startShakeDetection()
-        val shakeStarted = sensorRepository.startShakeDetection()
+//        val shakeStarted = sensorRepository.startShakeDetection()
 //        android.util.Log.d(
 //            "RoamMateSensor",
 //            "Shake start result: $shakeStarted"
@@ -1341,33 +1351,50 @@ class MainActivity : ComponentActivity() {
 
     // ---- Alex: sensor + fuzzy search trigger ----
 
-    private fun uiGetCurrentLocation(): SensorLocation {
+    private suspend fun uiGetCurrentLocation(): SensorLocation {
         // function: uiGetCurrentLocation
         // owner: Alex
         // output: current latitude/longitude/area
-        // TODO(Alex): Replace sample location with SensorRepository latest GPS value.
-        return SensorLocation(
-            latitude = -37.8039,
-            longitude = 144.9717,
+
+        // Wait until GPS has a valid location
+        val location = sensorRepository.locationFlow
+            .filterNotNull()
+            .first()
+
+        // Convert GPS coordinates into area name
+        val areaName = geocodingRepository.getAreaName(
+            latitude = location.latitude,
+            longitude = location.longitude
+        )
+        val result = SensorLocation(
+            latitude = location.latitude,
+            longitude = location.longitude,
             accuracyMeters = 12f,
-            areaName = "Carlton",
+            areaName = areaName,
+            isSample = false
+        )
+
+         return SensorLocation(
+            latitude = location.latitude,
+            longitude = location.longitude,
+            accuracyMeters = 12f,
+            areaName = areaName,
+            isSample = false
         )
     }
 
-    private fun uiObserveShakeEvents(screen: AuthScreen): String? {
+
+
+    private suspend fun uiObserveShakeEvents(
+        onShake: () -> Unit
+    ) {
         // function: uiObserveShakeEvents
         // owner: Alex
         // UI consumer: Yufei
         // input: current screen
         // output: UI action label
-        // TODO(Alex): Connect real ShakeDetector event to this UI action mapping.
-        return when (screen) {
-            AuthScreen.Explore -> "refresh nearby places"
-            AuthScreen.Trip -> "refresh trip progress"
-            AuthScreen.PlanMyTrip,
-            AuthScreen.PlanAddStop,
-            AuthScreen.EditAddStop -> "refresh stop suggestions"
-            else -> null
+        sensorRepository.shakeEvents.collect {
+            onShake()
         }
     }
 

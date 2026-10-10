@@ -8,20 +8,32 @@ val repository = PoiRepository(context)
 // 首次使用前，把 pois.json 导入本地 SQLite
 repository.importBundledPois()
 
-// 查询墨尔本全部景点，最多返回 1000 条
-val pois = repository.find(
-    "",           // 分类为空：不限分类
-    "Melbourne",  // 城市
-    "",           // 关键词为空：不限关键词
-    1000          // 最大返回数量
-)
+// 获取数据库中的全部景点，不需要筛选条件或 limit
+val pois = repository.allPois
 
-// 读取结果
+// pois 的类型是 List<PoiData>；每个对象包含该景点的全部字段
 pois.forEach { poi ->
+    println(poi.id)
     println(poi.name)
+    println(poi.baseScore)
+    println(poi.category)
+    println(poi.environment)
+    println(poi.latitude)
+    println(poi.longitude)
+    println(poi.recommendedVisitDuration)
+    println(poi.openTime)
+    println(poi.closeTime)
+    println(poi.filler)
+    println(poi.city)
     println(poi.address)
-    println("${poi.latitude}, ${poi.longitude}")
+    println(poi.description)
 }
+```
+
+Java 中调用同一个接口：
+
+```java
+List<PoiData> pois = repository.getAllPois();
 ```
 
 ## 按分类读取
@@ -67,7 +79,7 @@ poi?.let {
 viewModelScope.launch(Dispatchers.IO) {
     val repository = PoiRepository(context)
     repository.importBundledPois()
-    val pois = repository.find("", "Melbourne", "", 1000)
+    val pois = repository.allPois
 
     withContext(Dispatchers.Main) {
         // 在这里使用 pois 更新界面

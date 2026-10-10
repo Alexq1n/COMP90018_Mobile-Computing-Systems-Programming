@@ -256,6 +256,15 @@ final class SQLiteLocalDataStore extends SQLiteOpenHelper implements LocalDataSt
         }
     }
 
+    @Override public List<PoiData> getAllPois() {
+        List<PoiData> results = new ArrayList<>();
+        try (Cursor cursor = getReadableDatabase().query("pois", poiColumns(), null,
+                null, null, null, "base_score DESC, name ASC")) {
+            while (cursor.moveToNext()) results.add(readPoi(cursor));
+        }
+        return results;
+    }
+
     @Override public List<PoiData> getPois(String category, String city, String search, int limit) {
         if (limit < 1 || limit > 10000) throw new IllegalArgumentException("limit 需要在 1–10000 之间");
         List<String> clauses = new ArrayList<>();

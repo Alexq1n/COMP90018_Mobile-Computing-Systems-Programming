@@ -95,6 +95,7 @@ public class LocalDataStoreTest {
         PoiData beach = poi("beach-1", "Brighton Beach", "BEACH", 8.2, -37.91, 144.98);
         db.upsertPois(Arrays.asList(museum, beach));
         assertEquals(2, db.countPois());
+        assertEquals(2, db.getAllPois().size());
         assertEquals("Shot Tower Museum", db.getPoiById("museum-1").name);
         assertEquals(1, db.getPois("MUSEUM", "Melbourne", "tower", 20).size());
         assertEquals(0, db.getPois("BEACH", "Melbourne", "tower", 20).size());

@@ -47,6 +47,11 @@ public final class PoiRepository {
         return store.getPoiById(id);
     }
 
+    /** Returns every locally stored POI with all PoiData fields populated. */
+    public List<PoiData> getAllPois() {
+        return store.getAllPois();
+    }
+
     public List<PoiData> find(String category, String city, String keyword, int limit) {
         return store.getPois(category, city, keyword, limit);
     }

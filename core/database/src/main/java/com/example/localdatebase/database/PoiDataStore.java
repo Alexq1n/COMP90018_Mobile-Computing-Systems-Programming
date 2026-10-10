@@ -6,6 +6,7 @@ import java.util.List;
 public interface PoiDataStore {
     void upsertPois(List<PoiData> pois);
     PoiData getPoiById(String id);
+    List<PoiData> getAllPois();
     List<PoiData> getPois(String category, String city, String search, int limit);
     int countPois();
 }

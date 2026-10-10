@@ -61,6 +61,7 @@ class PlannerRealDataTest {
     private class FakeStore(private val values: List<PoiData>) : PoiDataStore {
         override fun upsertPois(pois: MutableList<PoiData>?) = Unit
         override fun getPoiById(id: String?): PoiData? = values.firstOrNull { it.id == id }
+        override fun getAllPois(): MutableList<PoiData> = values.toMutableList()
         override fun getPois(category: String?, city: String?, search: String?, limit: Int): MutableList<PoiData> =
             values.filter {
                 (category.isNullOrBlank() || it.category.equals(category, true)) &&

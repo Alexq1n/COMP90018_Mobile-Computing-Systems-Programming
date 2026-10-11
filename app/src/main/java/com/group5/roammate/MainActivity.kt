@@ -222,7 +222,6 @@ class MainActivity : ComponentActivity() {
             android.util.Log.d(
                 "SearchTest",
                 "${index + 1}. ${place.name} | " +
-                        "Distance: ${place.distanceText} | " +
                         "Environment: ${place.environmentType}"
             )
         }
@@ -426,6 +425,27 @@ class MainActivity : ComponentActivity() {
                 // TODO(Zewen, function: uiGenerateItinerary): pass these as must-visit places.
                 var planRequiredPlaces by remember {
                     mutableStateOf(emptyList<AddStopPlace>())
+                }
+
+                // Add stop list
+                // function: uiSearchPlacesByName; owner: Alex
+                // Used by Plan Add Stop and Edit Add Stop.
+                // Shake refreshes this default suggestion list.
+                var addStopResultPlaces by remember(
+                    addStopShakeRefreshCount,
+                    currentSensorLocation.value.latitude,
+                    currentSensorLocation.value.longitude,
+                ) {
+                    mutableStateOf(
+                        uiSearchPlacesByName(
+                            context = this@MainActivity,
+                            query = "",
+                            currentCity = "Melbourne",
+                            userLatitude = currentSensorLocation.value.latitude,
+                            userLongitude = currentSensorLocation.value.longitude,
+                            limit = 8,
+                        ).rotateLeft(addStopShakeRefreshCount),
+                    )
                 }
 
                 // Saved trips
@@ -728,10 +748,29 @@ class MainActivity : ComponentActivity() {
                     }
 
                     AuthScreen.Explore -> {
-                        // TODO(Alex, function: uiExploreNearbyPlaces): Temporary Explore nearby mock data.
-                        // data provider: Leyan attraction list; GPS provider: Alex sensor.
-                        val nearbyExplorePlaces = remember(exploreShakeRefreshCount) {
-                            sampleNearbyExplorePlaces().rotateLeft(exploreShakeRefreshCount)
+                        // Nearby places
+                        // function: uiExploreNearbyPlaces; owner: Alex
+                        // input: GPS + selected category source
+                        // output: nearby place cards for Explore
+                        // Shake refreshes order now; later Alex can refresh real nearby data here.
+                        val nearbyExplorePlaces = remember(
+                            exploreShakeRefreshCount,
+                            currentSensorLocation.value.latitude,
+                            currentSensorLocation.value.longitude,
+                        ) {
+                            val location = currentSensorLocation.value
+                            ExplorePlaceCategory.entries
+                                .flatMap { category ->
+                                    uiExploreNearbyPlaces(
+                                        context = this@MainActivity,
+                                        category = category,
+                                        userLatitude = location.latitude,
+                                        userLongitude = location.longitude,
+                                        limit = 6,
+                                    )
+                                }
+                                .distinctBy { place -> place.name }
+                                .rotateLeft(exploreShakeRefreshCount)
                         }
 
                         ExploreScreen(
@@ -890,9 +929,7 @@ class MainActivity : ComponentActivity() {
                         AddStopScreen(
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
-                            places = remember(addStopShakeRefreshCount) {
-                                melbournePopularAddStopPlaces().rotateLeft(addStopShakeRefreshCount)
-                            },
+                            places = addStopResultPlaces,
                             isSearching = isSearchingPlaces,
 
                             // 从 Plan My Trip 进来，返回 Plan My Trip。
@@ -903,15 +940,36 @@ class MainActivity : ComponentActivity() {
                             // TODO(Alex, function: uiSearchPlacesByName): Send query only after confirm button; name match first.
                             // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
                             onSearchConfirmClick = { query ->
+                                val location = currentSensorLocation.value
                                 isSearchingPlaces = true
+                                addStopResultPlaces = uiSearchPlacesByName(
+                                    context = this@MainActivity,
+                                    query = query,
+                                    currentCity = "Melbourne",
+                                    userLatitude = location.latitude,
+                                    userLongitude = location.longitude,
+                                    limit = 8,
+                                )
                                 Toast.makeText(
                                     this,
-                                    "Search: $query",
+                                    "Search results updated",
                                     Toast.LENGTH_SHORT,
                                 ).show()
                                 // TODO(Alex, function: uiSearchPlacesByName): Set false after search results return.
                                 // data provider: Leyan attraction names.
                                 isSearchingPlaces = false
+                            },
+
+                            onClearSearchClick = {
+                                val location = currentSensorLocation.value
+                                addStopResultPlaces = uiSearchPlacesByName(
+                                    context = this@MainActivity,
+                                    query = "",
+                                    currentCity = "Melbourne",
+                                    userLatitude = location.latitude,
+                                    userLongitude = location.longitude,
+                                    limit = 8,
+                                ).rotateLeft(addStopShakeRefreshCount)
                             },
 
                             // TODO(Zewen, function: uiGenerateItinerary): Add selected place into must-visit request.
@@ -931,9 +989,7 @@ class MainActivity : ComponentActivity() {
                         AddStopScreen(
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
-                            places = remember(addStopShakeRefreshCount) {
-                                melbournePopularAddStopPlaces().rotateLeft(addStopShakeRefreshCount)
-                            },
+                            places = addStopResultPlaces,
                             isSearching = isSearchingPlaces,
 
                             // 从 Edit itinerary 进来，返回 Edit itinerary。
@@ -944,15 +1000,36 @@ class MainActivity : ComponentActivity() {
                             // TODO(Alex, function: uiSearchPlacesByName): Send query only after confirm button; name match first.
                             // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
                             onSearchConfirmClick = { query ->
+                                val location = currentSensorLocation.value
                                 isSearchingPlaces = true
+                                addStopResultPlaces = uiSearchPlacesByName(
+                                    context = this@MainActivity,
+                                    query = query,
+                                    currentCity = "Melbourne",
+                                    userLatitude = location.latitude,
+                                    userLongitude = location.longitude,
+                                    limit = 8,
+                                )
                                 Toast.makeText(
                                     this,
-                                    "Search: $query",
+                                    "Search results updated",
                                     Toast.LENGTH_SHORT,
                                 ).show()
                                 // TODO(Alex, function: uiSearchPlacesByName): Set false after search results return.
                                 // data provider: Leyan attraction names.
                                 isSearchingPlaces = false
+                            },
+
+                            onClearSearchClick = {
+                                val location = currentSensorLocation.value
+                                addStopResultPlaces = uiSearchPlacesByName(
+                                    context = this@MainActivity,
+                                    query = "",
+                                    currentCity = "Melbourne",
+                                    userLatitude = location.latitude,
+                                    userLongitude = location.longitude,
+                                    limit = 8,
+                                ).rotateLeft(addStopShakeRefreshCount)
                             },
 
                             // TODO(Zewen, function: uiUpdateItineraryAfterEdit): Send added place for insert and recalculation.
@@ -983,7 +1060,7 @@ class MainActivity : ComponentActivity() {
 
                             // Done 后只更新本次行程兴趣，再返回 Plan My Trip。
                             onDoneClick = { updatedInterests ->
-                                tripInterests = updatedInterests
+                                tripInterests = uiSaveTripOnlyInterests(updatedInterests)
                                 currentScreen = AuthScreen.PlanMyTrip
                             },
                         )
@@ -1401,6 +1478,16 @@ class MainActivity : ComponentActivity() {
         return interests
     }
 
+    private fun uiSaveTripOnlyInterests(interests: List<String>): List<String> {
+        // function: uiSaveTripOnlyInterests
+        // owner: Zewen
+        // UI consumer: Yufei
+        // input: current-trip interest labels
+        // output: interest labels used only for this trip request
+        // TODO(Zewen): Read these interests when generating the current itinerary.
+        return interests
+    }
+
     private fun uiLoadSavedTrips(): List<SavedTrip> {
         // function: uiLoadSavedTrips
         // owner: Yuxiang
@@ -1427,15 +1514,7 @@ class MainActivity : ComponentActivity() {
             latitude = location.latitude,
             longitude = location.longitude
         )
-        val result = SensorLocation(
-            latitude = location.latitude,
-            longitude = location.longitude,
-            accuracyMeters = 12f,
-            areaName = areaName,
-            isSample = false
-        )
-
-         return SensorLocation(
+        return SensorLocation(
             latitude = location.latitude,
             longitude = location.longitude,
             accuracyMeters = 12f,
@@ -1500,50 +1579,29 @@ class MainActivity : ComponentActivity() {
         // data source: Leyan POI source
         // storage: Yuxiang database if needed
         // input: query, city, GPS, limit
-        // output: POI list mapped to AddStopPlace
-
-        // Connect to POI repository
+        // output: place name + environment type for AddStop UI
         val repository = MockPOI(context)
-
-        // Connect to search algorithm
         val searchService = POISearchService(repository)
 
-        // Run search algorithm
-        val results = searchService.search(
+        return searchService.search(
             query = query,
             userLatitude = userLatitude,
             userLongitude = userLongitude,
-            limit = limit
-        )
-
-        // Convert SearchResult to AddStopPlace
-        return results.map { result ->
-
+            limit = limit,
+        ).map { result ->
             AddStopPlace(
                 name = result.place.name,
-
-                distanceText = result.distanceMeters?.let { distance ->
-                    if (distance < 1000.0) {
-                        "${distance.toInt()} m"
-                    } else {
-                        String.format(
-                            java.util.Locale.US,
-                            "%.1f km",
-                            distance / 1000.0
-                        )
-                    }
-                } ?: "Distance unavailable",
-
                 environmentType = result.place.environment.name
                     .lowercase()
-                    .replaceFirstChar { it.uppercase() }
+                    .replaceFirstChar { it.uppercase() },
             )
         }
     }
 
-
+    // ---- Alex: nearby POI ranking ----
 
     private fun uiExploreNearbyPlaces(
+        context: Context,
         category: ExplorePlaceCategory,
         userLatitude: Double?,
         userLongitude: Double?,
@@ -1555,74 +1613,44 @@ class MainActivity : ComponentActivity() {
         // sensor source: Alex GPS
         // input: category filter, GPS, limit
         // output: POI list mapped to ExplorePlace
-        // TODO(Alex): Rank POI repository by nearby/category; UI hides exact distance.
-        return sampleNearbyExplorePlaces()
-            .filter { place -> place.category == category }
-            .take(limit)
+        val repository = MockPOI(context)
+        val searchService = POISearchService(repository)
+
+        return searchService.search(
+            query = "",
+            userLatitude = userLatitude,
+            userLongitude = userLongitude,
+            category = category,
+            limit = limit,
+        ).map { result ->
+            val place = result.place
+            ExplorePlace(
+                name = place.name,
+                distanceText = result.distanceMeters?.let { distance ->
+                    if (distance < 1000.0) {
+                        "${distance.toInt()} m"
+                    } else {
+                        String.format(java.util.Locale.US, "%.1f km", distance / 1000.0)
+                    }
+                } ?: "",
+                category = category,
+                environmentLabel = place.environment.name
+                    .lowercase()
+                    .replaceFirstChar { it.uppercase() },
+                tagText = "",
+                mapX = 0.5f,
+                mapY = 0.5f,
+            )
+        }
     }
 
-
-
-
-
-
-//    // ---- Leyan: attraction data ----
-//
-//    private fun uiExploreNearbyPlaces(
-//        context: Context,
-//        category: ExplorePlaceCategory,
-//        userLatitude: Double?,
-//        userLongitude: Double?,
-//        limit: Int,
-//    ): List<PlaceBriefUiData> {
-//        // function: uiExploreNearbyPlaces
-//        // owner: Alex
-//        // data source: Leyan POI source
-//        // sensor source: Alex GPS
-//        // input: category filter, GPS, limit
-//        // output: POI list mapped to ExplorePlace
-//
-//        // Connect to POI repository
-//        val repository = MockPOI(context)
-//
-//        // Connect to search algorithm
-//        val searchService = POISearchService(repository)
-//
-//        // Run search algorithm
-//        val results = searchService.search(
-//            query = "",
-//            userLatitude = userLatitude,
-//            userLongitude = userLongitude,
-//            category = category,
-//            limit = limit
-//        )
-//
-//        // Convert SearchResult to AddStopPlace
-//        return results.map { result ->
-//
-//            val place = result.place
-//
-//            PlaceBriefUiData(
-//                id = place.id,
-//                name = place.name,
-//                category = place.category.name,
-//                environmentType = place.environment.name
-//                    .lowercase()
-//                    .replaceFirstChar { it.uppercase() },
-//                latitude = place.coordinates.latitude,
-//                longitude = place.coordinates.longitude,
-//                distanceMeters = result.distanceMeters?.toInt()
-//            )
-//        }
-//    }
-
-
+    // ---- Leyan: attraction data ----
 
     private fun uiLoadAttractionDetail(attractionIdOrName: String): AttractionDetail {
         // function: uiLoadAttractionDetail
         // owner: Leyan
         // storage: Yuxiang database if needed
-        // input: attraction id
+        // input: attraction id or attraction name
         // output: POI detail mapped to AttractionDetail
         // TODO(Leyan): Load POI photo, hours, indoor/outdoor, website from real database.
         return sampleAttractionDetail(attractionIdOrName)
@@ -1883,32 +1911,26 @@ class MainActivity : ComponentActivity() {
         return listOf(
             AddStopPlace(
                 name = "Melbourne Museum",
-                distanceText = "1.8 km",
                 environmentType = "Indoor",
             ),
             AddStopPlace(
                 name = "National Gallery of Victoria",
-                distanceText = "1.2 km",
                 environmentType = "Indoor",
             ),
             AddStopPlace(
                 name = "State Library Victoria",
-                distanceText = "1.1 km",
                 environmentType = "Indoor",
             ),
             AddStopPlace(
                 name = "ACMI",
-                distanceText = "1.0 km",
                 environmentType = "Indoor",
             ),
             AddStopPlace(
                 name = "Royal Botanic Gardens",
-                distanceText = "2.4 km",
                 environmentType = "Outdoor",
             ),
             AddStopPlace(
                 name = "Queen Victoria Market",
-                distanceText = "1.6 km",
                 environmentType = "Outdoor",
             ),
         )

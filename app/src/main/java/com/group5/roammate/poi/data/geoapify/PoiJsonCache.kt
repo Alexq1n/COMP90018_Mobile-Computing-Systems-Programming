@@ -16,7 +16,7 @@ class PoiJsonCache(private val context: Context) {
 
     fun save(pois: List<POI>, fileName: String = "pois.json") {
         context.openFileOutput(fileName, Context.MODE_PRIVATE)
-            .bufferedWriter()
+            .bufferedWriter(Charsets.UTF_8)
             .use { it.write(json.encodeToString(pois)) }
         val file = context.getFileStreamPath(fileName)
         Log.d(

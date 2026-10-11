@@ -970,7 +970,6 @@ class MainActivity : ComponentActivity() {
 
                                 isGeneratingItinerary = true
 
-                                // TEST 1: verify values coming from Plan My Trip UI
                                 android.util.Log.d(
                                     "PLANNED_WEATHER",
                                     "UI request: destination=${request.destination}, " +
@@ -995,31 +994,39 @@ class MainActivity : ComponentActivity() {
                                             Toast.LENGTH_SHORT,
                                         ).show()
 
-                                    } else {
+                                        isGeneratingItinerary = false
 
+                                        return@uiLoadPlannedWeather
+                                    }
+
+                                    // Test log
+                                    android.util.Log.d(
+                                        "PLANNED_WEATHER",
+                                        "Forecast count = ${forecasts.size}"
+                                    )
+
+                                    forecasts.forEach { forecast ->
                                         android.util.Log.d(
                                             "PLANNED_WEATHER",
-                                            "Forecast count = ${forecasts.size}"
+                                            "date=${forecast.date}, status=${forecast.status}"
+                                        )
+                                    }
+
+                                    // Pass request + planned weather directly to Zewen
+                                    tripTimelineStops =
+                                        uiGenerateItinerary(
+                                            request = request,
+                                            weatherForecasts = forecasts,
                                         )
 
-                                        forecasts.forEach { forecast ->
-
-                                            android.util.Log.d(
-                                                "PLANNED_WEATHER",
-                                                "date=${forecast.date}, status=${forecast.status}"
-                                            )
-                                        }
-
-                                        Toast.makeText(
-                                            this,
-                                            "Loaded ${forecasts.size} days of weather",
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
-                                    }
+                                    Toast.makeText(
+                                        this,
+                                        "Loaded ${forecasts.size} days of weather",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
 
                                     isGeneratingItinerary = false
 
-                                    // testing阶段可以继续进 Trip
                                     currentScreen = AuthScreen.Trip
                                 }
                             },
@@ -1774,6 +1781,7 @@ class MainActivity : ComponentActivity() {
 
     private fun uiGenerateItinerary(
         request: PlanMyTripRequest,
+        weatherForecasts: List<DailyWeatherForecast>,
     ): List<TripTimelineStop> {
         // function: uiGenerateItinerary
         // owner: Zewen

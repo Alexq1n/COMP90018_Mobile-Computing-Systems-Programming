@@ -63,7 +63,14 @@ import com.group5.roammate.ui.sensor.SensorTestScreen
 import com.group5.roammate.ui.pet.CompanionsScreen
 import com.group5.roammate.ui.pet.PetCameraScreen
 import com.group5.roammate.ui.theme.RoamMateTheme
+import com.group5.roammate.poi.data.geoapify.GeoapifyRepository
+import com.group5.roammate.weather.CurrentWeatherMonitor
+import com.group5.roammate.weather.WeatherApiManager
+import com.group5.roammate.weather.model.DailyWeatherForecast
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import android.Manifest
 import android.content.ComponentName
 import android.content.Context
@@ -79,6 +86,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlin.math.roundToInt
 
 
 // [NEW] Sensor module
@@ -106,6 +114,54 @@ Keep each owner in a small function below, then connect the screen callbacks to 
 
 
 class MainActivity : ComponentActivity() {
+
+    // ==================== Leyan Weather ====================
+
+    private val weatherApiManager by lazy {
+        WeatherApiManager()
+    }
+
+    private val weatherGeoapifyRepository by lazy {
+        GeoapifyRepository()
+    }
+
+    private val currentWeatherMonitor by lazy {
+        CurrentWeatherMonitor(
+            weatherApiManager = weatherApiManager,
+
+            getCurrentLocation = { callback ->
+
+                val location =
+                    sensorRepository.getCurrentLocation()
+
+                if (location != null) {
+                    callback(
+                        location.latitude,
+                        location.longitude
+                    )
+                }
+            }
+        )
+    }
+
+    private var currentWeatherMonitorStarted = false
+
+    private val currentWeatherSummaryState =
+        mutableStateOf(
+            TripWeatherSummary(
+                temperature = "—",
+                condition = "Weather unavailable",
+            )
+        )
+
+    private var latestPlannedWeather:
+            List<DailyWeatherForecast> = emptyList()
+
+    private val planDateFormatter =
+        DateTimeFormatter.ofPattern(
+            "dd MMM yyyy",
+            Locale.ENGLISH
+        )
 
     private val geocodingRepository by lazy {
         GeocodingRepository(applicationContext)
@@ -201,6 +257,37 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // weather
+        weatherApiManager.currentWeather.observe(this) { weather ->
+
+            android.util.Log.d(
+                "ROAMMATE_WEATHER",
+                "Current weather received: " +
+                        "status=${weather.status}, " +
+                        "temperature=${weather.temperature}"
+            )
+
+            val temperatureText =
+                weather.temperature?.let {
+                    "${it.roundToInt()}°C"
+                } ?: "—"
+
+            val conditionText =
+                weather.status
+                    ?.name
+                    ?.lowercase()
+                    ?.replace("_", " ")
+                    ?.replaceFirstChar {
+                        it.uppercase()
+                    }
+                    ?: "Weather unavailable"
+
+            currentWeatherSummaryState.value =
+                TripWeatherSummary(
+                    temperature = temperatureText,
+                    condition = conditionText,
+                )
+        }
 
         // ==================== Search Test ====================
 
@@ -248,11 +335,20 @@ class MainActivity : ComponentActivity() {
                 // GPS: Latest location
                 launch {
                     sensorRepository.locationFlow.collect { location ->
-                        if (location != null) {
-//                            android.util.Log.d(
-//                                "RoamMateSensor",
-//                                "GPS: ${location.latitude}, ${location.longitude}"
-//                            )
+
+                        if (
+                            location != null &&
+                            !currentWeatherMonitorStarted
+                        ) {
+                            android.util.Log.d(
+                                "ROAMMATE_WEATHER",
+                                "GPS for weather: " +
+                                        "lat=${location.latitude}, " +
+                                        "lon=${location.longitude}"
+                            )
+                            currentWeatherMonitor.start()
+
+                            currentWeatherMonitorStarted = true
                         }
                     }
                 }
@@ -291,7 +387,7 @@ class MainActivity : ComponentActivity() {
             // RoamMateTheme responsible for unifying colors, fonts and the overall visual style.
             RoamMateTheme(dynamicColor = false) {
                 // This is a temporary page status.
-                var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.SensorTest) }
+                var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.PlanMyTrip) }
 
                 // Jie pet feature state: one koala, live weather gear and a persisted fashion choice.
                 val petPreferences = remember { PetPreferences(applicationContext) }
@@ -680,10 +776,8 @@ class MainActivity : ComponentActivity() {
                             destinationTitle = "Today in Melbourne",
 
                             // TODO(LeYan, function: uiLoadWeatherSummary): Connect real weather data.
-                            weatherSummary = TripWeatherSummary(
-                                temperature = if (petWeather.isCurrent) "${petWeather.temperatureC.toInt()}°C" else "—",
-                                condition = if (petWeather.isCurrent) "${petWeather.label} · ${petWeather.locationLabel}" else "Weather unavailable",
-                            ),
+                            // LeYan: live current weather from WeatherApiManager + Alex GPS
+                            weatherSummary = currentWeatherSummaryState.value,
 
                             // TODO(Zewen, function: uiLoadTripSummary): Connect generated multi-day trip summary.
                             // 例如：3 days in Melbourne + Day 1 / Day 2 / Day 3 简介。
@@ -873,15 +967,61 @@ class MainActivity : ComponentActivity() {
                             // TODO(Zewen, function: uiGenerateItinerary): Send request to planning backend, then open Trip.
                             isGeneratingItinerary = isGeneratingItinerary,
                             onGenerateItineraryClick = { request ->
+
                                 isGeneratingItinerary = true
-                                Toast.makeText(
-                                    this,
-                                    "Generate itinerary for ${request.destination}",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                                // TODO(Zewen, function: uiGenerateItinerary): Set false after backend returns itinerary.
-                                isGeneratingItinerary = false
-                                currentScreen = AuthScreen.Trip
+
+                                // TEST 1: verify values coming from Plan My Trip UI
+                                android.util.Log.d(
+                                    "PLANNED_WEATHER",
+                                    "UI request: destination=${request.destination}, " +
+                                            "startDate=${request.startDate}, " +
+                                            "endDate=${request.endDate}"
+                                )
+
+                                uiLoadPlannedWeather(
+                                    request = request
+                                ) { forecasts ->
+
+                                    if (forecasts == null) {
+
+                                        android.util.Log.e(
+                                            "PLANNED_WEATHER",
+                                            "Failed to load planned weather"
+                                        )
+
+                                        Toast.makeText(
+                                            this,
+                                            "Planned weather request failed",
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+
+                                    } else {
+
+                                        android.util.Log.d(
+                                            "PLANNED_WEATHER",
+                                            "Forecast count = ${forecasts.size}"
+                                        )
+
+                                        forecasts.forEach { forecast ->
+
+                                            android.util.Log.d(
+                                                "PLANNED_WEATHER",
+                                                "date=${forecast.date}, status=${forecast.status}"
+                                            )
+                                        }
+
+                                        Toast.makeText(
+                                            this,
+                                            "Loaded ${forecasts.size} days of weather",
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    }
+
+                                    isGeneratingItinerary = false
+
+                                    // testing阶段可以继续进 Trip
+                                    currentScreen = AuthScreen.Trip
+                                }
                             },
                         )
                     }
@@ -1235,6 +1375,8 @@ class MainActivity : ComponentActivity() {
             "MainActivity onStop: stopping foreground-only sensors"
         )
 
+        currentWeatherMonitor.stop()
+        currentWeatherMonitorStarted = false
 
         // Foreground-only sensors stop.
         sensorRepository.stopShakeDetection()
@@ -1686,22 +1828,110 @@ class MainActivity : ComponentActivity() {
     private fun uiLoadWeatherSummary(): TripWeatherSummary {
         // function: uiLoadWeatherSummary
         // owner: LeYan
-        // output: current weather summary
-        // TODO(LeYan): Replace with one-week weather API result.
-        return TripWeatherSummary(
-            temperature = "18°C",
-            condition = "Partly cloudy",
-        )
+        // source: Alex GPS -> CurrentWeatherMonitor -> WeatherApiManager
+        return currentWeatherSummaryState.value
     }
 
-    private fun uiIsWeatherAvailableForDate(dateText: String): Boolean {
-        // function: uiIsWeatherAvailableForDate
-        // owner: LeYan
-        // UI consumer: Yufei
-        // input: selected date
-        // output: weather available or unavailable
-        // TODO(LeYan): Return false when selected date is more than one week away.
-        return true
+    private fun uiLoadPlannedWeather(
+        request: PlanMyTripRequest,
+        onResult: (List<DailyWeatherForecast>?) -> Unit,
+    ) {
+
+        // UI date format:
+        // "12 Oct 2026"
+        val startDate =
+            try {
+                LocalDate.parse(
+                    request.startDate,
+                    planDateFormatter
+                )
+            } catch (e: Exception) {
+                onResult(null)
+                return
+            }
+
+        val endDate =
+            try {
+                LocalDate.parse(
+                    request.endDate,
+                    planDateFormatter
+                )
+            } catch (e: Exception) {
+                onResult(null)
+                return
+            }
+
+
+        // Invalid range
+        if (endDate.isBefore(startDate)) {
+            onResult(null)
+            return
+        }
+
+
+        // GeoapifyRepository is suspend,
+        // so run it inside lifecycleScope.
+        lifecycleScope.launch {
+
+            // destination -> latitude / longitude
+            val coordinates =
+                weatherGeoapifyRepository
+                    .geocodeDestination(
+                        request.destination
+                    )
+
+            if (coordinates == null) {
+                onResult(null)
+                return@launch
+            }
+            android.util.Log.d(
+                "PLANNED_WEATHER",
+                "Geocoded ${request.destination}: " +
+                        "lat=${coordinates.latitude}, " +
+                        "lon=${coordinates.longitude}"
+            )
+
+
+            // latitude / longitude + date range
+            // -> daily weather forecast
+            weatherApiManager.getPlannedWeather(
+                latitude = coordinates.latitude,
+                longitude = coordinates.longitude,
+                startDate = startDate,
+                endDate = endDate,
+            ) { forecasts ->
+
+                if (forecasts != null) {
+                    latestPlannedWeather = forecasts
+                }
+
+                // Weather API callback may be on background thread.
+                runOnUiThread {
+                    onResult(forecasts)
+                }
+            }
+        }
+    }
+
+    private fun uiIsWeatherAvailableForDate(
+        dateText: String,
+    ): Boolean {
+
+        val date =
+            try {
+                LocalDate.parse(
+                    dateText,
+                    planDateFormatter
+                )
+            } catch (e: Exception) {
+                return false
+            }
+
+        return latestPlannedWeather
+            .firstOrNull {
+                it.date == date
+            }
+            ?.status != null
     }
 
     // ---- Xiajie: pet ----

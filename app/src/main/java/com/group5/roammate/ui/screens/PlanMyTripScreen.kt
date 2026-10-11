@@ -76,6 +76,10 @@ private val RoamMateFieldBorder = Color(0xFFE3E8EF)
 // TODO: 之后交给 Zewen 的规划算法 / Yuxiang 的保存逻辑。
 data class PlanMyTripRequest(
     val destination: String,
+    // Added for weather integration.
+    val startDate: String,
+    val endDate: String,
+
     val date: String,
     val startTime: String,
     val interests: List<String>,
@@ -125,8 +129,13 @@ fun PlanMyTripScreen(
     var selectedDestination by rememberSaveable { mutableStateOf("Melbourne") }
     var showCityPicker by rememberSaveable { mutableStateOf(false) }
     var selectedTransport by rememberSaveable { mutableStateOf("Transit") }
-    var selectedStartDate by rememberSaveable { mutableStateOf("12 Sep 2026") }
-    var selectedEndDate by rememberSaveable { mutableStateOf("13 Sep 2026") }
+    var selectedStartDate by rememberSaveable {
+        mutableStateOf(defaultPlanDate(0))
+    }
+
+    var selectedEndDate by rememberSaveable {
+        mutableStateOf(defaultPlanDate(1))
+    }
     var selectedStartTime by rememberSaveable { mutableStateOf("10:00") }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showStartTimePicker by rememberSaveable { mutableStateOf(false) }
@@ -143,7 +152,15 @@ fun PlanMyTripScreen(
                     onGenerateItineraryClick(
                         PlanMyTripRequest(
                             destination = selectedDestination,
-                            date = formatDateRange(selectedStartDate, selectedEndDate),
+                            date = formatDateRange(
+                                selectedStartDate,
+                                selectedEndDate
+                            ),
+
+                            startDate = selectedStartDate,
+                            endDate = selectedEndDate.ifBlank {
+                                selectedStartDate
+                            },
                             startTime = selectedStartTime,
                             interests = selectedInterests,
                             transportMode = selectedTransport,
@@ -1719,6 +1736,17 @@ private fun generatePlanCalendarMonths(): List<PlanCalendarMonth> {
     }
 
     return months
+}
+
+private fun defaultPlanDate(daysFromToday: Int): String {
+    val calendar = Calendar.getInstance().apply {
+        add(Calendar.DATE, daysFromToday)
+    }
+
+    return SimpleDateFormat(
+        "dd MMM yyyy",
+        Locale.ENGLISH
+    ).format(calendar.time)
 }
 
 // parse: hour from "HH:mm"

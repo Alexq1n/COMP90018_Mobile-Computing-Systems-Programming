@@ -93,7 +93,7 @@ class FillerService(
                         )
 
                         if (filler != null) {
-                            println("  [FillerService] ✓ Injected filler: ${filler.poi.name}")
+                            println("  [FillerService] [CHECK] Injected filler: ${filler.poi.name}")
                             enrichedPOIs.add(filler)
                         } else {
                             println("  [FillerService] ✗ No suitable filler found")

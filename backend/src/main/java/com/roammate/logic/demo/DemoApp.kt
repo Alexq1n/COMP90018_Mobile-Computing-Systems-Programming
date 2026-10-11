@@ -23,7 +23,7 @@ fun main() {
         transportMode = TransportMode.WALKING
     )
 
-    println("\n📋 User Profile:")
+    println("\n[INFO] User Profile:")
     println("   Interests: ${userProfile.interests.joinToString(", ")}")
     println("   Budget: ${userProfile.budgetPreference}")
     println("   Transport: ${userProfile.transportMode}")
@@ -46,7 +46,7 @@ fun main() {
         includeFillers = true
     )
 
-    println("\n✅ Generated Itinerary:")
+    println("\n[OK] Generated Itinerary:")
     println("   Trip ID: ${itinerary.tripId}")
     println("   Total Days: ${itinerary.days.size}")
     println("   Total POIs: ${itinerary.days.sumOf { it.pois.size }}")
@@ -54,14 +54,14 @@ fun main() {
     println("   Estimated Cost: $${"%.2f".format(itinerary.totalEstimatedCost)}")
 
     itinerary.days.forEach { day ->
-        println("\n📅 Day ${day.dayNumber} (${day.date}):")
+        println("\n[DATE] Day ${day.dayNumber} (${day.date}):")
         println("   POIs: ${day.pois.size}")
         println("   Total Duration: ${day.totalDuration} min")
         println("   Travel Time: ${day.totalTravelTime} min")
         println("   Visit Time: ${day.totalVisitTime} min")
 
         day.pois.forEachIndexed { index, poi ->
-            val fillerTag = if (poi.isFiller) " 💎 [Hidden Gem]" else ""
+            val fillerTag = if (poi.isFiller) " [GEM] [Hidden Gem]" else ""
             println("   ${index + 1}. ${poi.poi.name}$fillerTag")
             println("      ${poi.startTime} - ${poi.endTime} (${poi.poi.recommendedVisitDuration} min)")
             println("      EV: ${"%.2f".format(poi.expectedValue)}, Travel: ${poi.travelTimeFromPrevious} min")
@@ -90,9 +90,9 @@ fun main() {
         )
     )
 
-    println("\n⚠️ Context Change:")
+    println("\n[WARNING] Context Change:")
     println("   Current Time: 13:00 (2-hour delay)")
-    println("   Weather: RAINY ☔")
+    println("   Weather: RAINY [RAIN]")
     println("   Completed POIs: ${completedPOIs.size}")
 
     val adjustment = tripPlanner.adjustTripState(
@@ -103,10 +103,10 @@ fun main() {
         dailyEndTime = "18:00"
     )
 
-    println("\n🔄 Adjustment Options Generated:")
+    println("\n[REFRESH] Adjustment Options Generated:")
 
     // Option A
-    println("\n📊 Option A (Experience First):")
+    println("\n[STATS] Option A (Experience First):")
     println("   Strategy: ${adjustment.optionA.strategy}")
     println("   Remaining POIs: ${adjustment.optionA.remainingItinerary.size}")
     println("   Total EV: ${"%.2f".format(adjustment.optionA.totalExpectedValue)}")
@@ -118,16 +118,16 @@ fun main() {
         println("\n   Remaining POIs:")
         adjustment.optionA.remainingItinerary.forEach { poi ->
             val envIcon = when (poi.poi.environment) {
-                Environment.INDOOR -> "🏠"
-                Environment.OUTDOOR -> "🌳"
-                Environment.MIXED -> "🏢"
+                Environment.INDOOR -> "[INDOOR]"
+                Environment.OUTDOOR -> "[OUTDOOR]"
+                Environment.MIXED -> "[MIXED]"
             }
             println("      - $envIcon ${poi.poi.name} (${poi.startTime}-${poi.endTime})")
         }
     }
 
     // Option B
-    println("\n📊 Option B (Efficiency First):")
+    println("\n[STATS] Option B (Efficiency First):")
     println("   Strategy: ${adjustment.optionB.strategy}")
     println("   Remaining POIs: ${adjustment.optionB.remainingItinerary.size}")
     println("   Total EV: ${"%.2f".format(adjustment.optionB.totalExpectedValue)}")
@@ -139,9 +139,9 @@ fun main() {
         println("\n   Remaining POIs:")
         adjustment.optionB.remainingItinerary.forEach { poi ->
             val envIcon = when (poi.poi.environment) {
-                Environment.INDOOR -> "🏠"
-                Environment.OUTDOOR -> "🌳"
-                Environment.MIXED -> "🏢"
+                Environment.INDOOR -> "[INDOOR]"
+                Environment.OUTDOOR -> "[OUTDOOR]"
+                Environment.MIXED -> "[MIXED]"
             }
             println("      - $envIcon ${poi.poi.name} (${poi.startTime}-${poi.endTime})")
         }
@@ -154,40 +154,40 @@ fun main() {
 
     val samplePOIs = poiRepository.getPOIsByCity("Melbourne").take(5)
 
-    println("\n☀️ Sunny Weather:")
+    println("\n[SUNNY] Sunny Weather:")
     samplePOIs.forEach { poi ->
         val ev = tripPlanner.calculatePOIValue(poi, userProfile, WeatherStatus.SUNNY)
         val envIcon = when (poi.environment) {
-            Environment.INDOOR -> "🏠"
-            Environment.OUTDOOR -> "🌳"
-            Environment.MIXED -> "🏢"
+            Environment.INDOOR -> "[INDOOR]"
+            Environment.OUTDOOR -> "[OUTDOOR]"
+            Environment.MIXED -> "[MIXED]"
         }
         println("   $envIcon ${poi.name}: EV = ${"%.2f".format(ev)} (Base: ${poi.baseScore})")
     }
 
-    println("\n☔ Rainy Weather:")
+    println("\n[RAIN] Rainy Weather:")
     samplePOIs.forEach { poi ->
         val ev = tripPlanner.calculatePOIValue(poi, userProfile, WeatherStatus.RAINY)
         val evChange = tripPlanner.calculatePOIValue(poi, userProfile, WeatherStatus.SUNNY)
         val changePercent = ((ev - evChange) / evChange * 100)
         val envIcon = when (poi.environment) {
-            Environment.INDOOR -> "🏠"
-            Environment.OUTDOOR -> "🌳"
-            Environment.MIXED -> "🏢"
+            Environment.INDOOR -> "[INDOOR]"
+            Environment.OUTDOOR -> "[OUTDOOR]"
+            Environment.MIXED -> "[MIXED]"
         }
         println("   $envIcon ${poi.name}: EV = ${"%.2f".format(ev)} (${"%.0f".format(changePercent)}% change)")
     }
 
     // Summary
     println("\n" + "=".repeat(60))
-    println("✅ Demo Complete!")
+    println("[OK] Demo Complete!")
     println("=".repeat(60))
     println("\nKey Achievements:")
-    println("   ✓ Multi-day itinerary generation")
-    println("   ✓ Geographic clustering")
-    println("   ✓ Dynamic adjustment with dual strategies")
-    println("   ✓ Weather-aware EV calculation")
-    println("   ✓ Hidden gems injection")
-    println("   ✓ Rollover queue for high-value POIs")
+    println("   [CHECK] Multi-day itinerary generation")
+    println("   [CHECK] Geographic clustering")
+    println("   [CHECK] Dynamic adjustment with dual strategies")
+    println("   [CHECK] Weather-aware EV calculation")
+    println("   [CHECK] Hidden gems injection")
+    println("   [CHECK] Rollover queue for high-value POIs")
     println("\n")
 }

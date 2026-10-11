@@ -392,13 +392,13 @@ class TripPlannerEngineTest {
      * Helper function to print detailed itinerary with timeline
      */
     private fun printDetailedItinerary(itinerary: Itinerary, label: String) {
-        println("\n╔════════════════════════════════════════════════════════════════╗")
-        println("║  DETAILED ITINERARY - $label")
-        println("╚════════════════════════════════════════════════════════════════╝")
+        println("\n+================================================================╗")
+        println("|  DETAILED ITINERARY - $label")
+        println("+================================================================╝")
 
         itinerary.days.forEachIndexed { index, day ->
-            println("\n📅 DAY ${index + 1} - ${day.date}")
-            println("─".repeat(65))
+            println("\n[DATE] DAY ${index + 1} - ${day.date}")
+            println("-".repeat(65))
 
             if (day.pois.isEmpty()) {
                 println("   (No POIs scheduled)")
@@ -407,17 +407,17 @@ class TripPlannerEngineTest {
                     val fillerTag = if (scheduledPOI.isFiller) " 🌟[FILLER]" else ""
                     println("\n${poiIndex + 1}. ${scheduledPOI.poi.name}$fillerTag")
                     println("   ⏰ Time: ${scheduledPOI.startTime} - ${scheduledPOI.endTime}")
-                    println("   📍 Category: ${scheduledPOI.poi.category}")
-                    println("   💰 Budget: ${scheduledPOI.poi.budgetLevel}")
-                    println("   🏠 Environment: ${scheduledPOI.poi.environment}")
-                    println("   ⭐ Expected Value: ${"%.2f".format(scheduledPOI.expectedValue)}")
-                    println("   ⏱️  Duration: ${scheduledPOI.poi.recommendedVisitDuration} min")
+                    println("   [LOCATION] Category: ${scheduledPOI.poi.category}")
+                    println("   [COST] Budget: ${scheduledPOI.poi.budgetLevel}")
+                    println("   [INDOOR] Environment: ${scheduledPOI.poi.environment}")
+                    println("   [STAR] Expected Value: ${"%.2f".format(scheduledPOI.expectedValue)}")
+                    println("   [TIME]  Duration: ${scheduledPOI.poi.recommendedVisitDuration} min")
 
                     if (poiIndex < day.pois.size - 1) {
                         val nextPOI = day.pois[poiIndex + 1]
                         val travelTime = nextPOI.travelTimeFromPrevious
                         if (travelTime > 0) {
-                            println("   🚶 Travel to next: $travelTime min")
+                            println("   [TRAVEL] Travel to next: $travelTime min")
                         }
 
                         // Calculate gap between POIs
@@ -433,22 +433,22 @@ class TripPlannerEngineTest {
                     }
                 }
 
-                println("\n" + "─".repeat(65))
+                println("\n" + "-".repeat(65))
                 println("Day ${index + 1} Summary:")
-                println("  • Total POIs: ${day.pois.size}")
-                println("  • Filler POIs: ${day.pois.count { it.isFiller }}")
-                println("  • Total EV: ${"%.2f".format(day.pois.sumOf { it.expectedValue })}")
-                println("  • Total Travel Time: ${day.totalTravelTime} min")
+                println("  * Total POIs: ${day.pois.size}")
+                println("  * Filler POIs: ${day.pois.count { it.isFiller }}")
+                println("  * Total EV: ${"%.2f".format(day.pois.sumOf { it.expectedValue })}")
+                println("  * Total Travel Time: ${day.totalTravelTime} min")
             }
         }
 
-        println("\n" + "═".repeat(65))
+        println("\n" + "=".repeat(65))
         println("TRIP SUMMARY:")
-        println("  • Total Days: ${itinerary.days.size}")
-        println("  • Total POIs: ${itinerary.days.sumOf { it.pois.size }}")
-        println("  • Total Fillers: ${itinerary.days.sumOf { day -> day.pois.count { it.isFiller } }}")
-        println("  • Total EV: ${"%.2f".format(itinerary.totalExpectedValue)}")
-        println("═".repeat(65) + "\n")
+        println("  * Total Days: ${itinerary.days.size}")
+        println("  * Total POIs: ${itinerary.days.sumOf { it.pois.size }}")
+        println("  * Total Fillers: ${itinerary.days.sumOf { day -> day.pois.count { it.isFiller } }}")
+        println("  * Total EV: ${"%.2f".format(itinerary.totalExpectedValue)}")
+        println("=".repeat(65) + "\n")
     }
 
     @Test
@@ -533,31 +533,31 @@ class TripPlannerEngineTest {
                 anzIndex < koorieIndex)
         }
 
-        println("\n✅ VERIFICATION RESULTS:")
-        println("  • Day 1 has Shot Tower Museum: ${day1POIs.any { it.poi.id == shotTower.id }}")
-        println("  • Day 2 has ANZ Banking Museum: ${day2POIs.any { it.poi.id == anzMuseum.id }}")
-        println("  • Day 2 has Koorie Heritage Trust: ${day2POIs.any { it.poi.id == koorieHeritage.id }}")
+        println("\n[OK] VERIFICATION RESULTS:")
+        println("  * Day 1 has Shot Tower Museum: ${day1POIs.any { it.poi.id == shotTower.id }}")
+        println("  * Day 2 has ANZ Banking Museum: ${day2POIs.any { it.poi.id == anzMuseum.id }}")
+        println("  * Day 2 has Koorie Heritage Trust: ${day2POIs.any { it.poi.id == koorieHeritage.id }}")
 
         if (anzIndex >= 0 && koorieIndex >= 0) {
-            println("  • ANZ Banking Museum scheduled at position ${anzIndex + 1}")
-            println("  • Koorie Heritage Trust scheduled at position ${koorieIndex + 1}")
-            println("  • Order is correct: ${anzIndex < koorieIndex}")
+            println("  * ANZ Banking Museum scheduled at position ${anzIndex + 1}")
+            println("  * Koorie Heritage Trust scheduled at position ${koorieIndex + 1}")
+            println("  * Order is correct: ${anzIndex < koorieIndex}")
         }
 
         // Print detailed itinerary
         printDetailedItinerary(itinerary, "PINNED POIs TEST")
 
-        println("\n📍 PINNED POIs SUMMARY:")
+        println("\n[LOCATION] PINNED POIs SUMMARY:")
         pinnedPOIs.forEach { pinned ->
             val poi = allPOIs.find { it.id == pinned.poiId }
             val scheduled = itinerary.days[pinned.dayNumber - 1].pois.find { it.poi.id == pinned.poiId }
-            println("  • ${poi?.name} on Day ${pinned.dayNumber}")
+            println("  * ${poi?.name} on Day ${pinned.dayNumber}")
             println("    - Requested: ${pinned.preferredStartTime ?: "anytime"}")
             println("    - Scheduled: ${scheduled?.startTime ?: "NOT SCHEDULED"}")
-            println("    - Status: ${if (scheduled != null) "✓ SUCCESS" else "✗ FAILED"}")
+            println("    - Status: ${if (scheduled != null) "[CHECK] SUCCESS" else "✗ FAILED"}")
         }
 
-        println("═".repeat(65))
+        println("=".repeat(65))
     }
 
     @Test
@@ -579,18 +579,18 @@ class TripPlannerEngineTest {
             pinnedPOIs = emptyList()
         )
 
-        println("\n📅 INITIAL ITINERARY (Sunny Weather):")
+        println("\n[DATE] INITIAL ITINERARY (Sunny Weather):")
         initialItinerary.days.forEachIndexed { dayIndex, day ->
             println("Day ${dayIndex + 1}:")
             day.pois.forEach { poi ->
-                println("  • ${poi.poi.name} (${poi.poi.environment}) - ${poi.startTime} to ${poi.endTime}")
+                println("  * ${poi.poi.name} (${poi.poi.environment}) - ${poi.startTime} to ${poi.endTime}")
             }
             val outdoorCount = day.pois.count { it.poi.environment == Environment.OUTDOOR }
             println("  Outdoor activities: $outdoorCount")
         }
 
         // Step 2: Simulate weather change on Day 2 from sunny to rainy
-        println("\n🌧️ WEATHER CHANGE: Day 2 changes from Sunny to Rainy")
+        println("\n[RAIN] WEATHER CHANGE: Day 2 changes from Sunny to Rainy")
 
         val day2Original = initialItinerary.days[1]
         val hasOutdoorActivities = day2Original.pois.any {
@@ -626,14 +626,14 @@ class TripPlannerEngineTest {
                 availableTimeMinutes = availableTimeMinutes
             )
 
-            println("\n📋 REPLANNING TRIGGERED:")
+            println("\n[INFO] REPLANNING TRIGGERED:")
             println("Reason: ${rainyDayOptions.triggerReason}")
 
             // Verify Option 1: Original (keep outdoor activities despite rain)
             println("\n📌 OPTION 1: Original (Keep outdoor activities)")
             println("  Total POIs: ${rainyDayOptions.original.pois.size}")
             rainyDayOptions.original.pois.forEach { itineraryPOI ->
-                println("  • ${itineraryPOI.poi.name} (${itineraryPOI.poi.environment})")
+                println("  * ${itineraryPOI.poi.name} (${itineraryPOI.poi.environment})")
             }
             val originalOutdoor = rainyDayOptions.original.pois.count { it.poi.environment == Environment.OUTDOOR }
             println("  Outdoor activities: $originalOutdoor")
@@ -642,7 +642,7 @@ class TripPlannerEngineTest {
             println("\n📌 OPTION 2: Experience First (Maximize EV)")
             println("  Total POIs: ${rainyDayOptions.experienceFirst.pois.size}")
             rainyDayOptions.experienceFirst.pois.forEach { itineraryPOI ->
-                println("  • ${itineraryPOI.poi.name} (${itineraryPOI.poi.environment}) - EV: ${String.format("%.2f", itineraryPOI.expectedValue)}")
+                println("  * ${itineraryPOI.poi.name} (${itineraryPOI.poi.environment}) - EV: ${String.format("%.2f", itineraryPOI.expectedValue)}")
             }
             val expFirstOutdoor = rainyDayOptions.experienceFirst.pois.count { it.poi.environment == Environment.OUTDOOR }
             val expFirstIndoor = rainyDayOptions.experienceFirst.pois.count { it.poi.environment == Environment.INDOOR }
@@ -653,7 +653,7 @@ class TripPlannerEngineTest {
             println("\n📌 OPTION 3: Efficiency First (Maximize EV/Cost)")
             println("  Total POIs: ${rainyDayOptions.efficiencyFirst.pois.size}")
             rainyDayOptions.efficiencyFirst.pois.forEach { itineraryPOI ->
-                println("  • ${itineraryPOI.poi.name} (${itineraryPOI.poi.environment}) - EV: ${String.format("%.2f", itineraryPOI.expectedValue)}")
+                println("  * ${itineraryPOI.poi.name} (${itineraryPOI.poi.environment}) - EV: ${String.format("%.2f", itineraryPOI.expectedValue)}")
             }
             val effFirstOutdoor = rainyDayOptions.efficiencyFirst.pois.count { it.poi.environment == Environment.OUTDOOR }
             val effFirstIndoor = rainyDayOptions.efficiencyFirst.pois.count { it.poi.environment == Environment.INDOOR }
@@ -661,32 +661,32 @@ class TripPlannerEngineTest {
             println("  Indoor activities: $effFirstIndoor")
 
             // Assertions
-            println("\n✅ VERIFICATION:")
+            println("\n[OK] VERIFICATION:")
 
             // Option 1 should keep original itinerary
             assertEquals("Option 1 should match original itinerary",
                 day2Original.pois.size, rainyDayOptions.original.pois.size)
-            println("  ✓ Option 1 preserves original itinerary")
+            println("  [CHECK] Option 1 preserves original itinerary")
 
             // Options 2 and 3 should have alternative POIs
             assertTrue("Experience First should provide alternatives",
                 rainyDayOptions.experienceFirst.pois.isNotEmpty())
             assertTrue("Efficiency First should provide alternatives",
                 rainyDayOptions.efficiencyFirst.pois.isNotEmpty())
-            println("  ✓ Alternative options provided")
+            println("  [CHECK] Alternative options provided")
 
             // Experience First and Efficiency First should prioritize indoor POIs
             assertTrue("Experience First should prioritize indoor activities in rainy weather",
                 expFirstIndoor > expFirstOutdoor)
             assertTrue("Efficiency First should prioritize indoor activities in rainy weather",
                 effFirstIndoor > effFirstOutdoor)
-            println("  ✓ Alternative options prioritize indoor activities")
+            println("  [CHECK] Alternative options prioritize indoor activities")
 
             // Experience First should maximize total EV
             val expFirstTotalEV = rainyDayOptions.experienceFirst.pois.sumOf { it.expectedValue }
             val effFirstTotalEV = rainyDayOptions.efficiencyFirst.pois.sumOf { it.expectedValue }
-            println("  • Experience First total EV: ${String.format("%.2f", expFirstTotalEV)}")
-            println("  • Efficiency First total EV: ${String.format("%.2f", effFirstTotalEV)}")
+            println("  * Experience First total EV: ${String.format("%.2f", expFirstTotalEV)}")
+            println("  * Efficiency First total EV: ${String.format("%.2f", effFirstTotalEV)}")
 
             // All POIs in alternative options should be valid
             rainyDayOptions.experienceFirst.pois.forEach { itineraryPOI ->
@@ -699,13 +699,13 @@ class TripPlannerEngineTest {
                 assertNotNull("Start time should not be null", itineraryPOI.startTime)
                 assertNotNull("End time should not be null", itineraryPOI.endTime)
             }
-            println("  ✓ All POIs have valid scheduling information")
+            println("  [CHECK] All POIs have valid scheduling information")
 
         } else {
-            println("\n⚠️ Day 2 has no outdoor activities, skipping weather replanning test")
+            println("\n[WARNING] Day 2 has no outdoor activities, skipping weather replanning test")
             println("Note: Adjust test data or initial weather to ensure outdoor activities are scheduled")
         }
 
-        println("\n" + "═".repeat(65))
+        println("\n" + "=".repeat(65))
     }
 }

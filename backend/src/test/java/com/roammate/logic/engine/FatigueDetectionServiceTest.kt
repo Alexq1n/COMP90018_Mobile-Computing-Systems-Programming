@@ -92,7 +92,7 @@ class FatigueDetectionServiceTest {
 
         assertEquals(FatigueLevel.LOW, fatigueLevel)
 
-        println("✓ Low fatigue detection test passed (300 steps)")
+        println("[CHECK] Low fatigue detection test passed (300 steps)")
     }
 
     @Test
@@ -101,7 +101,7 @@ class FatigueDetectionServiceTest {
 
         assertEquals(FatigueLevel.MEDIUM, fatigueLevel)
 
-        println("✓ Medium fatigue detection test passed (2000 steps)")
+        println("[CHECK] Medium fatigue detection test passed (2000 steps)")
     }
 
     @Test
@@ -110,7 +110,7 @@ class FatigueDetectionServiceTest {
 
         assertEquals(FatigueLevel.HIGH, fatigueLevel)
 
-        println("✓ High fatigue detection test passed (6000 steps)")
+        println("[CHECK] High fatigue detection test passed (6000 steps)")
     }
 
     @Test
@@ -130,7 +130,7 @@ class FatigueDetectionServiceTest {
         assertTrue(fatigueStatus.recommendedAction.contains("No step data"))
         assertNull(fatigueStatus.adjustedItinerary)
 
-        println("✓ No step data test passed")
+        println("[CHECK] No step data test passed")
     }
 
     @Test
@@ -149,7 +149,7 @@ class FatigueDetectionServiceTest {
         assertEquals(FatigueLevel.LOW, fatigueStatus.level)
         assertTrue(fatigueStatus.recommendedAction.contains("Normal activity"))
 
-        println("✓ Low fatigue analysis test passed")
+        println("[CHECK] Low fatigue analysis test passed")
     }
 
     @Test
@@ -168,7 +168,7 @@ class FatigueDetectionServiceTest {
         assertEquals(FatigueLevel.MEDIUM, fatigueStatus.level)
         assertTrue(fatigueStatus.recommendedAction.contains("Moderate activity"))
 
-        println("✓ Medium fatigue analysis test passed")
+        println("[CHECK] Medium fatigue analysis test passed")
     }
 
     @Test
@@ -187,7 +187,7 @@ class FatigueDetectionServiceTest {
         assertEquals(FatigueLevel.HIGH, fatigueStatus.level)
         assertTrue(fatigueStatus.recommendedAction.contains("High fatigue"))
 
-        println("✓ High fatigue analysis test passed")
+        println("[CHECK] High fatigue analysis test passed")
     }
 
     @Test
@@ -207,7 +207,7 @@ class FatigueDetectionServiceTest {
 
         assertNotNull(adjustedDay)
         // Low fatigue should allow normal POIs
-        println("✓ Low fatigue adjustment test passed: ${adjustedDay.pois.size} POIs")
+        println("[CHECK] Low fatigue adjustment test passed: ${adjustedDay.pois.size} POIs")
     }
 
     @Test
@@ -231,7 +231,7 @@ class FatigueDetectionServiceTest {
 
         // Should prefer shorter duration POIs
         val longDurationPOIs = adjustedDay.pois.filter { it.poi.recommendedVisitDuration > 90 }
-        println("✓ Medium fatigue adjustment test passed: ${adjustedDay.pois.size} POIs, ${longDurationPOIs.size} long-duration")
+        println("[CHECK] Medium fatigue adjustment test passed: ${adjustedDay.pois.size} POIs, ${longDurationPOIs.size} long-duration")
     }
 
     @Test
@@ -265,7 +265,7 @@ class FatigueDetectionServiceTest {
         }
         assertTrue("Should prioritize low-intensity POIs", lowIntensityPOIs.isNotEmpty())
 
-        println("✓ High fatigue adjustment test passed: ${adjustedDay.pois.size} POIs, all short-duration and low-intensity")
+        println("[CHECK] High fatigue adjustment test passed: ${adjustedDay.pois.size} POIs, all short-duration and low-intensity")
     }
 
     @Test
@@ -276,7 +276,7 @@ class FatigueDetectionServiceTest {
         assertEquals(FatigueLevel.MEDIUM, fatigueService.detectFatigue(4999))
         assertEquals(FatigueLevel.HIGH, fatigueService.detectFatigue(5000))
 
-        println("✓ Fatigue threshold boundary test passed")
+        println("[CHECK] Fatigue threshold boundary test passed")
     }
 
     @Test
@@ -299,7 +299,7 @@ class FatigueDetectionServiceTest {
         val hasLongDurationPOI = adjustedDay.pois.any { it.poi.id == "poi_001" }
         assertFalse("Long-duration POI should be filtered out", hasLongDurationPOI)
 
-        println("✓ High fatigue POI filtering test passed")
+        println("[CHECK] High fatigue POI filtering test passed")
     }
 
     @Test
@@ -321,6 +321,6 @@ class FatigueDetectionServiceTest {
         }
         assertTrue("Should allow moderate-duration POIs", has90MinPOI)
 
-        println("✓ Medium fatigue moderate POI allowance test passed")
+        println("[CHECK] Medium fatigue moderate POI allowance test passed")
     }
 }

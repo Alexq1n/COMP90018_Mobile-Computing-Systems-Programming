@@ -221,7 +221,7 @@ class RoutingEngine(
 
             // Check if we have enough time
             if (totalTime > remainingTime) {
-                println("  [RoutingEngine] ⚠️ Not enough time for pinned POI: ${poi.name}")
+                println("  [RoutingEngine] [WARNING] Not enough time for pinned POI: ${poi.name}")
                 continue
             }
 
@@ -254,7 +254,7 @@ class RoutingEngine(
                 restaurantScheduled = true
             }
 
-            println("  [RoutingEngine] ✓ Scheduled pinned POI: ${poi.name} at $startTimeStr")
+            println("  [RoutingEngine] [CHECK] Scheduled pinned POI: ${poi.name} at $startTimeStr")
         }
 
         // Step 2: Fill remaining time with optimal POIs using greedy algorithm
@@ -279,7 +279,7 @@ class RoutingEngine(
                 // In lunch window: ONLY consider restaurants if available
                 val restaurants = remaining.filter { (poi, _) -> poi.category == POICategory.RESTAURANT }
                 if (restaurants.isNotEmpty()) {
-                    println("  [RoutingEngine] 🍽️  Forcing restaurant selection in lunch window (${currentTimeObj.format(timeFormatter)})")
+                    println("  [RoutingEngine] [RESTAURANT]  Forcing restaurant selection in lunch window (${currentTimeObj.format(timeFormatter)})")
                     restaurants
                 } else {
                     // No restaurants available, skip to normal POIs

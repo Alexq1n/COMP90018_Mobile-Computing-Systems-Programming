@@ -126,7 +126,7 @@ class ItineraryEditServiceTest {
         assertTrue("New POI should be user-pinned", result.updatedDay!!.pois[2].isUserPinned)
         assertEquals("New POI should be at position 2", "poi_003", result.updatedDay!!.pois[2].poi.id)
 
-        println("✓ Add POI test passed: ${result.validationMessage}")
+        println("[CHECK] Add POI test passed: ${result.validationMessage}")
     }
 
     @Test
@@ -143,7 +143,7 @@ class ItineraryEditServiceTest {
         assertNull("Updated day should be null", result.updatedDay)
         assertTrue("Should have error message", result.validationMessage.contains("Invalid day index"))
 
-        println("✓ Invalid day index test passed: ${result.validationMessage}")
+        println("[CHECK] Invalid day index test passed: ${result.validationMessage}")
     }
 
     @Test
@@ -161,7 +161,7 @@ class ItineraryEditServiceTest {
         assertEquals("Remaining POI should be poi_002", "poi_002", result.updatedDay!!.pois[0].poi.id)
         assertTrue("Should have freed time", result.freedTimeMinutes > 0)
 
-        println("✓ Remove POI test passed: Freed ${result.freedTimeMinutes} minutes")
+        println("[CHECK] Remove POI test passed: Freed ${result.freedTimeMinutes} minutes")
     }
 
     @Test
@@ -175,7 +175,7 @@ class ItineraryEditServiceTest {
         assertFalse("Remove operation should fail", result.success)
         assertTrue("Should have error message", result.validationMessage.contains("not found"))
 
-        println("✓ POI not found test passed: ${result.validationMessage}")
+        println("[CHECK] POI not found test passed: ${result.validationMessage}")
     }
 
     @Test
@@ -195,7 +195,7 @@ class ItineraryEditServiceTest {
         assertTrue("Unified add action should succeed", result.success)
         assertNotNull("Updated day should not be null", result.updatedDay)
 
-        println("✓ Unified edit interface (ADD) test passed")
+        println("[CHECK] Unified edit interface (ADD) test passed")
     }
 
     @Test
@@ -213,7 +213,7 @@ class ItineraryEditServiceTest {
         assertTrue("Unified remove action should succeed", result.success)
         assertNotNull("Updated day should not be null", result.updatedDay)
 
-        println("✓ Unified edit interface (REMOVE) test passed")
+        println("[CHECK] Unified edit interface (REMOVE) test passed")
     }
 
     @Test
@@ -240,7 +240,7 @@ class ItineraryEditServiceTest {
         // May add more POIs depending on available time and candidates
         assertTrue("Should have at least the original remaining POI", optimizedDay.pois.size >= 1)
 
-        println("✓ Reoptimize day test passed: ${optimizedDay.pois.size} POIs after reoptimization")
+        println("[CHECK] Reoptimize day test passed: ${optimizedDay.pois.size} POIs after reoptimization")
     }
 
     @Test
@@ -279,6 +279,6 @@ class ItineraryEditServiceTest {
         assertTrue("Should still have pinned POI after reoptimization", pinnedPOIs.isNotEmpty())
         assertEquals("Pinned POI should be poi_003", "poi_003", pinnedPOIs[0].poi.id)
 
-        println("✓ User-pinned POI preservation test passed")
+        println("[CHECK] User-pinned POI preservation test passed")
     }
 }

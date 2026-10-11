@@ -145,7 +145,7 @@ class WeatherReplanningServiceTest {
         assertTrue(weatherContext.isRainy)
         assertEquals("2026-09-20T09:00:00", weatherContext.timestamp)
 
-        println("✓ Parse weather context test passed")
+        println("[CHECK] Parse weather context test passed")
     }
 
     @Test
@@ -154,7 +154,7 @@ class WeatherReplanningServiceTest {
 
         assertTrue("Should detect outdoor activities", hasOutdoor)
 
-        println("✓ Detect outdoor activities test passed")
+        println("[CHECK] Detect outdoor activities test passed")
     }
 
     @Test
@@ -177,7 +177,7 @@ class WeatherReplanningServiceTest {
 
         assertFalse("Should not detect outdoor activities", hasOutdoor)
 
-        println("✓ No outdoor activities test passed")
+        println("[CHECK] No outdoor activities test passed")
     }
 
     @Test
@@ -197,7 +197,7 @@ class WeatherReplanningServiceTest {
 
         assertTrue("Should trigger replanning for rainy day with outdoor activities", shouldTrigger)
 
-        println("✓ Should trigger replanning test passed")
+        println("[CHECK] Should trigger replanning test passed")
     }
 
     @Test
@@ -217,7 +217,7 @@ class WeatherReplanningServiceTest {
 
         assertFalse("Should not trigger replanning on sunny day", shouldTrigger)
 
-        println("✓ No trigger on sunny day test passed")
+        println("[CHECK] No trigger on sunny day test passed")
     }
 
     @Test
@@ -265,7 +265,7 @@ class WeatherReplanningServiceTest {
             rainyDayOptions.triggerReason.contains("Rainy") ||
             rainyDayOptions.triggerReason.contains("rainy"))
 
-        println("✓ Rainy day three options test passed")
+        println("[CHECK] Rainy day three options test passed")
         println("  - Original: ${rainyDayOptions.original.pois.size} POIs")
         println("  - Experience First: ${rainyDayOptions.experienceFirst.pois.size} POIs (${expFirstIndoorCount} indoor)")
         println("  - Efficiency First: ${rainyDayOptions.efficiencyFirst.pois.size} POIs (${effFirstIndoorCount} indoor)")
@@ -313,7 +313,7 @@ class WeatherReplanningServiceTest {
         assertTrue("Reason should mention no outdoor activities",
             rainyDayOptions.triggerReason.contains("No outdoor"))
 
-        println("✓ No outdoor activities scenario test passed")
+        println("[CHECK] No outdoor activities scenario test passed")
     }
 
     @Test
@@ -338,7 +338,7 @@ class WeatherReplanningServiceTest {
         assertTrue("Reason should mention weather is not rainy",
             rainyDayOptions.triggerReason.contains("not rainy"))
 
-        println("✓ Sunny weather scenario test passed")
+        println("[CHECK] Sunny weather scenario test passed")
     }
 
     @Test
@@ -363,7 +363,7 @@ class WeatherReplanningServiceTest {
         val effFirstTravelTime = rainyDayOptions.efficiencyFirst.totalTravelTime
 
         // Efficiency First should generally have less travel time (though not guaranteed with small dataset)
-        println("✓ Strategy comparison test passed")
+        println("[CHECK] Strategy comparison test passed")
         println("  - Experience First travel time: ${expFirstTravelTime} min")
         println("  - Efficiency First travel time: ${effFirstTravelTime} min")
     }

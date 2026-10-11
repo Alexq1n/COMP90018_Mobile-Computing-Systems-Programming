@@ -388,6 +388,26 @@ class MainActivity : ComponentActivity() {
                     mutableStateOf(emptyList<AddStopPlace>())
                 }
 
+                // Add stop list
+                // function: uiSearchPlacesByName; owner: Alex
+                // Used by Plan Add Stop and Edit Add Stop.
+                // Shake refreshes this default suggestion list.
+                var addStopResultPlaces by remember(
+                    addStopShakeRefreshCount,
+                    currentSensorLocation.value.latitude,
+                    currentSensorLocation.value.longitude,
+                ) {
+                    mutableStateOf(
+                        uiSearchPlacesByName(
+                            query = "",
+                            currentCity = "Melbourne",
+                            userLatitude = currentSensorLocation.value.latitude,
+                            userLongitude = currentSensorLocation.value.longitude,
+                            limit = 8,
+                        ).rotateLeft(addStopShakeRefreshCount),
+                    )
+                }
+
                 // Saved trips
                 // TODO(Yuxiang, function: uiLoadSavedTrips): Load saved trips from Firebase.
                 // input provider: Zewen trip summary shape.
@@ -688,10 +708,28 @@ class MainActivity : ComponentActivity() {
                     }
 
                     AuthScreen.Explore -> {
-                        // TODO(Alex, function: uiExploreNearbyPlaces): Temporary Explore nearby mock data.
-                        // data provider: Leyan attraction list; GPS provider: Alex sensor.
-                        val nearbyExplorePlaces = remember(exploreShakeRefreshCount) {
-                            sampleNearbyExplorePlaces().rotateLeft(exploreShakeRefreshCount)
+                        // Nearby places
+                        // function: uiExploreNearbyPlaces; owner: Alex
+                        // input: GPS + selected category source
+                        // output: nearby place cards for Explore
+                        // Shake refreshes order now; later Alex can refresh real nearby data here.
+                        val nearbyExplorePlaces = remember(
+                            exploreShakeRefreshCount,
+                            currentSensorLocation.value.latitude,
+                            currentSensorLocation.value.longitude,
+                        ) {
+                            val location = currentSensorLocation.value
+                            ExplorePlaceCategory.entries
+                                .flatMap { category ->
+                                    uiExploreNearbyPlaces(
+                                        category = category,
+                                        userLatitude = location.latitude,
+                                        userLongitude = location.longitude,
+                                        limit = 6,
+                                    )
+                                }
+                                .distinctBy { place -> place.name }
+                                .rotateLeft(exploreShakeRefreshCount)
                         }
 
                         ExploreScreen(
@@ -850,9 +888,7 @@ class MainActivity : ComponentActivity() {
                         AddStopScreen(
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
-                            places = remember(addStopShakeRefreshCount) {
-                                melbournePopularAddStopPlaces().rotateLeft(addStopShakeRefreshCount)
-                            },
+                            places = addStopResultPlaces,
                             isSearching = isSearchingPlaces,
 
                             // 从 Plan My Trip 进来，返回 Plan My Trip。
@@ -863,15 +899,34 @@ class MainActivity : ComponentActivity() {
                             // TODO(Alex, function: uiSearchPlacesByName): Send query only after confirm button; name match first.
                             // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
                             onSearchConfirmClick = { query ->
+                                val location = currentSensorLocation.value
                                 isSearchingPlaces = true
+                                addStopResultPlaces = uiSearchPlacesByName(
+                                    query = query,
+                                    currentCity = "Melbourne",
+                                    userLatitude = location.latitude,
+                                    userLongitude = location.longitude,
+                                    limit = 8,
+                                )
                                 Toast.makeText(
                                     this,
-                                    "Search: $query",
+                                    "Search results updated",
                                     Toast.LENGTH_SHORT,
                                 ).show()
                                 // TODO(Alex, function: uiSearchPlacesByName): Set false after search results return.
                                 // data provider: Leyan attraction names.
                                 isSearchingPlaces = false
+                            },
+
+                            onClearSearchClick = {
+                                val location = currentSensorLocation.value
+                                addStopResultPlaces = uiSearchPlacesByName(
+                                    query = "",
+                                    currentCity = "Melbourne",
+                                    userLatitude = location.latitude,
+                                    userLongitude = location.longitude,
+                                    limit = 8,
+                                ).rotateLeft(addStopShakeRefreshCount)
                             },
 
                             // TODO(Zewen, function: uiGenerateItinerary): Add selected place into must-visit request.
@@ -891,9 +946,7 @@ class MainActivity : ComponentActivity() {
                         AddStopScreen(
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
-                            places = remember(addStopShakeRefreshCount) {
-                                melbournePopularAddStopPlaces().rotateLeft(addStopShakeRefreshCount)
-                            },
+                            places = addStopResultPlaces,
                             isSearching = isSearchingPlaces,
 
                             // 从 Edit itinerary 进来，返回 Edit itinerary。
@@ -904,15 +957,34 @@ class MainActivity : ComponentActivity() {
                             // TODO(Alex, function: uiSearchPlacesByName): Send query only after confirm button; name match first.
                             // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
                             onSearchConfirmClick = { query ->
+                                val location = currentSensorLocation.value
                                 isSearchingPlaces = true
+                                addStopResultPlaces = uiSearchPlacesByName(
+                                    query = query,
+                                    currentCity = "Melbourne",
+                                    userLatitude = location.latitude,
+                                    userLongitude = location.longitude,
+                                    limit = 8,
+                                )
                                 Toast.makeText(
                                     this,
-                                    "Search: $query",
+                                    "Search results updated",
                                     Toast.LENGTH_SHORT,
                                 ).show()
                                 // TODO(Alex, function: uiSearchPlacesByName): Set false after search results return.
                                 // data provider: Leyan attraction names.
                                 isSearchingPlaces = false
+                            },
+
+                            onClearSearchClick = {
+                                val location = currentSensorLocation.value
+                                addStopResultPlaces = uiSearchPlacesByName(
+                                    query = "",
+                                    currentCity = "Melbourne",
+                                    userLatitude = location.latitude,
+                                    userLongitude = location.longitude,
+                                    limit = 8,
+                                ).rotateLeft(addStopShakeRefreshCount)
                             },
 
                             // TODO(Zewen, function: uiUpdateItineraryAfterEdit): Send added place for insert and recalculation.

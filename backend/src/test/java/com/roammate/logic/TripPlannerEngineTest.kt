@@ -1,5 +1,6 @@
 package com.roammate.logic
 
+import com.roammate.logic.engine.WeatherReplanningService
 import com.roammate.logic.models.*
 import com.roammate.logic.utils.MockPoiRepository
 import org.junit.Before
@@ -448,5 +449,263 @@ class TripPlannerEngineTest {
         println("  • Total Fillers: ${itinerary.days.sumOf { day -> day.pois.count { it.isFiller } }}")
         println("  • Total EV: ${"%.2f".format(itinerary.totalExpectedValue)}")
         println("═".repeat(65) + "\n")
+    }
+
+    @Test
+    fun testGenerateInitialTrip_WithPinnedPOIs() {
+        println("\n========== TESTING PINNED POIs ==========")
+
+        // Get POI repository to find specific POIs
+        val poiRepository = MockPoiRepository(useJsonData = true)
+        val allPOIs = poiRepository.getPOIsByCity("Melbourne")
+
+        // Find some specific POIs to pin
+        val shotTower = allPOIs.find { it.name.contains("Shot Tower Museum", ignoreCase = true) }
+        val anzMuseum = allPOIs.find { it.name.contains("ANZ Banking Museum", ignoreCase = true) }
+        val koorieHeritage = allPOIs.find { it.name.contains("Koorie Heritage Trust", ignoreCase = true) }
+
+        assertNotNull("Shot Tower Museum should exist in data", shotTower)
+        assertNotNull("ANZ Banking Museum should exist in data", anzMuseum)
+        assertNotNull("Koorie Heritage Trust should exist in data", koorieHeritage)
+
+        println("Found POIs to pin:")
+        println("  1. ${shotTower?.name} (ID: ${shotTower?.id})")
+        println("  2. ${anzMuseum?.name} (ID: ${anzMuseum?.id})")
+        println("  3. ${koorieHeritage?.name} (ID: ${koorieHeritage?.id})")
+
+        // Create pinned POIs:
+        // - Day 1: Shot Tower Museum (morning)
+        // - Day 2: ANZ Banking Museum (morning), Koorie Heritage Trust (afternoon)
+        // - Day 3: No pinned POIs
+        val pinnedPOIs = listOf(
+            PinnedPOI(
+                poiId = shotTower!!.id,
+                dayNumber = 1,
+                preferredStartTime = "09:30"
+            ),
+            PinnedPOI(
+                poiId = anzMuseum!!.id,
+                dayNumber = 2,
+                preferredStartTime = "10:00"
+            ),
+            PinnedPOI(
+                poiId = koorieHeritage!!.id,
+                dayNumber = 2,
+                preferredStartTime = "14:00"
+            )
+        )
+
+        // Generate itinerary with pinned POIs
+        val itinerary = engine.generateInitialTrip(
+            tripId = "trip_pinned",
+            destination = "Melbourne",
+            startDate = "2026-09-20",
+            numberOfDays = 3,
+            userProfile = userProfile,
+            startingLocation = Coordinates(-37.8136, 144.9631), // CBD
+            dailyStartTime = "09:00",
+            dailyEndTime = "18:00",
+            weatherStatus = WeatherStatus.SUNNY,
+            includeFillers = false,
+            pinnedPOIs = pinnedPOIs
+        )
+
+        assertNotNull(itinerary)
+        assertEquals(3, itinerary.days.size)
+
+        // Verify Day 1 contains Shot Tower Museum
+        val day1POIs = itinerary.days[0].pois
+        assertTrue("Day 1 should contain Shot Tower Museum",
+            day1POIs.any { it.poi.id == shotTower.id })
+
+        // Verify Day 2 contains both ANZ Banking Museum and Koorie Heritage Trust
+        val day2POIs = itinerary.days[1].pois
+        assertTrue("Day 2 should contain ANZ Banking Museum",
+            day2POIs.any { it.poi.id == anzMuseum.id })
+        assertTrue("Day 2 should contain Koorie Heritage Trust",
+            day2POIs.any { it.poi.id == koorieHeritage.id })
+
+        // Verify the order on Day 2 (ANZ Banking Museum should come before Koorie Heritage Trust)
+        val anzIndex = day2POIs.indexOfFirst { it.poi.id == anzMuseum.id }
+        val koorieIndex = day2POIs.indexOfFirst { it.poi.id == koorieHeritage.id }
+        if (anzIndex >= 0 && koorieIndex >= 0) {
+            assertTrue("ANZ Banking Museum should be scheduled before Koorie Heritage Trust on Day 2",
+                anzIndex < koorieIndex)
+        }
+
+        println("\n✅ VERIFICATION RESULTS:")
+        println("  • Day 1 has Shot Tower Museum: ${day1POIs.any { it.poi.id == shotTower.id }}")
+        println("  • Day 2 has ANZ Banking Museum: ${day2POIs.any { it.poi.id == anzMuseum.id }}")
+        println("  • Day 2 has Koorie Heritage Trust: ${day2POIs.any { it.poi.id == koorieHeritage.id }}")
+
+        if (anzIndex >= 0 && koorieIndex >= 0) {
+            println("  • ANZ Banking Museum scheduled at position ${anzIndex + 1}")
+            println("  • Koorie Heritage Trust scheduled at position ${koorieIndex + 1}")
+            println("  • Order is correct: ${anzIndex < koorieIndex}")
+        }
+
+        // Print detailed itinerary
+        printDetailedItinerary(itinerary, "PINNED POIs TEST")
+
+        println("\n📍 PINNED POIs SUMMARY:")
+        pinnedPOIs.forEach { pinned ->
+            val poi = allPOIs.find { it.id == pinned.poiId }
+            val scheduled = itinerary.days[pinned.dayNumber - 1].pois.find { it.poi.id == pinned.poiId }
+            println("  • ${poi?.name} on Day ${pinned.dayNumber}")
+            println("    - Requested: ${pinned.preferredStartTime ?: "anytime"}")
+            println("    - Scheduled: ${scheduled?.startTime ?: "NOT SCHEDULED"}")
+            println("    - Status: ${if (scheduled != null) "✓ SUCCESS" else "✗ FAILED"}")
+        }
+
+        println("═".repeat(65))
+    }
+
+    @Test
+    fun testWeatherChangeReplanning() {
+        println("\n========== TESTING WEATHER CHANGE REPLANNING ==========")
+
+        // Step 1: Generate initial itinerary with sunny weather
+        val initialItinerary = engine.generateInitialTrip(
+            tripId = "trip_weather_test",
+            destination = "Melbourne",
+            startDate = "2026-09-20",
+            numberOfDays = 2,
+            userProfile = userProfile,
+            startingLocation = Coordinates(-37.8136, 144.9631),
+            dailyStartTime = "09:00",
+            dailyEndTime = "18:00",
+            weatherStatus = WeatherStatus.SUNNY,
+            includeFillers = false,
+            pinnedPOIs = emptyList()
+        )
+
+        println("\n📅 INITIAL ITINERARY (Sunny Weather):")
+        initialItinerary.days.forEachIndexed { dayIndex, day ->
+            println("Day ${dayIndex + 1}:")
+            day.pois.forEach { poi ->
+                println("  • ${poi.poi.name} (${poi.poi.environment}) - ${poi.startTime} to ${poi.endTime}")
+            }
+            val outdoorCount = day.pois.count { it.poi.environment == Environment.OUTDOOR }
+            println("  Outdoor activities: $outdoorCount")
+        }
+
+        // Step 2: Simulate weather change on Day 2 from sunny to rainy
+        println("\n🌧️ WEATHER CHANGE: Day 2 changes from Sunny to Rainy")
+
+        val day2Original = initialItinerary.days[1]
+        val hasOutdoorActivities = day2Original.pois.any {
+            it.poi.environment == Environment.OUTDOOR || it.poi.environment == Environment.MIXED
+        }
+
+        println("Day 2 has outdoor activities: $hasOutdoorActivities")
+
+        if (hasOutdoorActivities) {
+            // Step 3: Trigger weather replanning
+            val weatherService = WeatherReplanningService(userProfile)
+            val allPOIs = MockPoiRepository(useJsonData = true).getPOIsByCity("Melbourne")
+
+            val contextPayload = ContextPayload(
+                currentTime = "2026-09-21T09:00:00",
+                currentLocation = Coordinates(-37.8136, 144.9631),
+                currentWeather = WeatherStatus.RAINY,
+                weatherStatus = WeatherStatus.RAINY,
+                itineraryProgress = ItineraryProgress(
+                    completedPOIs = emptyList(),
+                    delayMinutes = 0
+                ),
+                recentStepCount = null
+            )
+
+            val availableTimeMinutes = 540 // 09:00 to 18:00 = 9 hours
+
+            val rainyDayOptions = weatherService.handleRainyDayScenario(
+                currentItinerary = day2Original,
+                contextPayload = contextPayload,
+                allPOIs = allPOIs,
+                startLocation = Coordinates(-37.8136, 144.9631),
+                availableTimeMinutes = availableTimeMinutes
+            )
+
+            println("\n📋 REPLANNING TRIGGERED:")
+            println("Reason: ${rainyDayOptions.triggerReason}")
+
+            // Verify Option 1: Original (keep outdoor activities despite rain)
+            println("\n📌 OPTION 1: Original (Keep outdoor activities)")
+            println("  Total POIs: ${rainyDayOptions.original.pois.size}")
+            rainyDayOptions.original.pois.forEach { itineraryPOI ->
+                println("  • ${itineraryPOI.poi.name} (${itineraryPOI.poi.environment})")
+            }
+            val originalOutdoor = rainyDayOptions.original.pois.count { it.poi.environment == Environment.OUTDOOR }
+            println("  Outdoor activities: $originalOutdoor")
+
+            // Verify Option 2: Experience First (maximize EV with indoor POIs)
+            println("\n📌 OPTION 2: Experience First (Maximize EV)")
+            println("  Total POIs: ${rainyDayOptions.experienceFirst.pois.size}")
+            rainyDayOptions.experienceFirst.pois.forEach { itineraryPOI ->
+                println("  • ${itineraryPOI.poi.name} (${itineraryPOI.poi.environment}) - EV: ${String.format("%.2f", itineraryPOI.expectedValue)}")
+            }
+            val expFirstOutdoor = rainyDayOptions.experienceFirst.pois.count { it.poi.environment == Environment.OUTDOOR }
+            val expFirstIndoor = rainyDayOptions.experienceFirst.pois.count { it.poi.environment == Environment.INDOOR }
+            println("  Outdoor activities: $expFirstOutdoor")
+            println("  Indoor activities: $expFirstIndoor")
+
+            // Verify Option 3: Efficiency First (maximize EV/Cost ratio with indoor POIs)
+            println("\n📌 OPTION 3: Efficiency First (Maximize EV/Cost)")
+            println("  Total POIs: ${rainyDayOptions.efficiencyFirst.pois.size}")
+            rainyDayOptions.efficiencyFirst.pois.forEach { itineraryPOI ->
+                println("  • ${itineraryPOI.poi.name} (${itineraryPOI.poi.environment}) - EV: ${String.format("%.2f", itineraryPOI.expectedValue)}")
+            }
+            val effFirstOutdoor = rainyDayOptions.efficiencyFirst.pois.count { it.poi.environment == Environment.OUTDOOR }
+            val effFirstIndoor = rainyDayOptions.efficiencyFirst.pois.count { it.poi.environment == Environment.INDOOR }
+            println("  Outdoor activities: $effFirstOutdoor")
+            println("  Indoor activities: $effFirstIndoor")
+
+            // Assertions
+            println("\n✅ VERIFICATION:")
+
+            // Option 1 should keep original itinerary
+            assertEquals("Option 1 should match original itinerary",
+                day2Original.pois.size, rainyDayOptions.original.pois.size)
+            println("  ✓ Option 1 preserves original itinerary")
+
+            // Options 2 and 3 should have alternative POIs
+            assertTrue("Experience First should provide alternatives",
+                rainyDayOptions.experienceFirst.pois.isNotEmpty())
+            assertTrue("Efficiency First should provide alternatives",
+                rainyDayOptions.efficiencyFirst.pois.isNotEmpty())
+            println("  ✓ Alternative options provided")
+
+            // Experience First and Efficiency First should prioritize indoor POIs
+            assertTrue("Experience First should prioritize indoor activities in rainy weather",
+                expFirstIndoor > expFirstOutdoor)
+            assertTrue("Efficiency First should prioritize indoor activities in rainy weather",
+                effFirstIndoor > effFirstOutdoor)
+            println("  ✓ Alternative options prioritize indoor activities")
+
+            // Experience First should maximize total EV
+            val expFirstTotalEV = rainyDayOptions.experienceFirst.pois.sumOf { it.expectedValue }
+            val effFirstTotalEV = rainyDayOptions.efficiencyFirst.pois.sumOf { it.expectedValue }
+            println("  • Experience First total EV: ${String.format("%.2f", expFirstTotalEV)}")
+            println("  • Efficiency First total EV: ${String.format("%.2f", effFirstTotalEV)}")
+
+            // All POIs in alternative options should be valid
+            rainyDayOptions.experienceFirst.pois.forEach { itineraryPOI ->
+                assertNotNull("POI should not be null", itineraryPOI.poi)
+                assertNotNull("Start time should not be null", itineraryPOI.startTime)
+                assertNotNull("End time should not be null", itineraryPOI.endTime)
+            }
+            rainyDayOptions.efficiencyFirst.pois.forEach { itineraryPOI ->
+                assertNotNull("POI should not be null", itineraryPOI.poi)
+                assertNotNull("Start time should not be null", itineraryPOI.startTime)
+                assertNotNull("End time should not be null", itineraryPOI.endTime)
+            }
+            println("  ✓ All POIs have valid scheduling information")
+
+        } else {
+            println("\n⚠️ Day 2 has no outdoor activities, skipping weather replanning test")
+            println("Note: Adjust test data or initial weather to ensure outdoor activities are scheduled")
+        }
+
+        println("\n" + "═".repeat(65))
     }
 }

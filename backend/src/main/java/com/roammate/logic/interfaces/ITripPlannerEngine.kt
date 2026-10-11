@@ -21,6 +21,7 @@ interface ITripPlannerEngine {
      * @param dailyEndTime Daily end time (default: "18:00")
      * @param weatherStatus Initial weather status (default: SUNNY)
      * @param includeFillers Whether to inject hidden gems (default: true)
+     * @param pinnedPOIs List of user-specified POIs that must be visited on specific days (default: empty)
      * @return Complete itinerary with daily plans
      */
     fun generateInitialTrip(
@@ -33,7 +34,8 @@ interface ITripPlannerEngine {
         dailyStartTime: String = "09:00",
         dailyEndTime: String = "18:00",
         weatherStatus: WeatherStatus = WeatherStatus.SUNNY,
-        includeFillers: Boolean = true
+        includeFillers: Boolean = true,
+        pinnedPOIs: List<PinnedPOI> = emptyList()
     ): Itinerary
 
     /**

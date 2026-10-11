@@ -23,7 +23,8 @@ class TripPlannerEngine(
         dailyStartTime: String,
         dailyEndTime: String,
         weatherStatus: WeatherStatus,
-        includeFillers: Boolean
+        includeFillers: Boolean,
+        pinnedPOIs: List<PinnedPOI>
     ): Itinerary {
         // Get all POIs for destination
         val allPOIs = poiRepository.getPOIsByCity(destination)
@@ -38,7 +39,8 @@ class TripPlannerEngine(
             startingLocation = startingLocation,
             dailyStartTime = dailyStartTime,
             dailyEndTime = dailyEndTime,
-            weatherStatus = weatherStatus
+            weatherStatus = weatherStatus,
+            pinnedPOIs = pinnedPOIs
         )
 
         // Inject fillers if requested

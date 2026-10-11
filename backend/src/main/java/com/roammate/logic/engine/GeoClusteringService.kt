@@ -68,12 +68,14 @@ object GeoClusteringService {
         numberOfDays: Int,
         clusterRadiusMeters: Double = DEFAULT_CLUSTER_RADIUS_METERS
     ): List<List<POI>> {
+        if (allPOIs.isEmpty()) return List(numberOfDays) { emptyList() }
+
         // First, cluster all POIs
         val clusters = clusterPOIs(allPOIs, numberOfDays, clusterRadiusMeters)
 
         // If we have fewer clusters than days, some days will have no initial cluster
         // If we have more clusters than days, merge smaller clusters
-        return when {
+        val distribution = when {
             clusters.size <= numberOfDays -> {
                 // Pad with empty lists if needed
                 clusters + List(numberOfDays - clusters.size) { emptyList() }
@@ -85,6 +87,22 @@ object GeoClusteringService {
                 topClusters + listOf(remainingPOIs)
             }
         }
+
+        // Ensure no day is completely empty by redistributing POIs
+        // Move POIs from days with many POIs to empty days
+        val mutableDistribution = distribution.map { it.toMutableList() }
+        for (dayIndex in mutableDistribution.indices) {
+            if (mutableDistribution[dayIndex].isEmpty()) {
+                // Find a day with multiple POIs and move one
+                val donorDayIndex = mutableDistribution.indexOfFirst { it.size > 1 }
+                if (donorDayIndex >= 0) {
+                    val poiToMove = mutableDistribution[donorDayIndex].removeAt(0)
+                    mutableDistribution[dayIndex].add(poiToMove)
+                }
+            }
+        }
+
+        return mutableDistribution
     }
 
     /**

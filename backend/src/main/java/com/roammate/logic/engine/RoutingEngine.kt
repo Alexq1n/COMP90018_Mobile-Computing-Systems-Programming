@@ -26,14 +26,26 @@ class RoutingEngine(
         startingLocation: Coordinates,
         dailyStartTime: String = "09:00",
         dailyEndTime: String = "18:00",
-        weatherStatus: WeatherStatus = WeatherStatus.SUNNY
+        weatherStatus: WeatherStatus = WeatherStatus.SUNNY,
+        pinnedPOIs: List<PinnedPOI> = emptyList()
     ): Itinerary {
         // Filter out filler POIs for main itinerary
         val mainPOIs = allPOIs.filter { !it.isFiller }
 
-        // Cluster POIs across days
+        // Separate restaurants from other POIs
+        val restaurants = mainPOIs.filter { it.category == POICategory.RESTAURANT }
+        val nonRestaurants = mainPOIs.filter { it.category != POICategory.RESTAURANT }
+
+        // Create a map of pinned POIs by day number
+        val pinnedPOIsByDay = pinnedPOIs.groupBy { it.dayNumber }
+        val pinnedPOIIds = pinnedPOIs.map { it.poiId }.toSet()
+
+        // Filter out pinned POIs from clustering (they'll be added separately per day)
+        val poisToCluster = nonRestaurants.filter { it.id !in pinnedPOIIds }
+
+        // Cluster non-restaurant POIs across days
         val dailyClusters = GeoClusteringService.distributeClustersAcrossDays(
-            mainPOIs,
+            poisToCluster,
             numberOfDays
         )
 
@@ -47,9 +59,13 @@ class RoutingEngine(
                 emptyList()
             }
 
-            // Add rollover POIs from previous day
-            val candidatePOIs = (rolloverQueue + dayPOIs).distinct()
+            // Add rollover POIs from previous day and ALL restaurants to each day
+            // This ensures restaurants are available every day for lunch scheduling
+            val candidatePOIs = (rolloverQueue + dayPOIs + restaurants).distinct()
             rolloverQueue.clear()
+
+            // Get pinned POIs for this day
+            val dayPinnedPOIs = pinnedPOIsByDay[dayNumber] ?: emptyList()
 
             val dayItinerary = generateDayItinerary(
                 dayNumber = dayNumber,
@@ -59,7 +75,9 @@ class RoutingEngine(
                 startTime = dailyStartTime,
                 endTime = dailyEndTime,
                 weatherStatus = weatherStatus,
-                rolloverQueue = rolloverQueue
+                rolloverQueue = rolloverQueue,
+                pinnedPOIs = dayPinnedPOIs,
+                allPOIs = allPOIs
             )
 
             dayItineraries.add(dayItinerary)
@@ -92,7 +110,9 @@ class RoutingEngine(
         startTime: String,
         endTime: String,
         weatherStatus: WeatherStatus,
-        rolloverQueue: MutableList<POI>
+        rolloverQueue: MutableList<POI>,
+        pinnedPOIs: List<PinnedPOI> = emptyList(),
+        allPOIs: List<POI> = emptyList()
     ): DayItinerary {
         val startTimeObj = LocalTime.parse(startTime, timeFormatter)
         val endTimeObj = LocalTime.parse(endTime, timeFormatter)
@@ -107,6 +127,13 @@ class RoutingEngine(
             availableMinutes = availableMinutes
         )
 
+        // Resolve pinned POIs to actual POI objects
+        val pinnedPOIObjects = pinnedPOIs.mapNotNull { pinned ->
+            allPOIs.find { it.id == pinned.poiId }?.let { poi ->
+                Pair(poi, pinned)
+            }
+        }
+
         // Greedy routing: select POIs with best EV/Cost ratio
         val selectedPOIs = selectOptimalRoute(
             poisWithEV = poisWithEV,
@@ -114,7 +141,8 @@ class RoutingEngine(
             currentTime = startTimeObj,
             availableMinutes = availableMinutes,
             endTime = endTimeObj,
-            rolloverQueue = rolloverQueue
+            rolloverQueue = rolloverQueue,
+            pinnedPOIs = pinnedPOIObjects
         )
 
         val totalDuration = if (selectedPOIs.isNotEmpty()) {
@@ -143,6 +171,7 @@ class RoutingEngine(
     /**
      * Select optimal route using greedy heuristic with preference-adjusted costs
      * Special handling for restaurants: only one per day, scheduled between 11:00-14:00
+     * Pinned POIs are scheduled first according to user preferences
      */
     private fun selectOptimalRoute(
         poisWithEV: List<Pair<POI, Double>>,
@@ -150,7 +179,8 @@ class RoutingEngine(
         currentTime: LocalTime,
         availableMinutes: Int,
         endTime: LocalTime,
-        rolloverQueue: MutableList<POI>
+        rolloverQueue: MutableList<POI>,
+        pinnedPOIs: List<Pair<POI, PinnedPOI>> = emptyList()
     ): List<ItineraryPOI> {
         val selected = mutableListOf<ItineraryPOI>()
         val remaining = poisWithEV.toMutableList()
@@ -162,26 +192,104 @@ class RoutingEngine(
         val maxPOIsPerDay = 5  // NEW: Limit to 5 POIs per day to create more gaps
         var restaurantScheduled = false  // Track if restaurant already scheduled
 
+        // Step 1: Schedule pinned POIs first
+        println("[RoutingEngine] Scheduling ${pinnedPOIs.size} pinned POIs")
+        for ((poi, pinnedPOI) in pinnedPOIs.sortedBy { it.second.preferredStartTime ?: "00:00" }) {
+            val ev = EVCalculator.calculateEV(poi, userProfile, WeatherStatus.SUNNY)
+
+            // Calculate travel time to this POI
+            val rawTravelTime = if (currentLocationPoiId != null && travelDurationMatrix != null) {
+                TravelCostService.calculateAdjustedTravelTime(
+                    fromPoiId = currentLocationPoiId!!,
+                    toPoiId = poi.id,
+                    transportMode = userProfile.transportMode,
+                    transportPreference = userProfile.transportPreference,
+                    durationMatrix = travelDurationMatrix
+                )
+            } else {
+                null
+            } ?: TravelCostService.calculateTravelTime(
+                fromLat = currentLocation.latitude,
+                fromLon = currentLocation.longitude,
+                toLat = poi.coordinates.latitude,
+                toLon = poi.coordinates.longitude,
+                transportMode = userProfile.transportMode
+            )
+
+            val travelTime = TravelCostService.normalizeTravelTime(rawTravelTime)
+            val totalTime = travelTime + poi.recommendedVisitDuration
+
+            // Check if we have enough time
+            if (totalTime > remainingTime) {
+                println("  [RoutingEngine] ⚠️ Not enough time for pinned POI: ${poi.name}")
+                continue
+            }
+
+            // Schedule this pinned POI
+            currentTimeObj = currentTimeObj.plusMinutes(travelTime.toLong())
+            val startTimeStr = currentTimeObj.format(timeFormatter)
+            currentTimeObj = currentTimeObj.plusMinutes(poi.recommendedVisitDuration.toLong())
+            val endTimeStr = currentTimeObj.format(timeFormatter)
+
+            selected.add(
+                ItineraryPOI(
+                    poi = poi,
+                    startTime = startTimeStr,
+                    endTime = endTimeStr,
+                    travelTimeFromPrevious = travelTime,
+                    expectedValue = ev
+                )
+            )
+
+            // Update state
+            currentLocation = poi.coordinates
+            currentLocationPoiId = poi.id
+            remainingTime -= totalTime
+
+            // Remove this POI from remaining candidates
+            remaining.removeAll { it.first.id == poi.id }
+
+            // Track restaurant if this is one
+            if (poi.category == POICategory.RESTAURANT) {
+                restaurantScheduled = true
+            }
+
+            println("  [RoutingEngine] ✓ Scheduled pinned POI: ${poi.name} at $startTimeStr")
+        }
+
+        // Step 2: Fill remaining time with optimal POIs using greedy algorithm
+
         while (remaining.isNotEmpty() && remainingTime > 0 && selected.size < maxPOIsPerDay && currentTimeObj < endTime) {
             // Check if we should prioritize scheduling a restaurant (11:00-14:00 lunch window)
             val lunchStartTime = LocalTime.of(11, 0)
             val lunchEndTime = LocalTime.of(14, 0)
-            val shouldScheduleRestaurant = !restaurantScheduled &&
-                                          currentTimeObj >= lunchStartTime &&
-                                          currentTimeObj < lunchEndTime
 
-            // If in lunch window and no restaurant scheduled yet, try to prioritize restaurant
-            val eligiblePOIs = if (shouldScheduleRestaurant) {
-                // First try to get restaurants only
+            // Determine if we're in or approaching lunch window
+            val inLunchWindow = currentTimeObj >= lunchStartTime && currentTimeObj < lunchEndTime
+            val beforeLunchEnd = currentTimeObj < lunchEndTime
+
+            // Force restaurant scheduling if:
+            // 1. No restaurant scheduled yet
+            // 2. We're before lunch end time (still have a chance to schedule)
+            // 3. There are restaurants available
+            val shouldPrioritizeRestaurant = !restaurantScheduled && beforeLunchEnd
+
+            // If should prioritize restaurant, try restaurants first; otherwise exclude them from lunch window
+            val eligiblePOIs = if (shouldPrioritizeRestaurant && inLunchWindow) {
+                // In lunch window: ONLY consider restaurants if available
                 val restaurants = remaining.filter { (poi, _) -> poi.category == POICategory.RESTAURANT }
                 if (restaurants.isNotEmpty()) {
-                    restaurants  // Prioritize restaurants during lunch time
+                    println("  [RoutingEngine] 🍽️  Forcing restaurant selection in lunch window (${currentTimeObj.format(timeFormatter)})")
+                    restaurants
                 } else {
-                    // No restaurants available, fall back to normal POIs
+                    // No restaurants available, skip to normal POIs
                     remaining.filter { (poi, _) -> poi.category != POICategory.RESTAURANT }
                 }
+            } else if (shouldPrioritizeRestaurant) {
+                // Before lunch window: include all POIs but prioritize getting to lunch time
+                remaining
             } else {
-                // Outside lunch window or restaurant already scheduled: exclude restaurants
+                // Restaurant already scheduled or past lunch window: exclude restaurants
                 remaining.filter { (poi, _) -> poi.category != POICategory.RESTAURANT }
             }
 
@@ -227,7 +335,15 @@ class RoutingEngine(
                 val projectedEndTime = currentTimeObj.plusMinutes(totalRequired.toLong())
                 val passesAbsoluteCheck = projectedEndTime <= endTime
 
-                passesRelativeCheck && passesAbsoluteCheck
+                // Restaurant time window check: restaurants must start between 11:00-14:00
+                val projectedStartTime = currentTimeObj.plusMinutes(travelTime.toLong())
+                val passesRestaurantTimeCheck = if (poi.category == POICategory.RESTAURANT) {
+                    projectedStartTime >= lunchStartTime && projectedStartTime < lunchEndTime
+                } else {
+                    true  // Non-restaurants always pass this check
+                }
+
+                passesRelativeCheck && passesAbsoluteCheck && passesRestaurantTimeCheck
             }
 
             if (candidates.isEmpty()) break

@@ -1,15 +1,65 @@
+# ===========================
+# Track ONLY backend folder
+# ===========================
+# Ignore everything at root
+/*
+
+# But track backend folder and its contents
+!/backend/
+!/backend/**
+
+# Also track .gitignore itself
+!/.gitignore
+
+# ===========================
+# Gradle (within backend)
+# ===========================
+backend/.gradle/
+backend/build/
+backend/gradle-app.setting
+
+# ===========================
+# Android Studio / IntelliJ IDEA
+# ===========================
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+*.ipr
+*.iws
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
+
+# ===========================
+# Kotlin Build Outputs
+# ===========================
+*.class
+*.log
+*.ctxt
+backend/out/
+backend/bin/
+
+# ===========================
+# Local Configuration
+# ===========================
+backend/local.properties
+
+# ===========================
+# Backup Files
+# ===========================
+*~
+*.swp
+*.bak
+*.tmp
+*.orig
+
+# ===========================
+# OS Files
+# ===========================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# ===========================
+# Test Reports
+# ===========================
+backend/test-results/
+backend/*.hprof

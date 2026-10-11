@@ -64,6 +64,7 @@ fun AddStopScreen(
     places: List<AddStopPlace>,
     onBackClick: () -> Unit,
     onSearchConfirmClick: (String) -> Unit,
+    onClearSearchClick: () -> Unit = {},
     onAddPlaceClick: (AddStopPlace) -> Unit,
     isSearching: Boolean = false,
     modifier: Modifier = Modifier,
@@ -71,13 +72,9 @@ fun AddStopScreen(
     var searchText by rememberSaveable { mutableStateOf("") }
     var confirmedSearchText by rememberSaveable { mutableStateOf("") }
 
-    val filteredPlaces = if (confirmedSearchText.isBlank()) {
-        places
-    } else {
-        places.filter { place ->
-            place.name.contains(confirmedSearchText, ignoreCase = true)
-        }
-    }
+    // Search results
+    // Alex returns already-ranked places; UI should not filter them again.
+    val displayedPlaces = places
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -114,6 +111,7 @@ fun AddStopScreen(
                 onClearClick = {
                     searchText = ""
                     confirmedSearchText = ""
+                    onClearSearchClick()
                 },
                 onSearchConfirmClick = {
                     val query = searchText.trim()
@@ -147,13 +145,13 @@ fun AddStopScreen(
             // TODO: 之后这里接 Alex 的搜索结果，Yan 的景点/室内室外数据，Sitao 的距离定位数据。
             if (isSearching) {
                 SearchLoadingCard()
-            } else if (filteredPlaces.isEmpty()) {
+            } else if (displayedPlaces.isEmpty()) {
                 NotFoundCard(searchText = confirmedSearchText)
             } else {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    filteredPlaces.forEach { place ->
+                    displayedPlaces.forEach { place ->
                         AddStopResultCard(
                             place = place,
                             onAddClick = { onAddPlaceClick(place) },

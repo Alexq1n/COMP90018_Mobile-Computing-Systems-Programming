@@ -108,7 +108,7 @@ fun SensorScreen(
             modifier = Modifier.fillMaxWidth()
         )
         Button(
-            onClick = { searchResults = searchPlaces(query = query, places = places) },
+            onClick = { searchResults = searchPlaces(query = query, places = places, userLatitude = latitude, userLongitude = longitude) },
             enabled = query.isNotBlank()
         ) { Text("Search") }
 

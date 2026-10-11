@@ -1,13 +1,23 @@
+
 package com.example.sensors
 
 import kotlinx.serialization.Serializable
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
+
+// ==================================================
+// Data Models
+// ==================================================
 
 @Serializable
 data class Place(
     val id: String,
     val name: String,
 
-    // Optional enrichment fields. Null means the source did not provide a value.
+    // Optional enrichment fields
     val photoUrl: String? = null,
     val website: String? = null,
     val phone: String? = null,
@@ -38,9 +48,20 @@ data class OperatingHours(
 
 @Serializable
 enum class POICategory {
-    MUSEUM, PARK, RESTAURANT, SHOPPING, ENTERTAINMENT,
-    HISTORICAL, NATURE, BEACH, SPORTS, CULTURAL,
-    NIGHTLIFE, CAFE, LANDMARK, SCENIC_SPOT
+    MUSEUM,
+    PARK,
+    RESTAURANT,
+    SHOPPING,
+    ENTERTAINMENT,
+    HISTORICAL,
+    NATURE,
+    BEACH,
+    SPORTS,
+    CULTURAL,
+    NIGHTLIFE,
+    CAFE,
+    LANDMARK,
+    SCENIC_SPOT
 }
 
 @Serializable
@@ -50,41 +71,62 @@ enum class Environment {
     MIXED
 }
 
-
 data class SearchResult(
     val place: Place,
-    val score: Double
+    val score: Double,
+    val distanceMeters: Double? = null
 )
+
+// ==================================================
+// Main Search Function
+// ==================================================
 
 fun searchPlaces(
     query: String,
     places: List<Place>,
-    maxResults: Int = 10
+    maxResults: Int = 10,
+
+    //Optional user GPS
+    userLatitude: Double? = null,
+    userLongitude: Double? = null
+
 ): List<SearchResult> {
-
+    val distanceMultiplier = 5.0
     // 1. Text Normalization
-    val normalizedQuery = normalizeText(query)
+    val normalizedQuery = normalizeText(query.orEmpty())
+    val isDistancePriority = normalizedQuery.isEmpty()
 
-    if (normalizedQuery.isEmpty()) {
-        return emptyList()
-    }
 
     // 2. Tokenization
     val queryTokens = tokenize(normalizedQuery)
-    println("queryTokens : $queryTokens")
 
-    // 3–6. Matching + Scoring
+
+    // Validate user coordinates
+    val hasValidLocation =
+        userLatitude != null &&
+                userLongitude != null &&
+                userLatitude.isFinite() &&
+                userLongitude.isFinite() &&
+                userLatitude in -90.0..90.0 &&
+                userLongitude in -180.0..180.0
+
+    // 3. Matching + Scoring
     val results = places.mapNotNull { place ->
 
         val name = normalizeText(place.name)
         val category = normalizeText(place.category.name)
         val city = normalizeText(place.city)
 
+        // Environment
+        val environment = normalizeText(place.environment.name)
+
         val nameTokens = tokenize(name)
         val categoryTokens = tokenize(category)
         val cityTokens = tokenize(city)
+        val environmentTokens = tokenize(environment)
 
         var score = 0.0
+        var distanceMeters: Double? = null
 
         for (queryToken in queryTokens) {
 
@@ -103,12 +145,8 @@ fun searchPlaces(
                         100.0
                     }
 
-                    // Partial name token match
-                    nameToken.contains(queryToken) -> {
-                        70.0
-                    }
 
-                    // Fuzzy name match
+                    // Fuzzy match
                     levenshteinDistance(
                         queryToken,
                         nameToken
@@ -132,7 +170,6 @@ fun searchPlaces(
 
             score += bestNameScore
 
-
             // ------------------------------------------
             // Category Matching
             // ------------------------------------------
@@ -148,10 +185,17 @@ fun searchPlaces(
                         60.0
                     }
 
-                    // Partial category token match
-                    categoryToken.contains(queryToken) -> {
-                        40.0
+                    // Fuzzy match
+                    levenshteinDistance(
+                        queryToken,
+                        categoryToken
+                    ) <= fuzzyThreshold(queryToken) -> {
+                        fuzzyScore(
+                            queryToken,
+                            categoryToken
+                        )
                     }
+
 
                     else -> {
                         0.0
@@ -166,58 +210,148 @@ fun searchPlaces(
 
             score += bestCategoryScore
 
-
             // ------------------------------------------
-            // Suburb Matching
+            // City Matching
             // ------------------------------------------
 
-            var bestCityScore  = 0.0
+            var bestCityScore = 0.0
 
             for (cityToken in cityTokens) {
 
                 val currentScore = when {
 
-                    // Exact suburb token match
+                    // Exact city token match
                     cityToken == queryToken -> {
                         50.0
                     }
 
-                    // Partial suburb token match
-                    cityToken.contains(queryToken) -> {
-                        30.0
+                    // Fuzzy match
+                    levenshteinDistance(
+                        queryToken,
+                        cityToken
+                    ) <= fuzzyThreshold(queryToken) -> {
+                        fuzzyScore(
+                            queryToken,
+                            cityToken
+                        )
                     }
+
 
                     else -> {
                         0.0
                     }
                 }
 
-                bestCityScore  = maxOf(
-                    bestCityScore ,
+                bestCityScore = maxOf(
+                    bestCityScore,
                     currentScore
                 )
             }
 
             score += bestCityScore
+
+            // ------------------------------------------
+            // Environment Matching
+            // ------------------------------------------
+
+            var bestEnvironmentScore = 0.0
+
+            for (environmentToken in environmentTokens) {
+
+                val currentScore = when {
+
+                    // Exact environment token match
+                    environmentToken == queryToken -> {
+                        40.0
+                    }
+
+                    // Fuzzy match
+                    levenshteinDistance(
+                        queryToken,
+                        environmentToken
+                    ) <= fuzzyThreshold(queryToken) -> {
+                        fuzzyScore(
+                            queryToken,
+                            environmentToken
+                        )
+                    }
+
+
+                    else -> {
+                        0.0
+                    }
+                }
+
+                bestEnvironmentScore = maxOf(
+                    bestEnvironmentScore,
+                    currentScore
+                )
+            }
+
+            score += bestEnvironmentScore
         }
 
-        if (score > 0) {
-            SearchResult(place, score)
-        } else {
-            null
+        // ------------------------------------------
+        // Distance Scoring
+        // ------------------------------------------
+        if (hasValidLocation) {
+
+            val placeLatitude =
+                place.coordinates.latitude
+
+            val placeLongitude =
+                place.coordinates.longitude
+
+            val validPlaceCoordinates =
+                placeLatitude.isFinite() &&
+                        placeLongitude.isFinite() &&
+                        placeLatitude in -90.0..90.0 &&
+                        placeLongitude in -180.0..180.0
+
+            if (validPlaceCoordinates) {
+
+                    distanceMeters =
+                    calculateDistanceMeters(
+                        userLatitude!!,
+                        userLongitude!!,
+                        placeLatitude,
+                        placeLongitude
+                    )
+
+                val distanceScore =
+                    calculateDistanceScore(
+                        distanceMeters
+                    )
+
+                if (isDistancePriority) {
+                    // Distance Priority Mode
+                    score += distanceScore * distanceMultiplier
+                } else if (score >= 0.0) {
+
+                    // Normal Text Search Mode
+                    score += distanceScore
+                }
+
+            }
         }
+
+        SearchResult(place, score,distanceMeters)
+
+    }
+    results
+        .sortedByDescending { it.score }
+        .take(maxResults.coerceAtLeast(0)).forEach { result ->
     }
 
-    // 7. Ranking
+    // 4. Ranking
     return results
         .sortedByDescending { it.score }
         .take(maxResults.coerceAtLeast(0))
 }
 
-
-// --------------------------------------------------
+// ==================================================
 // Text Normalization
-// --------------------------------------------------
+// ==================================================
 
 fun normalizeText(text: String): String {
 
@@ -225,14 +359,14 @@ fun normalizeText(text: String): String {
         .lowercase()
         .trim()
         .replace("_", " ")
-        .replace(Regex("[^a-z0-9\\s]"), "")
+        .replace(Regex("[^a-z0-9\\s]"), " ")
         .replace(Regex("\\s+"), " ")
+        .trim()
 }
 
-
-// --------------------------------------------------
+// ==================================================
 // Tokenization
-// --------------------------------------------------
+// ==================================================
 
 fun tokenize(text: String): List<String> {
 
@@ -241,20 +375,18 @@ fun tokenize(text: String): List<String> {
         .filter { it.isNotBlank() }
 }
 
-
-// --------------------------------------------------
+// ==================================================
 // Fuzzy Matching
-// --------------------------------------------------
+// ==================================================
 
 fun fuzzyThreshold(word: String): Int {
 
     return when {
-        word.length <= 4 -> 1
-        word.length <= 7 -> 2
+        word.length <= 5 -> 1
+        word.length <= 8 -> 2
         else -> 3
     }
 }
-
 
 fun fuzzyScore(
     query: String,
@@ -280,10 +412,9 @@ fun fuzzyScore(
             )
 }
 
-
-// --------------------------------------------------
+// ==================================================
 // Levenshtein Distance
-// --------------------------------------------------
+// ==================================================
 
 fun levenshteinDistance(
     a: String,
@@ -322,4 +453,63 @@ fun levenshteinDistance(
     }
 
     return dp[a.length][b.length]
+}
+
+// ==================================================
+// Distance Calculation
+// Haversine Formula
+// Output: Distance in meters
+// ==================================================
+
+fun calculateDistanceMeters(
+    userLatitude: Double,
+    userLongitude: Double,
+    placeLatitude: Double,
+    placeLongitude: Double
+): Double {
+
+    val earthRadius = 6371000.0
+
+    val lat1 = Math.toRadians(userLatitude)
+    val lat2 = Math.toRadians(placeLatitude)
+
+    val deltaLat = Math.toRadians(
+        placeLatitude - userLatitude
+    )
+
+    val deltaLon = Math.toRadians(
+        placeLongitude - userLongitude
+    )
+
+    val a =
+        sin(deltaLat / 2).pow(2.0) +
+                cos(lat1) * cos(lat2) *
+                sin(deltaLon / 2).pow(2.0)
+
+    val safeA = a.coerceIn(0.0, 1.0)
+
+    val c = 2.0 * atan2(
+        sqrt(safeA),
+        sqrt(1.0 - safeA)
+    )
+
+    return earthRadius * c
+}
+
+// ==================================================
+// Distance Scoring
+// Maximum: 30 points
+// Score halves every 2 km
+// ==================================================
+
+fun calculateDistanceScore(
+    distanceMeters: Double
+): Double {
+
+    val maxScore = 30.0
+    val halfDistance = 2000.0
+
+    return maxScore * 2.0.pow(
+        -distanceMeters.coerceAtLeast(0.0) / halfDistance
+    )
 }

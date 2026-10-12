@@ -281,6 +281,7 @@ class MainActivity : ComponentActivity() {
 
 
 
+
         // Enable the page to extend to the status bar and the bottom navigation bar area.
         enableEdgeToEdge()
 

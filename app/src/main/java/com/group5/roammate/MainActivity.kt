@@ -1881,34 +1881,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-//    private fun uiSearchPlacesByName(
-//        query: String,
-//        currentCity: String?,
-//        userLatitude: Double?,
-//        userLongitude: Double?,
-//        limit: Int,
-//    ): List<AddStopPlace> {
-//        // function: uiSearchPlacesByName
-//        // owner: Alex
-//        // data source: Leyan POI source
-//        // storage: Yuxiang database if needed
-//        // input: query, city, GPS, limit
-//        // output: POI list mapped to AddStopPlace
-//        // TODO(Alex): Search POI repository by name; return POI list in final integration.
-//        val source = melbournePopularAddStopPlaces()
-//        val result = if (query.isBlank()) {
-//            source
-//        } else {
-//            source.filter { place ->
-//                place.name.contains(query, ignoreCase = true)
-//            }
-//        }
-//
-//        return result.take(limit)
-//    }
-
-
-
     private fun uiSearchPlacesByName(
         context: Context,
         query: String,
@@ -1956,7 +1928,7 @@ class MainActivity : ComponentActivity() {
         // sensor source: Alex GPS
         // input: category filter, GPS, limit
         // output: POI list mapped to ExplorePlace
-        val repository = MockPOIRepository(context)
+        val repository = DatabasePOI(context)
         val searchService = POISearchService(repository)
 
         return searchService.search(

@@ -962,26 +962,35 @@ class MainActivity : ComponentActivity() {
                             currentSensorLocation.value.longitude,
                         ) {
                             val location = currentSensorLocation.value
-                            // nearest 10, already sorted near -> far by backend
-                            val pool = ExplorePlaceCategory.entries
+
+                            ExplorePlaceCategory.entries
                                 .flatMap { category ->
-                                    uiExploreNearbyPlaces(
+
+                                    // Get top 10 places for each category
+                                    val pool = uiExploreNearbyPlaces(
                                         context = this@MainActivity,
                                         category = category,
                                         userLatitude = location.latitude,
                                         userLongitude = location.longitude,
-                                        limit = 6,
+                                        limit = 10,
                                     )
+
+                                    // Randomly select 5 indices
+                                    val keepIndices = pool.indices
+                                        .shuffled(
+                                            kotlin.random.Random(
+                                                exploreShakeRefreshCount + category.ordinal
+                                            )
+                                        )
+                                        .take(5)
+                                        .toSet()
+
+                                    // Keep original ranking order
+                                    pool.filterIndexed { index, _ ->
+                                        index in keepIndices
+                                    }
                                 }
                                 .distinctBy { place -> place.name }
-                                .take(10)
-
-                            // shake picks a random 8, but keep near -> far order
-                            val keepIndices = pool.indices
-                                .shuffled(kotlin.random.Random(exploreShakeRefreshCount))
-                                .take(8)
-                                .toSet()
-                            pool.filterIndexed { index, _ -> index in keepIndices }
                         }
 
                         ExploreScreen(

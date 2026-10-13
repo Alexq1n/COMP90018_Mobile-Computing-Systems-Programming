@@ -19,7 +19,6 @@ import com.example.localdatebase.cloud.CloudResultCallback
 import com.example.localdatebase.cloud.CloudUserSession
 import com.example.localdatebase.cloud.FirebaseCloudUserRepository
 import com.example.localdatebase.cloud.UserPreferences
-import com.group5.roammate.backend.MockPOI
 import com.group5.roammate.backend.POISearchService
 import com.group5.roammate.backend.PlaceRepository
 

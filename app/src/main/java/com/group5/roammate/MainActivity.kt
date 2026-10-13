@@ -1511,42 +1511,10 @@ class MainActivity : ComponentActivity() {
         // sensor source: Alex GPS
         // input: category filter, GPS, limit
         // output: POI list mapped to ExplorePlace
-<<<<<<< Updated upstream
-        // TODO(Alex): Rank POI repository by nearby/category; UI hides exact distance.
+        // TODO(Alex): Replace with real MockPOI + POISearchService nearby search.
         return sampleNearbyExplorePlaces()
             .filter { place -> place.category == category }
             .take(limit)
-=======
-        val repository = MockPOI(context)
-        val searchService = POISearchService(repository)
-
-        return searchService.search(
-            query = "",
-            userLatitude = userLatitude,
-            userLongitude = userLongitude,
-            category = category,
-            limit = limit,
-        ).map { result ->
-            val place = result.place
-            ExplorePlace(
-                name = place.name,
-                distanceText = result.distanceMeters?.let { distance ->
-                    if (distance < 1000.0) {
-                        "${distance.toInt()} m"
-                    } else {
-                        String.format(java.util.Locale.US, "%.1f km", distance / 1000.0)
-                    }
-                } ?: "",
-                category = category,
-                environmentLabel = place.environment.name
-                    .lowercase()
-                    .replaceFirstChar { it.uppercase() },
-                tagText = result.tagText,
-                mapX = 0.5f,
-                mapY = 0.5f,
-            )
-        }
->>>>>>> Stashed changes
     }
 
     // ---- Leyan: attraction data ----

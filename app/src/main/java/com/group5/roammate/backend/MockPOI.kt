@@ -1,4 +1,4 @@
-package com.group5.roammate.backend_alex
+package com.group5.roammate.backend
 
 import android.content.Context
 import com.group5.roammate.R

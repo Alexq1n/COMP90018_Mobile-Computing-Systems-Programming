@@ -19,8 +19,10 @@ import com.example.localdatebase.cloud.CloudResultCallback
 import com.example.localdatebase.cloud.CloudUserSession
 import com.example.localdatebase.cloud.FirebaseCloudUserRepository
 import com.example.localdatebase.cloud.UserPreferences
-import com.group5.roammate.backend_alex.MockPOI
-import com.group5.roammate.backend_alex.POISearchService
+import com.group5.roammate.backend.MockPOI
+import com.group5.roammate.backend.POISearchService
+import com.group5.roammate.backend.PlaceRepository
+
 import com.group5.roammate.ui.pet.rememberPetEnvironment
 import com.group5.roammate.pet.PetPreferences
 import com.group5.roammate.pet.PetStateEngine
@@ -90,6 +92,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.group5.roammate.backend.DatabasePOI
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.filterNotNull
@@ -1920,7 +1923,7 @@ class MainActivity : ComponentActivity() {
         // storage: Yuxiang database if needed
         // input: query, city, GPS, limit
         // output: place name + environment type for AddStop UI
-        val repository = MockPOI(context)
+        val repository: PlaceRepository = DatabasePOI(context)
         val searchService = POISearchService(repository)
 
         return searchService.search(
@@ -1953,7 +1956,7 @@ class MainActivity : ComponentActivity() {
         // sensor source: Alex GPS
         // input: category filter, GPS, limit
         // output: POI list mapped to ExplorePlace
-        val repository = MockPOI(context)
+        val repository = MockPOIRepository(context)
         val searchService = POISearchService(repository)
 
         return searchService.search(

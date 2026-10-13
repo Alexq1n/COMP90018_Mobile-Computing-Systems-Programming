@@ -965,7 +965,6 @@ class MainActivity : ComponentActivity() {
                             currentSensorLocation.value.longitude,
                         ) {
                             val location = currentSensorLocation.value
-
                             ExplorePlaceCategory.entries
                                 .flatMap { category ->
 

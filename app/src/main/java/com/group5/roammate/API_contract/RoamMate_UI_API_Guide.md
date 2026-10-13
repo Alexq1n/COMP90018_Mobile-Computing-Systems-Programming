@@ -22,13 +22,13 @@ Use this guide when connecting backend, Firebase, sensor, weather, search, pet, 
 
 | Function | Owner | Other input provider | Used by | Status |
 |---|---|---|---|---|
-| `uiLoginWithFirebase` | Yuxiang | - | Login | Mock in `MainActivity` |
-| `uiCreateAccountWithFirebase` | Yuxiang | - | Create account | Mock in `MainActivity` |
-| `uiLoadUserProfile` | Yuxiang | - | Home, Profile, Edit profile | Mock in `MainActivity` |
-| `uiSaveUserProfile` | Yuxiang | - | Edit profile | Mock in `MainActivity` |
-| `uiSaveProfileInterests` | Yuxiang | - | Interests from Profile | Mock in `MainActivity` |
+| `uiLoginWithFirebase` | Yuxiang | - | Login | Firebase Auth connected |
+| `uiCreateAccountWithFirebase` | Yuxiang | - | Create account | Firebase Auth + Firestore connected |
+| `uiLoadUserProfile` | Yuxiang | - | Home, Profile, Edit profile | Firebase connected |
+| `uiSaveUserProfile` | Yuxiang | - | Edit profile | Firebase connected |
+| `uiSaveProfileInterests` | Yuxiang | - | Interests from Profile | Firestore connected |
 | `uiSaveTripOnlyInterests` | Zewen | - | Interests from Plan My Trip | Helper in `MainActivity` |
-| `uiLoadSavedTrips` | Yuxiang | Zewen trip summary shape | Saved trips | Mock in `MainActivity` |
+| `uiLoadSavedTrips` | Yuxiang | Zewen trip summary shape | Saved trips | Firestore connected |
 | `uiGetCurrentLocation` | Alex | Sensor GPS | Home, Explore, Add stop, Trip | Sensor connected |
 | `uiObserveShakeEvents` | Alex | ShakeDetector | Explore, Add stop, Trip | Sensor connected |
 | `uiSearchPlacesByName` | Alex | Leyan POI data | Add stop | Mock/search hook |
@@ -417,10 +417,11 @@ Owner: Yuxiang
 
 Used by: `SavedTripsScreen`
 
-Output:
+Callbacks:
 
 ```kotlin
-List<SavedTrip>
+onSuccess: (List<SavedTrip>) -> Unit
+onError: (Exception) -> Unit
 ```
 
 ### `uiLoginWithFirebase`
@@ -434,11 +435,14 @@ email: String
 password: String
 ```
 
-Output:
+Callbacks:
 
 ```kotlin
-Boolean
+onSuccess: (CloudUserSession) -> Unit
+onError: (Exception) -> Unit
 ```
+
+Only `onSuccess` may navigate to Home. Invalid credentials stay on Login.
 
 ### `uiCreateAccountWithFirebase`
 
@@ -452,11 +456,14 @@ email: String
 password: String
 ```
 
-Output:
+Callbacks:
 
 ```kotlin
-Boolean
+onSuccess: (CloudUserSession) -> Unit
+onError: (Exception) -> Unit
 ```
+
+Firebase creates the account first. The UI then signs out and returns to Login so the user can authenticate with the new credentials.
 
 ### `uiLoadUserProfile`
 
@@ -478,10 +485,11 @@ Input:
 updatedName: String
 ```
 
-Output:
+Callbacks:
 
 ```kotlin
-String // saved displayName
+onSuccess: (CloudUserSession) -> Unit
+onError: (Exception) -> Unit
 ```
 
 ### `uiSaveProfileInterests`
@@ -490,10 +498,12 @@ Owner: Yuxiang
 
 Used by: Interests page from Profile.
 
-Input/Output:
+Input and callbacks:
 
 ```kotlin
-List<String>
+interests: List<String>
+onSuccess: (List<String>) -> Unit
+onError: (Exception) -> Unit
 ```
 
 Notes:

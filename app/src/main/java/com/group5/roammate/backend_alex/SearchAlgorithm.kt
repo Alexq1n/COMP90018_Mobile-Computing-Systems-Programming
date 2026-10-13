@@ -75,8 +75,7 @@ enum class Environment {
 data class SearchResult(
     val place: Place,
     val score: Double,
-    val distanceMeters: Double? = null,
-    val tagText: String = ""
+    val distanceMeters: Double? = null
 )
 
 
@@ -90,26 +89,24 @@ fun searchPlaces(
     places: List<Place>,
     maxResults: Int = 10,
 
-    // Optional user GPS
+    //Optional user GPS
     userLatitude: Double? = null,
     userLongitude: Double? = null,
     category: ExplorePlaceCategory? = null
 ): List<SearchResult> {
+    val distanceMultiplier = 100
 
-    // ------------------------------------------
+
     // 1. Text Normalization
-    // ------------------------------------------
-    val normalizedQuery = normalizeText(query)
+    val normalizedQuery = normalizeText(query.orEmpty())
     val isDistancePriority = normalizedQuery.isEmpty()
 
-    // ------------------------------------------
+
     // 2. Tokenization
-    // ------------------------------------------
     val queryTokens = tokenize(normalizedQuery)
 
-    // ------------------------------------------
-    // 3. Validate User GPS
-    // ------------------------------------------
+
+    // Validate user coordinates
     val hasValidLocation =
         userLatitude != null &&
                 userLongitude != null &&
@@ -118,30 +115,56 @@ fun searchPlaces(
                 userLatitude in -90.0..90.0 &&
                 userLongitude in -180.0..180.0
 
-    // ------------------------------------------
-    // 4. Matching + Scoring
-    // ------------------------------------------
-    val results = places.map { place ->
+    // 3. Matching + Scoring
+    val results = places.mapNotNull { place ->
+
+
+
+        // Check if the category matches the selected category.
+        val categoryMultiplier = if (category == null) {
+            1
+        } else {
+            val matched = when (category) {
+                ExplorePlaceCategory.Indoor ->
+                    place.environment == Environment.INDOOR
+
+                ExplorePlaceCategory.Outdoor ->
+                    place.environment == Environment.OUTDOOR
+
+                ExplorePlaceCategory.Cafes ->
+                    place.category == POICategory.CAFE
+
+                ExplorePlaceCategory.Food ->
+                    place.category == POICategory.RESTAURANT
+            }
+
+            if (matched) 37 else 1
+        }
+
+
+
 
         val name = normalizeText(place.name)
-        val categoryName = normalizeText(place.category.name)
+        val category = normalizeText(place.category.name)
         val city = normalizeText(place.city)
+
+        // Environment
         val environment = normalizeText(place.environment.name)
 
         val nameTokens = tokenize(name)
-        val categoryTokens = tokenize(categoryName)
+        val categoryTokens = tokenize(category)
         val cityTokens = tokenize(city)
         val environmentTokens = tokenize(environment)
 
         var score = 0.0
         var distanceMeters: Double? = null
-        var tagText = ""
 
         for (queryToken in queryTokens) {
 
             // ------------------------------------------
             // Name Matching
             // ------------------------------------------
+
             var bestNameScore = 0.0
 
             for (nameToken in nameTokens) {
@@ -152,6 +175,7 @@ fun searchPlaces(
                     nameToken == queryToken -> {
                         100.0
                     }
+
 
                     // Fuzzy match
                     levenshteinDistance(
@@ -180,6 +204,7 @@ fun searchPlaces(
             // ------------------------------------------
             // Category Matching
             // ------------------------------------------
+
             var bestCategoryScore = 0.0
 
             for (categoryToken in categoryTokens) {
@@ -202,6 +227,7 @@ fun searchPlaces(
                         )
                     }
 
+
                     else -> {
                         0.0
                     }
@@ -218,6 +244,7 @@ fun searchPlaces(
             // ------------------------------------------
             // City Matching
             // ------------------------------------------
+
             var bestCityScore = 0.0
 
             for (cityToken in cityTokens) {
@@ -240,6 +267,7 @@ fun searchPlaces(
                         )
                     }
 
+
                     else -> {
                         0.0
                     }
@@ -256,6 +284,7 @@ fun searchPlaces(
             // ------------------------------------------
             // Environment Matching
             // ------------------------------------------
+
             var bestEnvironmentScore = 0.0
 
             for (environmentToken in environmentTokens) {
@@ -278,6 +307,7 @@ fun searchPlaces(
                         )
                     }
 
+
                     else -> {
                         0.0
                     }
@@ -293,12 +323,15 @@ fun searchPlaces(
         }
 
         // ------------------------------------------
-        // 5. Distance Calculation
+        // Distance Scoring
         // ------------------------------------------
         if (hasValidLocation) {
 
-            val placeLatitude = place.coordinates.latitude
-            val placeLongitude = place.coordinates.longitude
+            val placeLatitude =
+                place.coordinates.latitude
+
+            val placeLongitude =
+                place.coordinates.longitude
 
             val validPlaceCoordinates =
                 placeLatitude.isFinite() &&
@@ -308,119 +341,45 @@ fun searchPlaces(
 
             if (validPlaceCoordinates) {
 
-                distanceMeters = calculateDistanceMeters(
-                    userLatitude!!,
-                    userLongitude!!,
-                    placeLatitude,
-                    placeLongitude
-                )
+                    distanceMeters =
+                    calculateDistanceMeters(
+                        userLatitude!!,
+                        userLongitude!!,
+                        placeLatitude,
+                        placeLongitude
+                    )
 
-                if (isDistancePriority) {
-
-                    // Distance Priority Mode:
-                    // Hidden gems within 1000m receive
-                    // priority during final sorting.
-
-                    if (
-                        place.isFiller == true
-                    ) {
-                        tagText = "Hidden gem"
-                    }
-
-                } else {
-
-                    // Normal Text Search Mode:
-                    // Distance contributes to the score.
-                    score += calculateDistanceScore(
+                val distanceScore =
+                    calculateDistanceScore(
                         distanceMeters
                     )
+
+                if (isDistancePriority) {
+                    // Distance Priority Mode
+                    score += distanceScore * distanceMultiplier
+                } else if (score >= 0.0) {
+
+                    // Normal Text Search Mode
+                    score += distanceScore
                 }
+
             }
         }
+        score *= categoryMultiplier
 
-        // ------------------------------------------
-        // 6. Build SearchResult
-        // ------------------------------------------
-        SearchResult(
-            place = place,
-            score = score,
-            distanceMeters = distanceMeters,
-            tagText = tagText
-        )
+        SearchResult(place, score,distanceMeters)
+
+    }
+    results
+        .sortedByDescending { it.score }
+        .take(maxResults.coerceAtLeast(0)).forEach { result ->
     }
 
-    // ------------------------------------------
-    // 7. Ranking
-    // ------------------------------------------
-    return if (isDistancePriority) {
-
-        // Distance Priority Mode:
-        //
-        // Priority 1: Category match
-        // Priority 2: Hidden gem
-        // Priority 3: Nearest distance
-
-        results
-            .sortedWith(
-                compareByDescending<SearchResult> { result ->
-
-                    // Priority 1: Category matching
-                    when (category) {
-
-                        null -> true
-
-                        ExplorePlaceCategory.Indoor ->
-                            result.place.environment ==
-                                    Environment.INDOOR
-
-                        ExplorePlaceCategory.Outdoor ->
-                            result.place.environment ==
-                                    Environment.OUTDOOR
-
-                        ExplorePlaceCategory.Cafes ->
-                            result.place.category ==
-                                    POICategory.CAFE
-
-                        ExplorePlaceCategory.Food ->
-                            result.place.category ==
-                                    POICategory.RESTAURANT
-                    }
-
-                }.thenByDescending { result ->
-
-                    // Priority 2: Hidden gem
-                    result.place.isFiller == true &&
-                            (result.place.baseScore ?: 0.0) >= 8.0 &&
-                            result.distanceMeters != null &&
-                            result.distanceMeters <= 500
-
-                }.thenBy { result ->
-
-                    // Priority 3: Nearest distance
-                    // Unknown distances are placed last.
-                    result.distanceMeters
-                        ?: Double.POSITIVE_INFINITY
-                }
-            )
-            .take(maxResults.coerceAtLeast(0))
-
-    } else {
-
-        // Normal Text Search Mode:
-        // Text matching score + distance score
-
-        results
-            .sortedByDescending { it.score }
-            .take(maxResults.coerceAtLeast(0))
-    }
+    // 4. Ranking
+    return results
+        .sortedByDescending { it.score }
+        .take(maxResults.coerceAtLeast(0))
 }
-
-
-
-
-
-
-
 
 // ==================================================
 // Text Normalization

@@ -321,7 +321,7 @@ private fun NearbyPlaceCard(
 
             Spacer(modifier = Modifier.width(14.dp))
 
-            // name + environment
+            // name + details
             Column(modifier = Modifier.weight(1f)) {
                 // name
                 Text(
@@ -334,9 +334,11 @@ private fun NearbyPlaceCard(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // environment only; distance stays internal for sorting
+                // distance + environment
                 Text(
-                    text = place.environmentLabel,
+                    text = listOf(place.distanceText, place.environmentLabel)
+                        .filter { it.isNotBlank() }
+                        .joinToString(" · "),
                     color = RoamMateMutedText,
                     fontSize = 14.sp,
                     lineHeight = 16.sp,

@@ -1,0 +1,48 @@
+plugins {
+    alias(libs.plugins.android.library)
+}
+
+def testHomePath = new File(gradle.gradleUserHomeDir, 'localdatabase-test-home').absolutePath
+def testTempPath = new File(gradle.gradleUserHomeDir, 'localdatabase-test-tmp').absolutePath
+def robolectricDepsPath = layout.buildDirectory.dir('robolectric-deps').get().asFile.absolutePath
+
+configurations {
+    robolectricSdk
+}
+android {
+    namespace 'com.example.localdatebase.database'
+    compileSdk {
+        version = release(36) { minorApiLevel = 1 }
+    }
+    defaultConfig { minSdk 24 }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    testOptions {
+        unitTests.includeAndroidResources = true
+        unitTests.all {
+            doFirst {
+                file(testHomePath).mkdirs()
+                file(testTempPath).mkdirs()
+            }
+            systemProperty 'user.home', testHomePath
+            systemProperty 'java.io.tmpdir', testTempPath
+            systemProperty 'robolectric.dependency.dir', robolectricDepsPath
+            dependsOn 'prepareRobolectricDependencies'
+        }
+    }
+}
+
+tasks.register('prepareRobolectricDependencies', Copy) {
+    from configurations.robolectricSdk
+    into robolectricDepsPath
+}
+
+dependencies {
+    testImplementation libs.junit
+    testImplementation 'androidx.test:core:1.7.0'
+    testImplementation 'org.robolectric:robolectric:4.16.1'
+    testImplementation 'org.robolectric:android-all-instrumented:9-robolectric-4913185-2-i7'
+    robolectricSdk 'org.robolectric:android-all-instrumented:9-robolectric-4913185-2-i7'
+}

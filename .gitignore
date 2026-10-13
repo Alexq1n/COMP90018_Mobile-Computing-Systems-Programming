@@ -8,6 +8,17 @@
 !/backend/
 !/backend/**
 
+# Shared local/Firebase database modules and configuration
+!/core/
+!/core/**
+!/feature/
+!/feature/**
+!/firestore.rules
+!/app/
+!/app/google-services.json
+/core/**/build/
+/feature/**/build/
+
 # Also track .gitignore itself
 !/.gitignore
 

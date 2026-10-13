@@ -323,7 +323,10 @@ fun searchPlaces(
 
 
                     if (
-                        place.isFiller == true
+                        place.isFiller == true &&
+                        (place.baseScore ?: 0.0) >= 9.0 &&
+                        distanceMeters != null &&
+                        distanceMeters <= 500
                     ) {
                         tagText = "Hidden gem"
                     }
@@ -384,7 +387,7 @@ fun searchPlaces(
 
                     // Priority 2: Hidden gem
                     result.place.isFiller == true &&
-                            (result.place.baseScore ?: 0.0) >= 8.0 &&
+                            (result.place.baseScore ?: 0.0) >= 9.0 &&
                             result.distanceMeters != null &&
                             result.distanceMeters <= 500
 

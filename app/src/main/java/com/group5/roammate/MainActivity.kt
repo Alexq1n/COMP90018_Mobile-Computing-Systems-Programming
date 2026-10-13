@@ -15,6 +15,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.example.localdatebase.cloud.CloudResultCallback
+import com.example.localdatebase.cloud.CloudUserSession
+import com.example.localdatebase.cloud.FirebaseCloudUserRepository
+import com.example.localdatebase.cloud.UserPreferences
 import com.group5.roammate.backend_alex.MockPOI
 import com.group5.roammate.backend_alex.POISearchService
 import com.group5.roammate.ui.pet.rememberPetEnvironment
@@ -64,7 +68,17 @@ import com.group5.roammate.ui.sensor.SensorTestScreen
 import com.group5.roammate.ui.pet.CompanionsScreen
 import com.group5.roammate.ui.pet.PetCameraScreen
 import com.group5.roammate.ui.theme.RoamMateTheme
+import com.group5.roammate.poi.data.geoapify.GeoapifyRepository
+import com.group5.roammate.weather.monitor.CurrentWeatherMonitor
+import com.group5.roammate.weather.monitor.WeatherForecastMonitor
+import com.group5.roammate.weather.context.WeatherContextDetector
+import com.group5.roammate.weather.context.WeatherContextEvent
+import com.group5.roammate.weather.data.WeatherRepository
+import com.group5.roammate.weather.model.DailyWeatherForecast
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import android.Manifest
 import android.content.ComponentName
 import android.content.Context
@@ -80,7 +94,14 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlin.math.roundToInt
 
+// for demo only
+import kotlinx.coroutines.delay
+import com.group5.roammate.weather.model.CurrentWeather
+import com.group5.roammate.weather.model.HourlyWeather
+import com.group5.roammate.weather.model.WeatherStatus
+import java.time.LocalDateTime
 
 // [NEW] Sensor module
 import com.group5.roammate.sensor.RoamMateApp
@@ -107,6 +128,73 @@ Keep each owner in a small function below, then connect the screen callbacks to 
 
 
 class MainActivity : ComponentActivity() {
+
+// ==================== Leyan Weather ====================
+
+    private val weatherRepository by lazy {
+        WeatherRepository()
+    }
+
+    private val weatherContextDetector by lazy {
+        WeatherContextDetector()
+    }
+
+    private val weatherGeoapifyRepository by lazy {
+        GeoapifyRepository()
+    }
+
+    private val currentWeatherMonitor by lazy {
+        CurrentWeatherMonitor(
+            weatherRepository = weatherRepository,
+            getCurrentLocation = {
+                sensorRepository
+                    .getCurrentLocation()
+                    ?.let { location ->
+                        location.latitude to location.longitude
+                    }
+            }
+        )
+    }
+
+    private val weatherForecastMonitor by lazy {
+        WeatherForecastMonitor(
+            weatherRepository = weatherRepository,
+            contextDetector = weatherContextDetector,
+            getCurrentLocation = {
+                sensorRepository
+                    .getCurrentLocation()
+                    ?.let { location ->
+                        location.latitude to location.longitude
+                    }
+            }
+        )
+    }
+
+    private var currentWeatherMonitorStarted = false
+
+    private val currentWeatherSummaryState =
+        mutableStateOf(
+            TripWeatherSummary(
+                temperature = "—",
+                condition = "Weather unavailable",
+            )
+        )
+
+    private val weatherSuggestionState =
+        mutableStateOf<HomeSmartSuggestion?>(null)
+
+    private var latestPlannedWeather:
+            List<DailyWeatherForecast> = emptyList()
+
+    private val planDateFormatter =
+        DateTimeFormatter.ofPattern(
+            "dd MMM yyyy",
+            Locale.ENGLISH
+        )
+
+    private val cloudUserRepository by lazy {
+        FirebaseCloudUserRepository()
+    }
 
     private val geocodingRepository by lazy {
         GeocodingRepository(applicationContext)
@@ -202,6 +290,57 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Weather context-awareness wiring.
+        // Current weather is still refreshed every 10 minutes. The same result
+        // is also used as the baseline for sudden-rain detection.
+        currentWeatherMonitor.onWeatherUpdated = { weather ->
+            weatherContextDetector
+                .detectCurrentWeatherChange(weather)
+                ?.let(::uiHandleWeatherContextEvent)
+
+            // Start forecast monitoring only after current weather exists, so
+            // upcoming-rain detection has a valid current-weather context.
+            weatherForecastMonitor.start()
+        }
+
+        weatherForecastMonitor.onContextEvent = { event ->
+            uiHandleWeatherContextEvent(event)
+        }
+
+        // ==================== Weather Demo ====================
+        startWeatherDemoScenario()
+
+        // UI observes the latest current weather from the repository.
+        weatherRepository.currentWeather.observe(this) { weather ->
+
+            android.util.Log.d(
+                "ROAMMATE_WEATHER",
+                "Current weather received: " +
+                        "status=${weather.status}, " +
+                        "temperature=${weather.temperature}"
+            )
+
+            val temperatureText =
+                weather.temperature?.let {
+                    "${it.roundToInt()}°C"
+                } ?: "—"
+
+            val conditionText =
+                weather.status
+                    ?.name
+                    ?.lowercase()
+                    ?.replace("_", " ")
+                    ?.replaceFirstChar {
+                        it.uppercase()
+                    }
+                    ?: "Weather unavailable"
+
+            currentWeatherSummaryState.value =
+                TripWeatherSummary(
+                    temperature = temperatureText,
+                    condition = conditionText,
+                )
+        }
 
         // ==================== Search Test ====================
 
@@ -248,11 +387,20 @@ class MainActivity : ComponentActivity() {
                 // GPS: Latest location
                 launch {
                     sensorRepository.locationFlow.collect { location ->
-                        if (location != null) {
-//                            android.util.Log.d(
-//                                "RoamMateSensor",
-//                                "GPS: ${location.latitude}, ${location.longitude}"
-//                            )
+
+                        if (
+                            location != null &&
+                            !currentWeatherMonitorStarted
+                        ) {
+                            android.util.Log.d(
+                                "ROAMMATE_WEATHER",
+                                "GPS for weather: " +
+                                        "lat=${location.latitude}, " +
+                                        "lon=${location.longitude}"
+                            )
+                            currentWeatherMonitor.start()
+
+                            currentWeatherMonitorStarted = true
                         }
                     }
                 }
@@ -291,7 +439,7 @@ class MainActivity : ComponentActivity() {
             // RoamMateTheme responsible for unifying colors, fonts and the overall visual style.
             RoamMateTheme(dynamicColor = false) {
                 // This is a temporary page status.
-                var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.SensorTest) }
+                var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.PlanMyTrip) }
 
                 // Jie pet feature state: one koala, live weather gear and a persisted fashion choice.
                 val petPreferences = remember { PetPreferences(applicationContext) }
@@ -300,9 +448,11 @@ class MainActivity : ComponentActivity() {
                 val petWeather = petEnvironment.weather
                 val petState = PetStateEngine.buildUiState(petProfile, petWeather)
 
-                // User name
-                // TODO(Yuxiang, function: uiLoadUserProfile): Replace with Firebase user profile.
-                var userName by rememberSaveable { mutableStateOf("Yufei") }
+                // Firebase keeps the account session across app restarts.
+                var userName by rememberSaveable {
+                    mutableStateOf(uiLoadUserProfile())
+                }
+                var isCloudRequestRunning by rememberSaveable { mutableStateOf(false) }
 
                 // Loading states
                 // TODO(Yufei, function: uiLoadingState): Set true while backend / Firebase requests are running.
@@ -416,6 +566,22 @@ class MainActivity : ComponentActivity() {
                     mutableStateOf(listOf("Museums", "Parks", "Food"))
                 }
 
+                LaunchedEffect(currentScreen) {
+                    if (
+                        cloudUserRepository.currentUser() != null &&
+                        (currentScreen == AuthScreen.Home ||
+                            currentScreen == AuthScreen.Profile ||
+                            currentScreen == AuthScreen.ProfileInterests)
+                    ) {
+                        uiLoadProfileInterests(
+                            onSuccess = { interests ->
+                                if (interests.isNotEmpty()) profileDefaultInterests = interests
+                            },
+                            onError = { /* Keep the local defaults when no cloud document exists. */ },
+                        )
+                    }
+                }
+
                 // Plan My Trip 入口使用：只属于当前这次行程的兴趣。
                 // TODO(Zewen, function: uiSaveTripOnlyInterests): pass one-trip interests into itinerary request only.
                 var tripInterests by rememberSaveable {
@@ -515,8 +681,7 @@ class MainActivity : ComponentActivity() {
                         LoginScreen(
                             modifier = Modifier.fillMaxSize(),
 
-                            // This will run when the user clicks "Log in".
-                            // TODO(Yuxiang, function: uiLoginWithFirebase): connect Firebase login.
+                            // Enter Home only after Firebase accepts the credentials.
                             onLoginClick = { email, password ->
                                 if (email.isBlank() || password.isBlank()) {
                                     Toast.makeText(
@@ -524,10 +689,21 @@ class MainActivity : ComponentActivity() {
                                         "Please enter email and password",
                                         Toast.LENGTH_SHORT,
                                     ).show()
-                                } else {
-                                    // 登录成功后进入 Home 页面。
-                                    // TODO(Yuxiang, function: uiLoginWithFirebase): Navigate only after Firebase login success.
-                                    currentScreen = AuthScreen.Home
+                                } else if (!isCloudRequestRunning) {
+                                    isCloudRequestRunning = true
+                                    uiLoginWithFirebase(
+                                        email = email,
+                                        password = password,
+                                        onSuccess = { session ->
+                                            isCloudRequestRunning = false
+                                            userName = session.readableName()
+                                            currentScreen = AuthScreen.Home
+                                        },
+                                        onError = { error ->
+                                            isCloudRequestRunning = false
+                                            showCloudError(error)
+                                        },
+                                    )
                                 }
                             },
 
@@ -552,17 +728,24 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.Login
                             },
 
-                            // Received the name, email and password
-                            // TODO(Yuxiang, function: uiCreateAccountWithFirebase): connect Firebase register.
-                            onCreateAccountClick = { fullName, _, _ ->
-                                // 注册成功后进入 Home 页面。
-                                // TODO(Yuxiang, function: uiCreateAccountWithFirebase): Navigate only after Firebase register success.
-                                Toast.makeText(
-                                    this,
-                                    "Create account clicked for $fullName",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                                currentScreen = AuthScreen.Home
+                            onCreateAccountClick = { fullName, email, password ->
+                                if (!isCloudRequestRunning) {
+                                    isCloudRequestRunning = true
+                                    uiCreateAccountWithFirebase(
+                                        fullName = fullName,
+                                        email = email,
+                                        password = password,
+                                        onSuccess = { session ->
+                                            isCloudRequestRunning = false
+                                            userName = session.readableName()
+                                            currentScreen = AuthScreen.Home
+                                        },
+                                        onError = { error ->
+                                            isCloudRequestRunning = false
+                                            showCloudError(error)
+                                        },
+                                    )
+                                }
                             },
 
                             // An error prompt on the login page
@@ -604,7 +787,7 @@ class MainActivity : ComponentActivity() {
 
                             // function: uiBuildHomeSmartSuggestion; owner: Yufei; status: UI done.
                             // input providers: LeYan weather, Xiajie pet status.
-                            smartSuggestion = homeSmartSuggestion,
+                            smartSuggestion = weatherSuggestionState.value,
 
                             // Jie pet module: Home, Pet and Camera share the same koala outfit.
                             petStatus = HomePetStatus(
@@ -722,10 +905,8 @@ class MainActivity : ComponentActivity() {
                             destinationTitle = "Today in Melbourne",
 
                             // TODO(LeYan, function: uiLoadWeatherSummary): Connect real weather data.
-                            weatherSummary = TripWeatherSummary(
-                                temperature = if (petWeather.isCurrent) "${petWeather.temperatureC.toInt()}°C" else "—",
-                                condition = if (petWeather.isCurrent) "${petWeather.label} · ${petWeather.locationLabel}" else "Weather unavailable",
-                            ),
+                            // LeYan: live current weather from WeatherRepository + CurrentWeatherMonitor + Alex GPS
+                            weatherSummary = currentWeatherSummaryState.value,
 
                             // Call Zewen's backend to get trip summary
                             tripSummary = uiLoadTripSummary(),
@@ -781,22 +962,34 @@ class MainActivity : ComponentActivity() {
                             currentSensorLocation.value.longitude,
                         ) {
                             val location = currentSensorLocation.value
-                            // 每个 category 各自独立:取最近 10 个 → 随机选 8 个,保持近→远顺序
-                            ExplorePlaceCategory.entries.flatMap { category ->
-                                val pool = uiExploreNearbyPlaces(
-                                    context = this@MainActivity,
-                                    category = category,
-                                    userLatitude = location.latitude,
-                                    userLongitude = location.longitude,
-                                    limit = 10,
-                                ).distinctBy { place -> place.name }
+                            ExplorePlaceCategory.entries
+                                .flatMap { category ->
 
-                                val keepIndices = pool.indices
-                                    .shuffled(kotlin.random.Random(exploreShakeRefreshCount + category.ordinal))
-                                    .take(8)
-                                    .toSet()
-                                pool.filterIndexed { index, _ -> index in keepIndices }
-                            }
+                                    // Get top 10 places for each category
+                                    val pool = uiExploreNearbyPlaces(
+                                        context = this@MainActivity,
+                                        category = category,
+                                        userLatitude = location.latitude,
+                                        userLongitude = location.longitude,
+                                        limit = 10,
+                                    )
+
+                                    // Randomly select 5 indices
+                                    val keepIndices = pool.indices
+                                        .shuffled(
+                                            kotlin.random.Random(
+                                                exploreShakeRefreshCount + category.ordinal
+                                            )
+                                        )
+                                        .take(5)
+                                        .toSet()
+
+                                    // Keep original ranking order
+                                    pool.filterIndexed { index, _ ->
+                                        index in keepIndices
+                                    }
+                                }
+                                .distinctBy { place -> place.name }
                         }
 
                         ExploreScreen(
@@ -924,23 +1117,72 @@ class MainActivity : ComponentActivity() {
                             // TODO(Zewen, function: uiGenerateItinerary): Send request to planning backend, then open Trip.
                             isGeneratingItinerary = isGeneratingItinerary,
                             onGenerateItineraryClick = { request ->
+
                                 isGeneratingItinerary = true
+
                                 Toast.makeText(
                                     this,
                                     "Generating itinerary for ${request.destination}",
                                     Toast.LENGTH_SHORT,
                                 ).show()
 
-                                // Call Zewen's backend logic to generate itinerary
-                                tripTimelineStops = uiGenerateItinerary(request)
+                                android.util.Log.d(
+                                    "PLANNED_WEATHER",
+                                    "UI request: destination=${request.destination}, " +
+                                            "startDate=${request.startDate}, " +
+                                            "endDate=${request.endDate}"
+                                )
 
-                                isGeneratingItinerary = false
-                                Toast.makeText(
-                                    this,
-                                    "Itinerary generated successfully!",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                                currentScreen = AuthScreen.Trip
+                                uiLoadPlannedWeather(
+                                    request = request
+                                ) { forecasts ->
+
+                                    if (forecasts == null) {
+
+                                        android.util.Log.e(
+                                            "PLANNED_WEATHER",
+                                            "Failed to load planned weather"
+                                        )
+
+                                        Toast.makeText(
+                                            this,
+                                            "Planned weather request failed",
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+
+                                        isGeneratingItinerary = false
+                                        return@uiLoadPlannedWeather
+                                    }
+
+                                    android.util.Log.d(
+                                        "PLANNED_WEATHER",
+                                        "Forecast count = ${forecasts.size}"
+                                    )
+
+                                    forecasts.forEach { forecast ->
+                                        android.util.Log.d(
+                                            "PLANNED_WEATHER",
+                                            "date=${forecast.date}, status=${forecast.status}"
+                                        )
+                                    }
+
+                                    // Pass trip request + planned weather to Zewen
+                                    tripTimelineStops =
+                                        uiGenerateItinerary(
+                                            request = request,
+                                            weatherForecasts = forecasts,
+                                        )
+
+                                    isGeneratingItinerary = false
+
+                                    Toast.makeText(
+                                        this,
+                                        "Itinerary generated successfully!",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+
+                                    currentScreen = AuthScreen.Trip
+                                }
                             },
                         )
                     }
@@ -1149,8 +1391,9 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.EditProfile
                             },
 
-                            // TODO(Yuxiang, function: uiLogout): connect Firebase logout.
                             onLogoutClick = {
+                                cloudUserRepository.signOut()
+                                userName = ""
                                 currentScreen = AuthScreen.Login
                             },
 
@@ -1194,16 +1437,23 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.Profile
                             },
 
-                            // Save button.
-                            // TODO(Yuxiang, function: uiSaveUserProfile): Send updatedName to Firebase user profile.
                             onSaveChangesClick = { updatedName ->
-                                userName = updatedName
-                                Toast.makeText(
-                                    this,
-                                    "Profile updated",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                                currentScreen = AuthScreen.Profile
+                                if (!isCloudRequestRunning) {
+                                    isCloudRequestRunning = true
+                                    uiSaveUserProfile(
+                                        updatedName = updatedName,
+                                        onSuccess = { session ->
+                                            isCloudRequestRunning = false
+                                            userName = session.readableName()
+                                            Toast.makeText(this, "Profile updated", Toast.LENGTH_SHORT).show()
+                                            currentScreen = AuthScreen.Profile
+                                        },
+                                        onError = { error ->
+                                            isCloudRequestRunning = false
+                                            showCloudError(error)
+                                        },
+                                    )
+                                }
                             },
 
                             // Error toast.
@@ -1224,10 +1474,22 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.Profile
                             },
 
-                            // Done 后更新长期默认兴趣；之后接 Yuxiang 的 Firebase 永久保存。
                             onDoneClick = { updatedInterests ->
-                                profileDefaultInterests = updatedInterests
-                                currentScreen = AuthScreen.Profile
+                                if (!isCloudRequestRunning) {
+                                    isCloudRequestRunning = true
+                                    uiSaveProfileInterests(
+                                        interests = updatedInterests,
+                                        onSuccess = { savedInterests ->
+                                            isCloudRequestRunning = false
+                                            profileDefaultInterests = savedInterests
+                                            currentScreen = AuthScreen.Profile
+                                        },
+                                        onError = { error ->
+                                            isCloudRequestRunning = false
+                                            showCloudError(error)
+                                        },
+                                    )
+                                }
                             },
                         )
                     }
@@ -1332,6 +1594,9 @@ class MainActivity : ComponentActivity() {
             "MainActivity onStop: stopping foreground-only sensors"
         )
 
+        currentWeatherMonitor.stop()
+        weatherForecastMonitor.stop()
+        currentWeatherMonitorStarted = false
 
         // Foreground-only sensors stop.
         sensorRepository.stopShakeDetection()
@@ -1450,52 +1715,106 @@ class MainActivity : ComponentActivity() {
     private fun uiLoginWithFirebase(
         email: String,
         password: String,
-    ): Boolean {
-        // function: uiLoginWithFirebase
-        // owner: Yuxiang
-        // input: email, password
-        // output: login success
-        // TODO(Yuxiang): Replace with Firebase Auth signIn.
-        return email.isNotBlank() && password.isNotBlank()
+        onSuccess: (CloudUserSession) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.signIn(email, password, cloudCallback(onSuccess, onError))
+        } catch (error: Exception) {
+            onError(error)
+        }
     }
 
     private fun uiCreateAccountWithFirebase(
         fullName: String,
         email: String,
         password: String,
-    ): Boolean {
-        // function: uiCreateAccountWithFirebase
-        // owner: Yuxiang
-        // input: fullName, email, password
-        // output: register success
-        // TODO(Yuxiang): Replace with Firebase Auth createUser + user profile save.
-        return fullName.isNotBlank() && email.isNotBlank() && password.isNotBlank()
+        onSuccess: (CloudUserSession) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.register(
+                fullName,
+                email,
+                password,
+                cloudCallback(onSuccess, onError),
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
     }
 
-    private fun uiLoadUserProfile(): String {
-        // function: uiLoadUserProfile
-        // owner: Yuxiang
-        // output: displayName
-        // TODO(Yuxiang): Load user display name from Firebase.
-        return "Yufei"
+    private fun uiLoadUserProfile(): String =
+        cloudUserRepository.currentUser()?.readableName().orEmpty()
+
+    private fun uiSaveUserProfile(
+        updatedName: String,
+        onSuccess: (CloudUserSession) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.updateDisplayName(
+                updatedName,
+                cloudCallback(onSuccess, onError),
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
     }
 
-    private fun uiSaveUserProfile(updatedName: String): String {
-        // function: uiSaveUserProfile
-        // owner: Yuxiang
-        // input: updatedName
-        // output: saved displayName
-        // TODO(Yuxiang): Save updated name to Firebase user profile.
-        return updatedName.trim()
+    private fun uiSaveProfileInterests(
+        interests: List<String>,
+        onSuccess: (List<String>) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.savePreferences(
+                UserPreferences("system", "en-AU", interests, true),
+                object : CloudResultCallback<Void> {
+                    override fun onSuccess(value: Void?) = onSuccess(interests)
+                    override fun onError(error: Exception) = onError(error)
+                },
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
     }
 
-    private fun uiSaveProfileInterests(interests: List<String>): List<String> {
-        // function: uiSaveProfileInterests
-        // owner: Yuxiang
-        // input: long-term interest ids
-        // output: saved interest ids
-        // TODO(Yuxiang): Save default interests permanently.
-        return interests
+    private fun uiLoadProfileInterests(
+        onSuccess: (List<String>) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.loadPreferences(
+                object : CloudResultCallback<UserPreferences> {
+                    override fun onSuccess(value: UserPreferences) =
+                        onSuccess(value.preferredCategories)
+
+                    override fun onError(error: Exception) = onError(error)
+                },
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
+    }
+
+    private fun <T> cloudCallback(
+        onSuccess: (T) -> Unit,
+        onError: (Exception) -> Unit,
+    ) = object : CloudResultCallback<T> {
+        override fun onSuccess(value: T) = onSuccess(value)
+        override fun onError(error: Exception) = onError(error)
+    }
+
+    private fun CloudUserSession.readableName(): String =
+        displayName.ifBlank { email.substringBefore('@').ifBlank { "Traveller" } }
+
+    private fun showCloudError(error: Exception) {
+        Toast.makeText(
+            this,
+            error.localizedMessage ?: "Cloud request failed",
+            Toast.LENGTH_LONG,
+        ).show()
     }
 
     private fun uiSaveTripOnlyInterests(interests: List<String>): List<String> {
@@ -1534,6 +1853,7 @@ class MainActivity : ComponentActivity() {
             latitude = location.latitude,
             longitude = location.longitude
         )
+
         return SensorLocation(
             latitude = location.latitude,
             longitude = location.longitude,
@@ -1542,7 +1862,6 @@ class MainActivity : ComponentActivity() {
             isSample = false
         )
     }
-
 
 
     private suspend fun uiObserveShakeEvents(
@@ -1690,6 +2009,7 @@ class MainActivity : ComponentActivity() {
 
     private fun uiGenerateItinerary(
         request: PlanMyTripRequest,
+        weatherForecasts: List<DailyWeatherForecast>,
     ): List<TripTimelineStop> {
         // function: uiGenerateItinerary
         // owner: Zewen
@@ -2172,26 +2492,245 @@ class MainActivity : ComponentActivity() {
     }
 
     // ---- LeYan: weather ----
+    // demo onlu
+    private fun startWeatherDemoScenario() {
+
+        lifecycleScope.launch {
+
+            android.util.Log.d(
+                "WEATHER_DEMO",
+                "Demo started. Fake forecast will arrive in 5 minutes."
+            )
+
+            // Wait 1 minutes after app launch.
+            delay(60 * 1000L)
+
+            val now = LocalDateTime.now()
+
+            // Example:
+            // If the fake forecast arrives at 1:05 PM,
+            // rain will be predicted for 2:00 PM.
+            val rainTime =
+                now
+                    .withMinute(0)
+                    .withSecond(0)
+                    .withNano(0)
+                    .plusHours(1)
+
+
+            // Fake current weather:
+            // it is still sunny NOW.
+            val fakeCurrentWeather =
+                CurrentWeather(
+                    status = WeatherStatus.SUNNY,
+                    temperature = 22.0,
+                )
+
+
+            // Fake forecast:
+            // sunny now -> rain next hour.
+            val fakeHourlyForecast =
+                listOf(
+                    HourlyWeather(
+                        time = now,
+                        status = WeatherStatus.SUNNY,
+                        precipitationType = null,
+                        precipitationTotal = 0.0,
+                    ),
+
+                    HourlyWeather(
+                        time = rainTime,
+                        status = WeatherStatus.RAINY,
+                        precipitationType = "rain",
+                        precipitationTotal = 2.0,
+                    ),
+                )
+
+
+            android.util.Log.d(
+                "WEATHER_DEMO",
+                "Fake forecast received: rain expected at $rainTime"
+            )
+
+
+            // IMPORTANT:
+            // The fake data goes through the REAL context detector.
+            val event =
+                weatherContextDetector.detectUpcomingRain(
+                    current = fakeCurrentWeather,
+                    hourly = fakeHourlyForecast,
+                    hoursAhead = 3,
+                    now = now,
+                )
+
+
+            if (event != null) {
+
+                android.util.Log.d(
+                    "WEATHER_DEMO",
+                    "Weather context event generated: $event"
+                )
+
+                uiHandleWeatherContextEvent(event)
+            }
+        }
+    }
+
+    private fun uiHandleWeatherContextEvent(
+        event: WeatherContextEvent,
+    ) {
+        when (event) {
+
+            is WeatherContextEvent.SuddenRain -> {
+
+                android.util.Log.d(
+                    "WEATHER_CONTEXT",
+                    "Sudden rain detected: " +
+                            "${event.from} -> ${event.to}"
+                )
+
+                runOnUiThread {
+                    weatherSuggestionState.value =
+                        HomeSmartSuggestion(
+                            label = "Rain",
+                            message = "It has started raining. Tap to view your options."
+                        )
+                }
+            }
+
+
+            is WeatherContextEvent.UpcomingRain -> {
+
+                android.util.Log.d(
+                    "WEATHER_CONTEXT",
+                    "Rain expected at ${event.expectedStartTime}"
+                )
+
+                val timeText =
+                    event.expectedStartTime
+                        .format(
+                            DateTimeFormatter.ofPattern("h:mm a")
+                        )
+
+                runOnUiThread {
+                    weatherSuggestionState.value =
+                        HomeSmartSuggestion(
+                            label = "Rain",
+                            message =
+                                "Rain is expected around $timeText. Tap to view your options."
+                        )
+                }
+            }
+        }
+    }
 
     private fun uiLoadWeatherSummary(): TripWeatherSummary {
         // function: uiLoadWeatherSummary
         // owner: LeYan
-        // output: current weather summary
-        // TODO(LeYan): Replace with one-week weather API result.
-        return TripWeatherSummary(
-            temperature = "18°C",
-            condition = "Partly cloudy",
-        )
+        // source: Alex GPS -> CurrentWeatherMonitor -> WeatherRepository
+        return currentWeatherSummaryState.value
     }
 
-    private fun uiIsWeatherAvailableForDate(dateText: String): Boolean {
-        // function: uiIsWeatherAvailableForDate
-        // owner: LeYan
-        // UI consumer: Yufei
-        // input: selected date
-        // output: weather available or unavailable
-        // TODO(LeYan): Return false when selected date is more than one week away.
-        return true
+    private fun uiLoadPlannedWeather(
+        request: PlanMyTripRequest,
+        onResult: (List<DailyWeatherForecast>?) -> Unit,
+    ) {
+
+        // UI date format:
+        // "12 Oct 2026"
+        val startDate =
+            try {
+                LocalDate.parse(
+                    request.startDate,
+                    planDateFormatter
+                )
+            } catch (e: Exception) {
+                onResult(null)
+                return
+            }
+
+        val endDate =
+            try {
+                LocalDate.parse(
+                    request.endDate,
+                    planDateFormatter
+                )
+            } catch (e: Exception) {
+                onResult(null)
+                return
+            }
+
+
+        // Invalid range
+        if (endDate.isBefore(startDate)) {
+            onResult(null)
+            return
+        }
+
+
+        // GeoapifyRepository is suspend,
+        // so run it inside lifecycleScope.
+        lifecycleScope.launch {
+
+            // destination -> latitude / longitude
+            val coordinates =
+                weatherGeoapifyRepository
+                    .geocodeDestination(
+                        request.destination
+                    )
+
+            if (coordinates == null) {
+                onResult(null)
+                return@launch
+            }
+            android.util.Log.d(
+                "PLANNED_WEATHER",
+                "Geocoded ${request.destination}: " +
+                        "lat=${coordinates.latitude}, " +
+                        "lon=${coordinates.longitude}"
+            )
+
+
+            // latitude / longitude + date range
+            // -> daily weather forecast
+            weatherRepository.getPlannedWeather(
+                latitude = coordinates.latitude,
+                longitude = coordinates.longitude,
+                startDate = startDate,
+                endDate = endDate,
+            ) { forecasts ->
+
+                if (forecasts != null) {
+                    latestPlannedWeather = forecasts
+                }
+
+                // Weather API callback may be on background thread.
+                runOnUiThread {
+                    onResult(forecasts)
+                }
+            }
+        }
+    }
+
+    private fun uiIsWeatherAvailableForDate(
+        dateText: String,
+    ): Boolean {
+
+        val date =
+            try {
+                LocalDate.parse(
+                    dateText,
+                    planDateFormatter
+                )
+            } catch (e: Exception) {
+                return false
+            }
+
+        return latestPlannedWeather
+            .firstOrNull {
+                it.date == date
+            }
+            ?.status != null
     }
 
     // ---- Xiajie: pet ----

@@ -731,7 +731,7 @@ class MainActivity : ComponentActivity() {
                                 }
                                 .distinctBy { place -> place.name }
                                 .take(10)       // 先取附近 10 个作为候选池
-                                .shuffled()     // 打乱
+                                .shuffled(kotlin.random.Random(exploreShakeRefreshCount))   // 固定种子：只有摇一摇才换
                                 .take(8)       // 随机选 8 个
                         }
 

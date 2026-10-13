@@ -26,8 +26,36 @@ class TripPlannerEngine(
         includeFillers: Boolean,
         pinnedPOIs: List<PinnedPOI>
     ): Itinerary {
+        println("[TripPlannerEngine] generateInitialTrip called with ${pinnedPOIs.size} pinned POIs")
+        pinnedPOIs.forEach { pinned ->
+            println("  - PinnedPOI: poiId=${pinned.poiId}")
+        }
+
         // Get all POIs for destination
-        val allPOIs = poiRepository.getPOIsByCity(destination)
+        var allPOIs = poiRepository.getPOIsByCity(destination)
+        println("[TripPlannerEngine] Retrieved ${allPOIs.size} POIs for destination='$destination'")
+
+        // CRITICAL FIX: Ensure all pinned POIs are included in allPOIs
+        // If a pinned POI is not in allPOIs, try to find it by ID across all cities
+        val missingPinnedPOIIds = pinnedPOIs.map { it.poiId }.filter { pinnedId ->
+            allPOIs.none { poi -> poi.id == pinnedId }
+        }
+
+        if (missingPinnedPOIIds.isNotEmpty()) {
+            println("[TripPlannerEngine] WARNING: ${missingPinnedPOIIds.size} pinned POIs not found in destination='$destination'")
+            println("[TripPlannerEngine] Trying to fetch missing POIs by ID...")
+
+            // Try to get missing POIs from all available POIs
+            val additionalPOIs = missingPinnedPOIIds.mapNotNull { poiId ->
+                poiRepository.getPOIById(poiId)?.also {
+                    println("[TripPlannerEngine] Found missing POI: ${it.name} (city=${it.city})")
+                }
+            }
+
+            // Add missing POIs to allPOIs
+            allPOIs = allPOIs + additionalPOIs
+            println("[TripPlannerEngine] Total POIs after adding missing: ${allPOIs.size}")
+        }
 
         // Generate baseline itinerary using routing engine
         val routingEngine = RoutingEngine(userProfile)

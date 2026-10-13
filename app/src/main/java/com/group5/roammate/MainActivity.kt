@@ -64,8 +64,11 @@ import com.group5.roammate.ui.pet.CompanionsScreen
 import com.group5.roammate.ui.pet.PetCameraScreen
 import com.group5.roammate.ui.theme.RoamMateTheme
 import com.group5.roammate.poi.data.geoapify.GeoapifyRepository
-import com.group5.roammate.weather.CurrentWeatherMonitor
-import com.group5.roammate.weather.WeatherApiManager
+import com.group5.roammate.weather.monitor.CurrentWeatherMonitor
+import com.group5.roammate.weather.monitor.WeatherForecastMonitor
+import com.group5.roammate.weather.context.WeatherContextDetector
+import com.group5.roammate.weather.context.WeatherContextEvent
+import com.group5.roammate.weather.data.WeatherRepository
 import com.group5.roammate.weather.model.DailyWeatherForecast
 
 import java.time.LocalDate
@@ -88,6 +91,12 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlin.math.roundToInt
 
+// for demo only
+import kotlinx.coroutines.delay
+import com.group5.roammate.weather.model.CurrentWeather
+import com.group5.roammate.weather.model.HourlyWeather
+import com.group5.roammate.weather.model.WeatherStatus
+import java.time.LocalDateTime
 
 // [NEW] Sensor module
 import com.group5.roammate.sensor.RoamMateApp
@@ -117,8 +126,12 @@ class MainActivity : ComponentActivity() {
 
     // ==================== Leyan Weather ====================
 
-    private val weatherApiManager by lazy {
-        WeatherApiManager()
+    private val weatherRepository by lazy {
+        WeatherRepository()
+    }
+
+    private val weatherContextDetector by lazy {
+        WeatherContextDetector()
     }
 
     private val weatherGeoapifyRepository by lazy {
@@ -127,19 +140,29 @@ class MainActivity : ComponentActivity() {
 
     private val currentWeatherMonitor by lazy {
         CurrentWeatherMonitor(
-            weatherApiManager = weatherApiManager,
+            weatherRepository = weatherRepository,
 
-            getCurrentLocation = { callback ->
+            getCurrentLocation = {
+                sensorRepository
+                    .getCurrentLocation()
+                    ?.let { location ->
+                        location.latitude to location.longitude
+                    }
+            }
+        )
+    }
 
-                val location =
-                    sensorRepository.getCurrentLocation()
+    private val weatherForecastMonitor by lazy {
+        WeatherForecastMonitor(
+            weatherRepository = weatherRepository,
+            contextDetector = weatherContextDetector,
 
-                if (location != null) {
-                    callback(
-                        location.latitude,
-                        location.longitude
-                    )
-                }
+            getCurrentLocation = {
+                sensorRepository
+                    .getCurrentLocation()
+                    ?.let { location ->
+                        location.latitude to location.longitude
+                    }
             }
         )
     }
@@ -153,6 +176,9 @@ class MainActivity : ComponentActivity() {
                 condition = "Weather unavailable",
             )
         )
+
+    private val weatherSuggestionState =
+        mutableStateOf<HomeSmartSuggestion?>(null)
 
     private var latestPlannedWeather:
             List<DailyWeatherForecast> = emptyList()
@@ -257,8 +283,28 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // weather
-        weatherApiManager.currentWeather.observe(this) { weather ->
+        // Weather context-awareness wiring.
+        // Current weather is still refreshed every 10 minutes. The same result
+        // is also used as the baseline for sudden-rain detection.
+        currentWeatherMonitor.onWeatherUpdated = { weather ->
+            weatherContextDetector
+                .detectCurrentWeatherChange(weather)
+                ?.let(::uiHandleWeatherContextEvent)
+
+            // Start forecast monitoring only after current weather exists, so
+            // upcoming-rain detection has a valid current-weather context.
+            weatherForecastMonitor.start()
+        }
+
+        weatherForecastMonitor.onContextEvent = { event ->
+            uiHandleWeatherContextEvent(event)
+        }
+
+        // ==================== Weather Demo ====================
+        startWeatherDemoScenario()
+
+        // UI observes the latest current weather from the repository.
+        weatherRepository.currentWeather.observe(this) { weather ->
 
             android.util.Log.d(
                 "ROAMMATE_WEATHER",
@@ -681,7 +727,7 @@ class MainActivity : ComponentActivity() {
 
                             // function: uiBuildHomeSmartSuggestion; owner: Yufei; status: UI done.
                             // input providers: LeYan weather, Xiajie pet status.
-                            smartSuggestion = homeSmartSuggestion,
+                            smartSuggestion = weatherSuggestionState.value,
 
                             // Jie pet module: Home, Pet and Camera share the same koala outfit.
                             petStatus = HomePetStatus(
@@ -776,7 +822,7 @@ class MainActivity : ComponentActivity() {
                             destinationTitle = "Today in Melbourne",
 
                             // TODO(LeYan, function: uiLoadWeatherSummary): Connect real weather data.
-                            // LeYan: live current weather from WeatherApiManager + Alex GPS
+                            // LeYan: live current weather from WeatherRepository + CurrentWeatherMonitor + Alex GPS
                             weatherSummary = currentWeatherSummaryState.value,
 
                             // TODO(Zewen, function: uiLoadTripSummary): Connect generated multi-day trip summary.
@@ -1383,6 +1429,7 @@ class MainActivity : ComponentActivity() {
         )
 
         currentWeatherMonitor.stop()
+        weatherForecastMonitor.stop()
         currentWeatherMonitorStarted = false
 
         // Foreground-only sensors stop.
@@ -1584,7 +1631,7 @@ class MainActivity : ComponentActivity() {
             isSample = false
         )
 
-         return SensorLocation(
+        return SensorLocation(
             latitude = location.latitude,
             longitude = location.longitude,
             accuracyMeters = 12f,
@@ -1832,11 +1879,142 @@ class MainActivity : ComponentActivity() {
     }
 
     // ---- LeYan: weather ----
+    // demo onlu
+    private fun startWeatherDemoScenario() {
+
+        lifecycleScope.launch {
+
+            android.util.Log.d(
+                "WEATHER_DEMO",
+                "Demo started. Fake forecast will arrive in 5 minutes."
+            )
+
+            // Wait 1 minutes after app launch.
+            delay(60 * 1000L)
+
+            val now = LocalDateTime.now()
+
+            // Example:
+            // If the fake forecast arrives at 1:05 PM,
+            // rain will be predicted for 2:00 PM.
+            val rainTime =
+                now
+                    .withMinute(0)
+                    .withSecond(0)
+                    .withNano(0)
+                    .plusHours(1)
+
+
+            // Fake current weather:
+            // it is still sunny NOW.
+            val fakeCurrentWeather =
+                CurrentWeather(
+                    status = WeatherStatus.SUNNY,
+                    temperature = 22.0,
+                )
+
+
+            // Fake forecast:
+            // sunny now -> rain next hour.
+            val fakeHourlyForecast =
+                listOf(
+                    HourlyWeather(
+                        time = now,
+                        status = WeatherStatus.SUNNY,
+                        precipitationType = null,
+                        precipitationTotal = 0.0,
+                    ),
+
+                    HourlyWeather(
+                        time = rainTime,
+                        status = WeatherStatus.RAINY,
+                        precipitationType = "rain",
+                        precipitationTotal = 2.0,
+                    ),
+                )
+
+
+            android.util.Log.d(
+                "WEATHER_DEMO",
+                "Fake forecast received: rain expected at $rainTime"
+            )
+
+
+            // IMPORTANT:
+            // The fake data goes through the REAL context detector.
+            val event =
+                weatherContextDetector.detectUpcomingRain(
+                    current = fakeCurrentWeather,
+                    hourly = fakeHourlyForecast,
+                    hoursAhead = 3,
+                    now = now,
+                )
+
+
+            if (event != null) {
+
+                android.util.Log.d(
+                    "WEATHER_DEMO",
+                    "Weather context event generated: $event"
+                )
+
+                uiHandleWeatherContextEvent(event)
+            }
+        }
+    }
+
+    private fun uiHandleWeatherContextEvent(
+        event: WeatherContextEvent,
+    ) {
+        when (event) {
+
+            is WeatherContextEvent.SuddenRain -> {
+
+                android.util.Log.d(
+                    "WEATHER_CONTEXT",
+                    "Sudden rain detected: " +
+                            "${event.from} -> ${event.to}"
+                )
+
+                runOnUiThread {
+                    weatherSuggestionState.value =
+                        HomeSmartSuggestion(
+                            label = "Rain",
+                            message = "It has started raining. Tap to view your options."
+                        )
+                }
+            }
+
+
+            is WeatherContextEvent.UpcomingRain -> {
+
+                android.util.Log.d(
+                    "WEATHER_CONTEXT",
+                    "Rain expected at ${event.expectedStartTime}"
+                )
+
+                val timeText =
+                    event.expectedStartTime
+                        .format(
+                            DateTimeFormatter.ofPattern("h:mm a")
+                        )
+
+                runOnUiThread {
+                    weatherSuggestionState.value =
+                        HomeSmartSuggestion(
+                            label = "Rain",
+                            message =
+                                "Rain is expected around $timeText. Tap to view your options."
+                        )
+                }
+            }
+        }
+    }
 
     private fun uiLoadWeatherSummary(): TripWeatherSummary {
         // function: uiLoadWeatherSummary
         // owner: LeYan
-        // source: Alex GPS -> CurrentWeatherMonitor -> WeatherApiManager
+        // source: Alex GPS -> CurrentWeatherMonitor -> WeatherRepository
         return currentWeatherSummaryState.value
     }
 
@@ -1902,7 +2080,7 @@ class MainActivity : ComponentActivity() {
 
             // latitude / longitude + date range
             // -> daily weather forecast
-            weatherApiManager.getPlannedWeather(
+            weatherRepository.getPlannedWeather(
                 latitude = coordinates.latitude,
                 longitude = coordinates.longitude,
                 startDate = startDate,

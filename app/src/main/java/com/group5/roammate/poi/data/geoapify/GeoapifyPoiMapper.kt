@@ -124,9 +124,7 @@ object GeoapifyPoiMapper {
     }
 
     /**
-     * Prototype fallback only. These are NOT guaranteed real opening hours.
-     * If your scheduling logic depends on hours, enable Place Details enrichment
-     * or make POI.operatingHours nullable.
+     * Prototype fallback
      */
     private fun fallbackHoursForPrototype(category: POICategory): OperatingHours = when (category) {
         POICategory.PARK,

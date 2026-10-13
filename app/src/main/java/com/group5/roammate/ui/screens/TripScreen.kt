@@ -42,11 +42,11 @@ import com.group5.roammate.ui.theme.RoamMateTheme
 
 // on-screen -> code:
 //   "Trip" + destination + weather pill  -> TripHeader / WeatherPill
-//   trip summary                         -> TripSummaryCard
+//   multi-day itinerary                  -> TripMultiDayItinerary
 //   timeline (time · dot · title · tag)  -> TripTimeline > TripTimelineRow
 //   dot (done/current/upcoming)          -> TimelineDot
 //   "Hidden gem" tag                     -> HiddenStopTag
-//   buttons: Edit itinerary / Start navigation -> TripActionBar
+//   buttons: End trip / Start navigation -> TripActionBar
 //   bottom tabs                          -> RoamMateBottomNavigation
 
 // colors
@@ -75,7 +75,14 @@ data class TripWeatherSummary(
     val condition: String,
 )
 
-// data: short trip summary
+// data: one day in the whole trip
+data class TripDayPlan(
+    val dayTitle: String,
+    val dateText: String,
+    val stops: List<TripTimelineStop>,
+)
+
+// data: trip title only
 data class TripSummary(
     val title: String,
     val description: String,
@@ -95,8 +102,9 @@ fun TripScreen(
     weatherSummary: TripWeatherSummary,
     tripSummary: TripSummary? = null,
     stops: List<TripTimelineStop>,
+    tripDays: List<TripDayPlan> = emptyList(),
     onStopClick: (TripTimelineStop) -> Unit,
-    onEditItineraryClick: () -> Unit,
+    onEndTripClick: () -> Unit,
     onStartNavigationClick: () -> Unit,
     onTabClick: (RoamMateMainTab) -> Unit,
     modifier: Modifier = Modifier,
@@ -109,7 +117,7 @@ fun TripScreen(
         bottomBar = {
             Column {
                 TripActionBar(
-                    onEditItineraryClick = onEditItineraryClick,
+                    onEndTripClick = onEndTripClick,
                     onStartNavigationClick = onStartNavigationClick,
                 )
 
@@ -137,19 +145,23 @@ fun TripScreen(
                 weatherSummary = weatherSummary,
             )
 
-            // summary
-            if (tripSummary != null) {
-                Spacer(modifier = Modifier.height(16.dp))
-                TripSummaryCard(summary = tripSummary)
-                Spacer(modifier = Modifier.height(22.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            val visibleTripDays = if (tripDays.isNotEmpty()) {
+                tripDays
             } else {
-                Spacer(modifier = Modifier.height(26.dp))
+                listOf(
+                    TripDayPlan(
+                        dayTitle = "Today",
+                        dateText = tripSummary?.title ?: destinationTitle,
+                        stops = stops,
+                    ),
+                )
             }
 
-            // TODO: 之后这里显示 Zewen 生成的真实行程顺序，以及 Sitao 提供的当前进度。
-            // timeline
-            TripTimeline(
-                stops = stops,
+            // TODO(Zewen): Replace visibleTripDays with generated multi-day itinerary.
+            TripMultiDayItinerary(
+                tripDays = visibleTripDays,
                 onStopClick = onStopClick,
             )
 
@@ -219,38 +231,74 @@ private fun WeatherPill(
     }
 }
 
-// ---- summary card ("3 days in Melbourne" + day notes) ----
+// ---- multi-day itinerary (Day 1 / Day 2 / Day 3 sections) ----
 @Composable
-private fun TripSummaryCard(
-    summary: TripSummary,
+private fun TripMultiDayItinerary(
+    tripDays: List<TripDayPlan>,
+    onStopClick: (TripTimelineStop) -> Unit,
+) {
+    if (tripDays.isEmpty()) {
+        EmptyTripTimeline()
+    } else {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            tripDays.forEach { dayPlan ->
+                TripDaySection(
+                    dayPlan = dayPlan,
+                    onStopClick = onStopClick,
+                )
+            }
+        }
+    }
+}
+
+// ---- one day section ----
+@Composable
+private fun TripDaySection(
+    dayPlan: TripDayPlan,
+    onStopClick: (TripTimelineStop) -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        color = RoamMateLightTeal.copy(alpha = 0.55f),
-        border = BorderStroke(1.dp, RoamMateTeal.copy(alpha = 0.15f)),
+        shape = RoundedCornerShape(20.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, RoamMateTimelineGrey.copy(alpha = 0.55f)),
+        shadowElevation = 1.dp,
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
         ) {
-            // summary title
-            Text(
-                text = summary.title,
-                color = RoamMateTeal,
-                fontSize = 17.sp,
-                lineHeight = 20.sp,
-                fontWeight = FontWeight.ExtraBold,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = dayPlan.dayTitle,
+                    modifier = Modifier.weight(1f),
+                    color = RoamMateTeal,
+                    fontSize = 20.sp,
+                    lineHeight = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                )
+
+                if (dayPlan.dateText.isNotBlank()) {
+                    Text(
+                        text = dayPlan.dateText,
+                        color = RoamMateMutedText,
+                        fontSize = 13.sp,
+                        lineHeight = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // summary text
-            Text(
-                text = summary.description,
-                color = RoamMateText.copy(alpha = 0.74f),
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-                fontWeight = FontWeight.SemiBold,
+            TripTimeline(
+                stops = dayPlan.stops,
+                onStopClick = onStopClick,
             )
         }
     }
@@ -452,10 +500,10 @@ private fun TimelineDot(
     ) {}
 }
 
-// ---- bottom buttons: Edit itinerary (outline) + Start navigation (teal) ----
+// ---- bottom buttons: End trip (outline) + Start navigation (teal) ----
 @Composable
 private fun TripActionBar(
-    onEditItineraryClick: () -> Unit,
+    onEndTripClick: () -> Unit,
     onStartNavigationClick: () -> Unit,
 ) {
     Surface(
@@ -469,9 +517,9 @@ private fun TripActionBar(
                 .padding(horizontal = 28.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            // button: Edit itinerary -> edit page
+            // button: End trip -> leave the active trip
             OutlinedButton(
-                onClick = onEditItineraryClick,
+                onClick = onEndTripClick,
                 modifier = Modifier
                     .weight(1f)
                     .height(58.dp),
@@ -482,9 +530,10 @@ private fun TripActionBar(
                 ),
             ) {
                 Text(
-                    text = "Edit itinerary",
+                    text = "End trip",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center,
                 )
             }
 
@@ -524,22 +573,49 @@ private fun TripScreenPreview() {
             ),
             tripSummary = TripSummary(
                 title = "3 days in Melbourne",
-                description = "Day 1: Melbourne Museum, State Library and ACMI. Day 2: Royal Botanic Gardens and Queen Victoria Market. Day 3: Brighton Beach and Southbank.",
+                description = "Full multi-day itinerary.",
             ),
             stops = listOf(
                 TripTimelineStop("09:00", "Federation Square", TripStopStatus.Done),
                 TripTimelineStop("10:00", "Melbourne Museum", TripStopStatus.Current),
                 TripTimelineStop("12:00", "Lunch nearby", TripStopStatus.Upcoming),
-                TripTimelineStop(
-                    time = "13:30",
-                    title = "Pidapipo Gelato",
-                    status = TripStopStatus.Upcoming,
-                    hiddenTag = "Hidden gem · nearby",
+            ),
+            tripDays = listOf(
+                TripDayPlan(
+                    dayTitle = "Day 1",
+                    dateText = "Today",
+                    stops = listOf(
+                        TripTimelineStop("09:00", "Federation Square", TripStopStatus.Done),
+                        TripTimelineStop("10:00", "Melbourne Museum", TripStopStatus.Current),
+                        TripTimelineStop("12:00", "Lunch nearby", TripStopStatus.Upcoming),
+                        TripTimelineStop("14:00", "Royal Botanic Gardens", TripStopStatus.Upcoming),
+                    ),
                 ),
-                TripTimelineStop("14:00", "Royal Botanic Gardens", TripStopStatus.Upcoming),
+                TripDayPlan(
+                    dayTitle = "Day 2",
+                    dateText = "Tomorrow",
+                    stops = listOf(
+                        TripTimelineStop("10:00", "State Library Victoria", TripStopStatus.Upcoming),
+                        TripTimelineStop(
+                            time = "13:30",
+                            title = "Pidapipo Gelato",
+                            status = TripStopStatus.Upcoming,
+                            hiddenTag = "Hidden gem · nearby",
+                        ),
+                        TripTimelineStop("15:00", "Queen Victoria Market", TripStopStatus.Upcoming),
+                    ),
+                ),
+                TripDayPlan(
+                    dayTitle = "Day 3",
+                    dateText = "Final day",
+                    stops = listOf(
+                        TripTimelineStop("09:30", "Brighton Beach", TripStopStatus.Upcoming),
+                        TripTimelineStop("13:00", "Southbank walk", TripStopStatus.Upcoming),
+                    ),
+                ),
             ),
             onStopClick = {},
-            onEditItineraryClick = {},
+            onEndTripClick = {},
             onStartNavigationClick = {},
             onTabClick = {},
             modifier = Modifier.fillMaxSize(),

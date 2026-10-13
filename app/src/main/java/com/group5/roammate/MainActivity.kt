@@ -899,6 +899,12 @@ class MainActivity : ComponentActivity() {
                     }
 
                     AuthScreen.PlanMyTrip -> {
+                        // Log the current state of planRequiredPlaces
+                        android.util.Log.d("RoamMate", "PlanMyTrip screen: planRequiredPlaces size = ${planRequiredPlaces.size}")
+                        planRequiredPlaces.forEachIndexed { index, place ->
+                            android.util.Log.d("RoamMate", "  [$index] ${place.name}")
+                        }
+
                         PlanMyTripScreen(
                             modifier = Modifier.fillMaxSize(),
 
@@ -1714,10 +1720,15 @@ class MainActivity : ComponentActivity() {
             )
 
             // Step 3: Convert required places to pinned POIs
+            android.util.Log.d("RoamMate", "Step 3: request.specificPlaces = ${request.specificPlaces}")
             val pinnedPOIs = convertToPinnedPOIs(
                 placeNames = request.specificPlaces,
                 destination = request.destination
             )
+            android.util.Log.d("RoamMate", "Step 3: pinnedPOIs created = ${pinnedPOIs.size}")
+            pinnedPOIs.forEach { pinned ->
+                android.util.Log.d("RoamMate", "  - PinnedPOI: poiId=${pinned.poiId}, dayNumber=${pinned.dayNumber}")
+            }
 
             // Step 4: Get starting location
             // TODO(Alex): Replace with real GPS location from currentSensorLocation
@@ -1861,27 +1872,47 @@ class MainActivity : ComponentActivity() {
     ): List<com.group5.roammate.logic.models.PinnedPOI> {
         if (placeNames.isEmpty()) return emptyList()
 
-        // Get all POIs for the destination
+        // Get all POIs for the destination (try with includeFillers = true to get more POIs)
         val allPOIs = tripPlannerEngine.getPOIsForDestination(
             destination = destination,
-            includeFillers = false
+            includeFillers = true
         )
+
+        android.util.Log.d("RoamMate", "convertToPinnedPOIs: destination='$destination', total POIs=${allPOIs.size}")
+        android.util.Log.d("RoamMate", "Looking for places: ${placeNames.joinToString(", ")}")
+
+        // If no POIs found for exact destination match, try getting ALL POIs from repository
+        val poisToSearch = if (allPOIs.isEmpty()) {
+            android.util.Log.w("RoamMate", "No POIs found for destination '$destination', trying all cities...")
+            // Try common city name variations
+            val cityVariations = listOf(destination, "Melbourne", "Melbourne CBD", "M2")
+            cityVariations.flatMap { city ->
+                tripPlannerEngine.getPOIsForDestination(city, includeFillers = true)
+            }.distinctBy { it.id }
+        } else {
+            allPOIs
+        }
+
+        android.util.Log.d("RoamMate", "Total POIs to search: ${poisToSearch.size}")
 
         // Find matching POIs by name
         return placeNames.mapNotNull { placeName ->
-            val matchingPOI = allPOIs.find { poi ->
+            android.util.Log.d("RoamMate", "Searching for: $placeName")
+
+            val matchingPOI = poisToSearch.find { poi ->
                 poi.name.equals(placeName, ignoreCase = true) ||
                 poi.name.contains(placeName, ignoreCase = true)
             }
 
             if (matchingPOI != null) {
+                android.util.Log.d("RoamMate", "✓ Found POI: ${matchingPOI.name} (id=${matchingPOI.id})")
                 com.group5.roammate.logic.models.PinnedPOI(
                     poiId = matchingPOI.id,
                     dayNumber = 1, // Pin to first day by default
                     preferredStartTime = null // No specific time preference
                 )
             } else {
-                android.util.Log.w("RoamMate", "Could not find POI: $placeName")
+                android.util.Log.w("RoamMate", "✗ Could not find POI: $placeName (searched ${poisToSearch.size} POIs)")
                 null
             }
         }

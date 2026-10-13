@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -40,6 +41,11 @@ android {
 
 dependencies {
     val cameraXVersion = "1.6.2"
+    implementation(project(":core:database"))
+    implementation(project(":feature:cloud"))
+    implementation(project(":feature:planner"))
+    implementation(project(":feature:poi"))
+    implementation(project(":feature:sensor"))
     // sensor dependence
     implementation("com.google.code.gson:gson:2.13.2")
     implementation("org.greenrobot:eventbus:3.3.1")

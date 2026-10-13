@@ -425,7 +425,6 @@ fun SensorTestScreen(
                         Log.d(
                             SEARCH_TAG,
                             "${index + 1}. Name: ${place.name} | " +
-                                    "Distance: ${place.distanceText} | " +
                                     "Environment: ${place.environmentType}"
                         )
                     }
@@ -461,7 +460,6 @@ fun SensorTestScreen(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    Text("Distance: ${place.distanceText}")
                     Text("Environment: ${place.environmentType}")
                 }
             }

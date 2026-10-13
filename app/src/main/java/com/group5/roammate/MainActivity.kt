@@ -15,6 +15,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.example.localdatebase.cloud.CloudResultCallback
+import com.example.localdatebase.cloud.CloudUserSession
+import com.example.localdatebase.cloud.FirebaseCloudUserRepository
+import com.example.localdatebase.cloud.UserPreferences
 import com.group5.roammate.backend_alex.MockPOI
 import com.group5.roammate.backend_alex.POISearchService
 import com.group5.roammate.ui.pet.rememberPetEnvironment
@@ -56,6 +60,7 @@ import com.group5.roammate.ui.screens.SavedTrip
 import com.group5.roammate.ui.screens.SavedTripsScreen
 import com.group5.roammate.ui.screens.TripScreen
 import com.group5.roammate.ui.screens.TripStopStatus
+import com.group5.roammate.ui.screens.TripDayPlan
 import com.group5.roammate.ui.screens.TripSummary
 import com.group5.roammate.ui.screens.TripTimelineStop
 import com.group5.roammate.ui.screens.TripWeatherSummary
@@ -124,7 +129,7 @@ Keep each owner in a small function below, then connect the screen callbacks to 
 
 class MainActivity : ComponentActivity() {
 
-    // ==================== Leyan Weather ====================
+// ==================== Leyan Weather ====================
 
     private val weatherRepository by lazy {
         WeatherRepository()
@@ -141,7 +146,6 @@ class MainActivity : ComponentActivity() {
     private val currentWeatherMonitor by lazy {
         CurrentWeatherMonitor(
             weatherRepository = weatherRepository,
-
             getCurrentLocation = {
                 sensorRepository
                     .getCurrentLocation()
@@ -156,7 +160,6 @@ class MainActivity : ComponentActivity() {
         WeatherForecastMonitor(
             weatherRepository = weatherRepository,
             contextDetector = weatherContextDetector,
-
             getCurrentLocation = {
                 sensorRepository
                     .getCurrentLocation()
@@ -188,6 +191,10 @@ class MainActivity : ComponentActivity() {
             "dd MMM yyyy",
             Locale.ENGLISH
         )
+
+    private val cloudUserRepository by lazy {
+        FirebaseCloudUserRepository()
+    }
 
     private val geocodingRepository by lazy {
         GeocodingRepository(applicationContext)
@@ -355,7 +362,6 @@ class MainActivity : ComponentActivity() {
             android.util.Log.d(
                 "SearchTest",
                 "${index + 1}. ${place.name} | " +
-                        "Distance: ${place.distanceText} | " +
                         "Environment: ${place.environmentType}"
             )
         }
@@ -442,9 +448,11 @@ class MainActivity : ComponentActivity() {
                 val petWeather = petEnvironment.weather
                 val petState = PetStateEngine.buildUiState(petProfile, petWeather)
 
-                // User name
-                // TODO(Yuxiang, function: uiLoadUserProfile): Replace with Firebase user profile.
-                var userName by rememberSaveable { mutableStateOf("Yufei") }
+                // Firebase keeps the account session across app restarts.
+                var userName by rememberSaveable {
+                    mutableStateOf(uiLoadUserProfile())
+                }
+                var isCloudRequestRunning by rememberSaveable { mutableStateOf(false) }
 
                 // Loading states
                 // TODO(Yufei, function: uiLoadingState): Set true while backend / Firebase requests are running.
@@ -558,6 +566,22 @@ class MainActivity : ComponentActivity() {
                     mutableStateOf(listOf("Museums", "Parks", "Food"))
                 }
 
+                LaunchedEffect(currentScreen) {
+                    if (
+                        cloudUserRepository.currentUser() != null &&
+                        (currentScreen == AuthScreen.Home ||
+                            currentScreen == AuthScreen.Profile ||
+                            currentScreen == AuthScreen.ProfileInterests)
+                    ) {
+                        uiLoadProfileInterests(
+                            onSuccess = { interests ->
+                                if (interests.isNotEmpty()) profileDefaultInterests = interests
+                            },
+                            onError = { /* Keep the local defaults when no cloud document exists. */ },
+                        )
+                    }
+                }
+
                 // Plan My Trip 入口使用：只属于当前这次行程的兴趣。
                 // TODO(Zewen, function: uiSaveTripOnlyInterests): pass one-trip interests into itinerary request only.
                 var tripInterests by rememberSaveable {
@@ -568,6 +592,27 @@ class MainActivity : ComponentActivity() {
                 // TODO(Zewen, function: uiGenerateItinerary): pass these as must-visit places.
                 var planRequiredPlaces by remember {
                     mutableStateOf(emptyList<AddStopPlace>())
+                }
+
+                // Add stop list
+                // function: uiSearchPlacesByName; owner: Alex
+                // Used by Plan Add Stop and Edit Add Stop.
+                // Shake refreshes this default suggestion list.
+                var addStopResultPlaces by remember(
+                    addStopShakeRefreshCount,
+                    currentSensorLocation.value.latitude,
+                    currentSensorLocation.value.longitude,
+                ) {
+                    mutableStateOf(
+                        uiSearchPlacesByName(
+                            context = this@MainActivity,
+                            query = "",
+                            currentCity = "Melbourne",
+                            userLatitude = currentSensorLocation.value.latitude,
+                            userLongitude = currentSensorLocation.value.longitude,
+                            limit = 8,
+                        ).rotateLeft(addStopShakeRefreshCount),
+                    )
                 }
 
                 // Saved trips
@@ -623,13 +668,11 @@ class MainActivity : ComponentActivity() {
                 }
 
                 // Adjust itinerary 弹窗当前显示第几个候选方案。
-                // TODO(Zewen, function: uiAdjustItineraryForWeather): Backend currently provides two candidate plans.
                 var adjustPlanIndex by rememberSaveable { mutableStateOf(0) }
 
-                // TODO(Zewen, function: uiAdjustItineraryForWeather): Replace with weather-based candidate plans.
-                // input provider: LeYan weather and attraction suitability.
-                val adjustedItineraryPlans = remember {
-                    sampleAdjustedItineraryPlans()
+                // Store weather adjustment plans (calculated on-demand)
+                var adjustedItineraryPlans by remember {
+                    mutableStateOf<List<AdjustItineraryPlan>>(emptyList())
                 }
 
                 when (currentScreen) {
@@ -638,8 +681,7 @@ class MainActivity : ComponentActivity() {
                         LoginScreen(
                             modifier = Modifier.fillMaxSize(),
 
-                            // This will run when the user clicks "Log in".
-                            // TODO(Yuxiang, function: uiLoginWithFirebase): connect Firebase login.
+                            // Enter Home only after Firebase accepts the credentials.
                             onLoginClick = { email, password ->
                                 if (email.isBlank() || password.isBlank()) {
                                     Toast.makeText(
@@ -647,10 +689,21 @@ class MainActivity : ComponentActivity() {
                                         "Please enter email and password",
                                         Toast.LENGTH_SHORT,
                                     ).show()
-                                } else {
-                                    // 登录成功后进入 Home 页面。
-                                    // TODO(Yuxiang, function: uiLoginWithFirebase): Navigate only after Firebase login success.
-                                    currentScreen = AuthScreen.Home
+                                } else if (!isCloudRequestRunning) {
+                                    isCloudRequestRunning = true
+                                    uiLoginWithFirebase(
+                                        email = email,
+                                        password = password,
+                                        onSuccess = { session ->
+                                            isCloudRequestRunning = false
+                                            userName = session.readableName()
+                                            currentScreen = AuthScreen.Home
+                                        },
+                                        onError = { error ->
+                                            isCloudRequestRunning = false
+                                            showCloudError(error)
+                                        },
+                                    )
                                 }
                             },
 
@@ -675,17 +728,24 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.Login
                             },
 
-                            // Received the name, email and password
-                            // TODO(Yuxiang, function: uiCreateAccountWithFirebase): connect Firebase register.
-                            onCreateAccountClick = { fullName, _, _ ->
-                                // 注册成功后进入 Home 页面。
-                                // TODO(Yuxiang, function: uiCreateAccountWithFirebase): Navigate only after Firebase register success.
-                                Toast.makeText(
-                                    this,
-                                    "Create account clicked for $fullName",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                                currentScreen = AuthScreen.Home
+                            onCreateAccountClick = { fullName, email, password ->
+                                if (!isCloudRequestRunning) {
+                                    isCloudRequestRunning = true
+                                    uiCreateAccountWithFirebase(
+                                        fullName = fullName,
+                                        email = email,
+                                        password = password,
+                                        onSuccess = { session ->
+                                            isCloudRequestRunning = false
+                                            userName = session.readableName()
+                                            currentScreen = AuthScreen.Home
+                                        },
+                                        onError = { error ->
+                                            isCloudRequestRunning = false
+                                            showCloudError(error)
+                                        },
+                                    )
+                                }
                             },
 
                             // An error prompt on the login page
@@ -746,7 +806,12 @@ class MainActivity : ComponentActivity() {
 
                             // function: uiAdjustItineraryForWeather; owner: Zewen.
                             // UI entry is wired by Yufei.
-                            onSmartSuggestionClick = { currentScreen = AuthScreen.Pet },
+                            onSmartSuggestionClick = {
+                                // Calculate weather adjustment plans RIGHT BEFORE entering the screen
+                                adjustedItineraryPlans = uiAdjustItineraryForWeather("Heavy rain expected")
+                                adjustPlanIndex = 0 // Reset to first plan
+                                currentScreen = AuthScreen.AdjustItinerary
+                            },
 
                             onPetCardClick = {
                                 currentScreen = AuthScreen.Pet
@@ -780,40 +845,58 @@ class MainActivity : ComponentActivity() {
                     }
 
                     AuthScreen.AdjustItinerary -> {
-                        val selectedPlan = adjustedItineraryPlans[
-                            adjustPlanIndex.coerceIn(0, adjustedItineraryPlans.lastIndex)
-                        ]
+                        // Ensure plans are loaded when entering this screen
+                        if (adjustedItineraryPlans.isEmpty()) {
+                            LaunchedEffect(Unit) {
+                                adjustedItineraryPlans = uiAdjustItineraryForWeather("Heavy rain expected")
+                            }
+                        }
 
-                        AdjustItineraryScreen(
-                            modifier = Modifier.fillMaxSize(),
-                            plan = selectedPlan,
-                            canRegenerateAnother = adjustPlanIndex < adjustedItineraryPlans.lastIndex,
+                        // Show loading state if plans not ready yet
+                        if (adjustedItineraryPlans.isEmpty()) {
+                            // Simple loading placeholder
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = androidx.compose.ui.Alignment.Center
+                            ) {
+                                androidx.compose.material3.CircularProgressIndicator()
+                            }
+                        } else {
+                            val selectedPlan = adjustedItineraryPlans[
+                                adjustPlanIndex.coerceIn(0, adjustedItineraryPlans.lastIndex)
+                            ]
 
-                            // Apply this plan:
-                            // 把 Zewen 给出的候选方案转换成 Trip/Home 共用的 tripTimelineStops。
-                            onApplyPlanClick = { plan ->
-                                tripTimelineStops = plan.toTripTimelineStops()
-                                Toast.makeText(this, "New itinerary applied", Toast.LENGTH_SHORT).show()
-                                currentScreen = AuthScreen.Trip
-                            },
+                            AdjustItineraryScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                plan = selectedPlan,
+                                canRegenerateAnother = adjustPlanIndex < adjustedItineraryPlans.lastIndex,
 
-                            // Regenerate another:
-                            // Zewen 目前只做两个方案，所以这里只能从第一个切到第二个。
-                            onRegenerateAnotherClick = {
-                                adjustPlanIndex = (adjustPlanIndex + 1)
-                                    .coerceAtMost(adjustedItineraryPlans.lastIndex)
-                            },
+                                // Apply this plan:
+                                // 把 Zewen 给出的候选方案转换成 Trip/Home 共用的 tripTimelineStops。
+                                onApplyPlanClick = { plan ->
+                                    tripTimelineStops = plan.toTripTimelineStops()
+                                    Toast.makeText(this, "New itinerary applied", Toast.LENGTH_SHORT).show()
+                                    currentScreen = AuthScreen.Trip
+                                },
 
-                            // 第二个方案没有第三个可生成，所以按钮变成 Back to previous plan。
-                            onBackToPreviousPlanClick = {
-                                adjustPlanIndex = (adjustPlanIndex - 1).coerceAtLeast(0)
-                            },
+                                // Regenerate another:
+                                // Zewen 目前只做两个方案，所以这里只能从第一个切到第二个。
+                                onRegenerateAnotherClick = {
+                                    adjustPlanIndex = (adjustPlanIndex + 1)
+                                        .coerceAtMost(adjustedItineraryPlans.lastIndex)
+                                },
 
-                            // 不采用新方案，保留原本 tripTimelineStops。
-                            onKeepCurrentPlanClick = {
-                                currentScreen = AuthScreen.Trip
-                            },
-                        )
+                                // 第二个方案没有第三个可生成，所以按钮变成 Back to previous plan。
+                                onBackToPreviousPlanClick = {
+                                    adjustPlanIndex = (adjustPlanIndex - 1).coerceAtLeast(0)
+                                },
+
+                                // 不采用新方案，保留原本 tripTimelineStops。
+                                onKeepCurrentPlanClick = {
+                                    currentScreen = AuthScreen.Trip
+                                },
+                            )
+                        }
                     }
 
                     AuthScreen.Trip -> {
@@ -825,16 +908,15 @@ class MainActivity : ComponentActivity() {
                             // LeYan: live current weather from WeatherRepository + CurrentWeatherMonitor + Alex GPS
                             weatherSummary = currentWeatherSummaryState.value,
 
-                            // TODO(Zewen, function: uiLoadTripSummary): Connect generated multi-day trip summary.
-                            // 例如：3 days in Melbourne + Day 1 / Day 2 / Day 3 简介。
-                            tripSummary = TripSummary(
-                                title = "3 days in Melbourne",
-                                description = "Day 1: Melbourne Museum, State Library and ACMI. Day 2: Royal Botanic Gardens and Queen Victoria Market. Day 3: Brighton Beach and Southbank.",
-                            ),
+                            // Call Zewen's backend to get trip summary
+                            tripSummary = uiLoadTripSummary(),
 
                             // TODO(Zewen, function: uiUpdateTripProgress): Replace with real itinerary order and progress status.
                             // input provider: Alex GPS location.
                             stops = tripTimelineStops,
+
+                            // TODO(Zewen, function: uiLoadTripDays): Connect full multi-day itinerary.
+                            tripDays = uiLoadTripDays(tripTimelineStops),
 
                             // TODO(Leyan, function: uiLoadAttractionDetail): Open detail with real attraction id.
                             // storage provider: Yuxiang database if needed.
@@ -844,9 +926,10 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.AttractionDetail
                             },
 
-                            // TODO: 之后这里跳转 Edit itinerary 页面，手动增加/删除站点。
-                            onEditItineraryClick = {
-                                currentScreen = AuthScreen.EditItinerary
+                            // End trip: close the current active trip and return Home.
+                            onEndTripClick = {
+                                Toast.makeText(this, "Trip ended", Toast.LENGTH_SHORT).show()
+                                currentScreen = AuthScreen.Home
                             },
 
                             // Start navigation 和 Home 提醒条共用外部地图逻辑。
@@ -868,10 +951,37 @@ class MainActivity : ComponentActivity() {
                     }
 
                     AuthScreen.Explore -> {
-                        // TODO(Alex, function: uiExploreNearbyPlaces): Temporary Explore nearby mock data.
-                        // data provider: Leyan attraction list; GPS provider: Alex sensor.
-                        val nearbyExplorePlaces = remember(exploreShakeRefreshCount) {
-                            sampleNearbyExplorePlaces().rotateLeft(exploreShakeRefreshCount)
+                        // Nearby places
+                        // function: uiExploreNearbyPlaces; owner: Alex
+                        // input: GPS + selected category source
+                        // output: nearby place cards for Explore
+                        // Shake refreshes order now; later Alex can refresh real nearby data here.
+                        val nearbyExplorePlaces = remember(
+                            exploreShakeRefreshCount,
+                            currentSensorLocation.value.latitude,
+                            currentSensorLocation.value.longitude,
+                        ) {
+                            val location = currentSensorLocation.value
+                            // nearest 10, already sorted near -> far by backend
+                            val pool = ExplorePlaceCategory.entries
+                                .flatMap { category ->
+                                    uiExploreNearbyPlaces(
+                                        context = this@MainActivity,
+                                        category = category,
+                                        userLatitude = location.latitude,
+                                        userLongitude = location.longitude,
+                                        limit = 6,
+                                    )
+                                }
+                                .distinctBy { place -> place.name }
+                                .take(10)
+
+                            // shake picks a random 8, but keep near -> far order
+                            val keepIndices = pool.indices
+                                .shuffled(kotlin.random.Random(exploreShakeRefreshCount))
+                                .take(8)
+                                .toSet()
+                            pool.filterIndexed { index, _ -> index in keepIndices }
                         }
 
                         ExploreScreen(
@@ -910,20 +1020,6 @@ class MainActivity : ComponentActivity() {
                             // 返回到打开详情页的来源页面：Explore 或 Trip。
                             onBackClick = {
                                 currentScreen = attractionDetailReturnScreen
-                            },
-
-                            // Add to trip: 先加入当前行程假数据，并回到 Trip。
-                            // TODO(Zewen, function: uiAddAttractionToTrip): Send attraction id to backend for insert/reorder.
-                            onAddToTripClick = { attraction ->
-                                tripTimelineStops = rebalanceTripStopsAfterManualEdit(
-                                    tripTimelineStops.withAddedTemporaryAttraction(attraction),
-                                )
-                                Toast.makeText(
-                                    this,
-                                    "${attraction.name} added to itinerary",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                                currentScreen = AuthScreen.Trip
                             },
 
                             // Navigate: 打开外部地图，和 Home/Trip 共用同一个入口。
@@ -1016,6 +1112,12 @@ class MainActivity : ComponentActivity() {
 
                                 isGeneratingItinerary = true
 
+                                Toast.makeText(
+                                    this,
+                                    "Generating itinerary for ${request.destination}",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+
                                 android.util.Log.d(
                                     "PLANNED_WEATHER",
                                     "UI request: destination=${request.destination}, " +
@@ -1041,11 +1143,9 @@ class MainActivity : ComponentActivity() {
                                         ).show()
 
                                         isGeneratingItinerary = false
-
                                         return@uiLoadPlannedWeather
                                     }
 
-                                    // Test log
                                     android.util.Log.d(
                                         "PLANNED_WEATHER",
                                         "Forecast count = ${forecasts.size}"
@@ -1058,20 +1158,20 @@ class MainActivity : ComponentActivity() {
                                         )
                                     }
 
-                                    // Pass request + planned weather directly to Zewen
+                                    // Pass trip request + planned weather to Zewen
                                     tripTimelineStops =
                                         uiGenerateItinerary(
                                             request = request,
                                             weatherForecasts = forecasts,
                                         )
 
+                                    isGeneratingItinerary = false
+
                                     Toast.makeText(
                                         this,
-                                        "Loaded ${forecasts.size} days of weather",
+                                        "Itinerary generated successfully!",
                                         Toast.LENGTH_SHORT,
                                     ).show()
-
-                                    isGeneratingItinerary = false
 
                                     currentScreen = AuthScreen.Trip
                                 }
@@ -1083,9 +1183,7 @@ class MainActivity : ComponentActivity() {
                         AddStopScreen(
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
-                            places = remember(addStopShakeRefreshCount) {
-                                melbournePopularAddStopPlaces().rotateLeft(addStopShakeRefreshCount)
-                            },
+                            places = addStopResultPlaces,
                             isSearching = isSearchingPlaces,
 
                             // 从 Plan My Trip 进来，返回 Plan My Trip。
@@ -1096,15 +1194,36 @@ class MainActivity : ComponentActivity() {
                             // TODO(Alex, function: uiSearchPlacesByName): Send query only after confirm button; name match first.
                             // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
                             onSearchConfirmClick = { query ->
+                                val location = currentSensorLocation.value
                                 isSearchingPlaces = true
+                                addStopResultPlaces = uiSearchPlacesByName(
+                                    context = this@MainActivity,
+                                    query = query,
+                                    currentCity = "Melbourne",
+                                    userLatitude = location.latitude,
+                                    userLongitude = location.longitude,
+                                    limit = 8,
+                                )
                                 Toast.makeText(
                                     this,
-                                    "Search: $query",
+                                    "Search results updated",
                                     Toast.LENGTH_SHORT,
                                 ).show()
                                 // TODO(Alex, function: uiSearchPlacesByName): Set false after search results return.
                                 // data provider: Leyan attraction names.
                                 isSearchingPlaces = false
+                            },
+
+                            onClearSearchClick = {
+                                val location = currentSensorLocation.value
+                                addStopResultPlaces = uiSearchPlacesByName(
+                                    context = this@MainActivity,
+                                    query = "",
+                                    currentCity = "Melbourne",
+                                    userLatitude = location.latitude,
+                                    userLongitude = location.longitude,
+                                    limit = 8,
+                                ).rotateLeft(addStopShakeRefreshCount)
                             },
 
                             // TODO(Zewen, function: uiGenerateItinerary): Add selected place into must-visit request.
@@ -1124,9 +1243,7 @@ class MainActivity : ComponentActivity() {
                         AddStopScreen(
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
-                            places = remember(addStopShakeRefreshCount) {
-                                melbournePopularAddStopPlaces().rotateLeft(addStopShakeRefreshCount)
-                            },
+                            places = addStopResultPlaces,
                             isSearching = isSearchingPlaces,
 
                             // 从 Edit itinerary 进来，返回 Edit itinerary。
@@ -1137,15 +1254,36 @@ class MainActivity : ComponentActivity() {
                             // TODO(Alex, function: uiSearchPlacesByName): Send query only after confirm button; name match first.
                             // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
                             onSearchConfirmClick = { query ->
+                                val location = currentSensorLocation.value
                                 isSearchingPlaces = true
+                                addStopResultPlaces = uiSearchPlacesByName(
+                                    context = this@MainActivity,
+                                    query = query,
+                                    currentCity = "Melbourne",
+                                    userLatitude = location.latitude,
+                                    userLongitude = location.longitude,
+                                    limit = 8,
+                                )
                                 Toast.makeText(
                                     this,
-                                    "Search: $query",
+                                    "Search results updated",
                                     Toast.LENGTH_SHORT,
                                 ).show()
                                 // TODO(Alex, function: uiSearchPlacesByName): Set false after search results return.
                                 // data provider: Leyan attraction names.
                                 isSearchingPlaces = false
+                            },
+
+                            onClearSearchClick = {
+                                val location = currentSensorLocation.value
+                                addStopResultPlaces = uiSearchPlacesByName(
+                                    context = this@MainActivity,
+                                    query = "",
+                                    currentCity = "Melbourne",
+                                    userLatitude = location.latitude,
+                                    userLongitude = location.longitude,
+                                    limit = 8,
+                                ).rotateLeft(addStopShakeRefreshCount)
                             },
 
                             // TODO(Zewen, function: uiUpdateItineraryAfterEdit): Send added place for insert and recalculation.
@@ -1176,7 +1314,7 @@ class MainActivity : ComponentActivity() {
 
                             // Done 后只更新本次行程兴趣，再返回 Plan My Trip。
                             onDoneClick = { updatedInterests ->
-                                tripInterests = updatedInterests
+                                tripInterests = uiSaveTripOnlyInterests(updatedInterests)
                                 currentScreen = AuthScreen.PlanMyTrip
                             },
                         )
@@ -1245,8 +1383,9 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.EditProfile
                             },
 
-                            // TODO(Yuxiang, function: uiLogout): connect Firebase logout.
                             onLogoutClick = {
+                                cloudUserRepository.signOut()
+                                userName = ""
                                 currentScreen = AuthScreen.Login
                             },
 
@@ -1290,16 +1429,23 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.Profile
                             },
 
-                            // Save button.
-                            // TODO(Yuxiang, function: uiSaveUserProfile): Send updatedName to Firebase user profile.
                             onSaveChangesClick = { updatedName ->
-                                userName = updatedName
-                                Toast.makeText(
-                                    this,
-                                    "Profile updated",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                                currentScreen = AuthScreen.Profile
+                                if (!isCloudRequestRunning) {
+                                    isCloudRequestRunning = true
+                                    uiSaveUserProfile(
+                                        updatedName = updatedName,
+                                        onSuccess = { session ->
+                                            isCloudRequestRunning = false
+                                            userName = session.readableName()
+                                            Toast.makeText(this, "Profile updated", Toast.LENGTH_SHORT).show()
+                                            currentScreen = AuthScreen.Profile
+                                        },
+                                        onError = { error ->
+                                            isCloudRequestRunning = false
+                                            showCloudError(error)
+                                        },
+                                    )
+                                }
                             },
 
                             // Error toast.
@@ -1320,10 +1466,22 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.Profile
                             },
 
-                            // Done 后更新长期默认兴趣；之后接 Yuxiang 的 Firebase 永久保存。
                             onDoneClick = { updatedInterests ->
-                                profileDefaultInterests = updatedInterests
-                                currentScreen = AuthScreen.Profile
+                                if (!isCloudRequestRunning) {
+                                    isCloudRequestRunning = true
+                                    uiSaveProfileInterests(
+                                        interests = updatedInterests,
+                                        onSuccess = { savedInterests ->
+                                            isCloudRequestRunning = false
+                                            profileDefaultInterests = savedInterests
+                                            currentScreen = AuthScreen.Profile
+                                        },
+                                        onError = { error ->
+                                            isCloudRequestRunning = false
+                                            showCloudError(error)
+                                        },
+                                    )
+                                }
                             },
                         )
                     }
@@ -1549,51 +1707,115 @@ class MainActivity : ComponentActivity() {
     private fun uiLoginWithFirebase(
         email: String,
         password: String,
-    ): Boolean {
-        // function: uiLoginWithFirebase
-        // owner: Yuxiang
-        // input: email, password
-        // output: login success
-        // TODO(Yuxiang): Replace with Firebase Auth signIn.
-        return email.isNotBlank() && password.isNotBlank()
+        onSuccess: (CloudUserSession) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.signIn(email, password, cloudCallback(onSuccess, onError))
+        } catch (error: Exception) {
+            onError(error)
+        }
     }
 
     private fun uiCreateAccountWithFirebase(
         fullName: String,
         email: String,
         password: String,
-    ): Boolean {
-        // function: uiCreateAccountWithFirebase
-        // owner: Yuxiang
-        // input: fullName, email, password
-        // output: register success
-        // TODO(Yuxiang): Replace with Firebase Auth createUser + user profile save.
-        return fullName.isNotBlank() && email.isNotBlank() && password.isNotBlank()
+        onSuccess: (CloudUserSession) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.register(
+                fullName,
+                email,
+                password,
+                cloudCallback(onSuccess, onError),
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
     }
 
-    private fun uiLoadUserProfile(): String {
-        // function: uiLoadUserProfile
-        // owner: Yuxiang
-        // output: displayName
-        // TODO(Yuxiang): Load user display name from Firebase.
-        return "Yufei"
+    private fun uiLoadUserProfile(): String =
+        cloudUserRepository.currentUser()?.readableName().orEmpty()
+
+    private fun uiSaveUserProfile(
+        updatedName: String,
+        onSuccess: (CloudUserSession) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.updateDisplayName(
+                updatedName,
+                cloudCallback(onSuccess, onError),
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
     }
 
-    private fun uiSaveUserProfile(updatedName: String): String {
-        // function: uiSaveUserProfile
-        // owner: Yuxiang
-        // input: updatedName
-        // output: saved displayName
-        // TODO(Yuxiang): Save updated name to Firebase user profile.
-        return updatedName.trim()
+    private fun uiSaveProfileInterests(
+        interests: List<String>,
+        onSuccess: (List<String>) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.savePreferences(
+                UserPreferences("system", "en-AU", interests, true),
+                object : CloudResultCallback<Void> {
+                    override fun onSuccess(value: Void?) = onSuccess(interests)
+                    override fun onError(error: Exception) = onError(error)
+                },
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
     }
 
-    private fun uiSaveProfileInterests(interests: List<String>): List<String> {
-        // function: uiSaveProfileInterests
-        // owner: Yuxiang
-        // input: long-term interest ids
-        // output: saved interest ids
-        // TODO(Yuxiang): Save default interests permanently.
+    private fun uiLoadProfileInterests(
+        onSuccess: (List<String>) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.loadPreferences(
+                object : CloudResultCallback<UserPreferences> {
+                    override fun onSuccess(value: UserPreferences) =
+                        onSuccess(value.preferredCategories)
+
+                    override fun onError(error: Exception) = onError(error)
+                },
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
+    }
+
+    private fun <T> cloudCallback(
+        onSuccess: (T) -> Unit,
+        onError: (Exception) -> Unit,
+    ) = object : CloudResultCallback<T> {
+        override fun onSuccess(value: T) = onSuccess(value)
+        override fun onError(error: Exception) = onError(error)
+    }
+
+    private fun CloudUserSession.readableName(): String =
+        displayName.ifBlank { email.substringBefore('@').ifBlank { "Traveller" } }
+
+    private fun showCloudError(error: Exception) {
+        Toast.makeText(
+            this,
+            error.localizedMessage ?: "Cloud request failed",
+            Toast.LENGTH_LONG,
+        ).show()
+    }
+
+    private fun uiSaveTripOnlyInterests(interests: List<String>): List<String> {
+        // function: uiSaveTripOnlyInterests
+        // owner: Zewen
+        // UI consumer: Yufei
+        // input: current-trip interest labels
+        // output: interest labels used only for this trip request
+        // TODO(Zewen): Read these interests when generating the current itinerary.
         return interests
     }
 
@@ -1623,13 +1845,6 @@ class MainActivity : ComponentActivity() {
             latitude = location.latitude,
             longitude = location.longitude
         )
-        val result = SensorLocation(
-            latitude = location.latitude,
-            longitude = location.longitude,
-            accuracyMeters = 12f,
-            areaName = areaName,
-            isSample = false
-        )
 
         return SensorLocation(
             latitude = location.latitude,
@@ -1639,7 +1854,6 @@ class MainActivity : ComponentActivity() {
             isSample = false
         )
     }
-
 
 
     private suspend fun uiObserveShakeEvents(
@@ -1696,50 +1910,29 @@ class MainActivity : ComponentActivity() {
         // data source: Leyan POI source
         // storage: Yuxiang database if needed
         // input: query, city, GPS, limit
-        // output: POI list mapped to AddStopPlace
-
-        // Connect to POI repository
+        // output: place name + environment type for AddStop UI
         val repository = MockPOI(context)
-
-        // Connect to search algorithm
         val searchService = POISearchService(repository)
 
-        // Run search algorithm
-        val results = searchService.search(
+        return searchService.search(
             query = query,
             userLatitude = userLatitude,
             userLongitude = userLongitude,
-            limit = limit
-        )
-
-        // Convert SearchResult to AddStopPlace
-        return results.map { result ->
-
+            limit = limit,
+        ).map { result ->
             AddStopPlace(
                 name = result.place.name,
-
-                distanceText = result.distanceMeters?.let { distance ->
-                    if (distance < 1000.0) {
-                        "${distance.toInt()} m"
-                    } else {
-                        String.format(
-                            java.util.Locale.US,
-                            "%.1f km",
-                            distance / 1000.0
-                        )
-                    }
-                } ?: "Distance unavailable",
-
                 environmentType = result.place.environment.name
                     .lowercase()
-                    .replaceFirstChar { it.uppercase() }
+                    .replaceFirstChar { it.uppercase() },
             )
         }
     }
 
-
+    // ---- Alex: nearby POI ranking ----
 
     private fun uiExploreNearbyPlaces(
+        context: Context,
         category: ExplorePlaceCategory,
         userLatitude: Double?,
         userLongitude: Double?,
@@ -1751,80 +1944,60 @@ class MainActivity : ComponentActivity() {
         // sensor source: Alex GPS
         // input: category filter, GPS, limit
         // output: POI list mapped to ExplorePlace
-        // TODO(Alex): Rank POI repository by nearby/category; UI hides exact distance.
-        return sampleNearbyExplorePlaces()
-            .filter { place -> place.category == category }
-            .take(limit)
+        val repository = MockPOI(context)
+        val searchService = POISearchService(repository)
+
+        return searchService.search(
+            query = "",
+            userLatitude = userLatitude,
+            userLongitude = userLongitude,
+            category = category,
+            limit = limit,
+        ).map { result ->
+            val place = result.place
+            ExplorePlace(
+                name = place.name,
+                distanceText = result.distanceMeters?.let { distance ->
+                    if (distance < 1000.0) {
+                        "${distance.toInt()} m"
+                    } else {
+                        String.format(java.util.Locale.US, "%.1f km", distance / 1000.0)
+                    }
+                } ?: "",
+                category = category,
+                environmentLabel = place.environment.name
+                    .lowercase()
+                    .replaceFirstChar { it.uppercase() },
+                tagText = result.tagText,
+                mapX = 0.5f,
+                mapY = 0.5f,
+            )
+        }
     }
 
-
-
-
-
-
-//    // ---- Leyan: attraction data ----
-//
-//    private fun uiExploreNearbyPlaces(
-//        context: Context,
-//        category: ExplorePlaceCategory,
-//        userLatitude: Double?,
-//        userLongitude: Double?,
-//        limit: Int,
-//    ): List<PlaceBriefUiData> {
-//        // function: uiExploreNearbyPlaces
-//        // owner: Alex
-//        // data source: Leyan POI source
-//        // sensor source: Alex GPS
-//        // input: category filter, GPS, limit
-//        // output: POI list mapped to ExplorePlace
-//
-//        // Connect to POI repository
-//        val repository = MockPOI(context)
-//
-//        // Connect to search algorithm
-//        val searchService = POISearchService(repository)
-//
-//        // Run search algorithm
-//        val results = searchService.search(
-//            query = "",
-//            userLatitude = userLatitude,
-//            userLongitude = userLongitude,
-//            category = category,
-//            limit = limit
-//        )
-//
-//        // Convert SearchResult to AddStopPlace
-//        return results.map { result ->
-//
-//            val place = result.place
-//
-//            PlaceBriefUiData(
-//                id = place.id,
-//                name = place.name,
-//                category = place.category.name,
-//                environmentType = place.environment.name
-//                    .lowercase()
-//                    .replaceFirstChar { it.uppercase() },
-//                latitude = place.coordinates.latitude,
-//                longitude = place.coordinates.longitude,
-//                distanceMeters = result.distanceMeters?.toInt()
-//            )
-//        }
-//    }
-
-
+    // ---- Leyan: attraction data ----
 
     private fun uiLoadAttractionDetail(attractionIdOrName: String): AttractionDetail {
         // function: uiLoadAttractionDetail
         // owner: Leyan
         // storage: Yuxiang database if needed
-        // input: attraction id
+        // input: attraction id or attraction name
         // output: POI detail mapped to AttractionDetail
         // TODO(Leyan): Load POI photo, hours, indoor/outdoor, website from real database.
         return sampleAttractionDetail(attractionIdOrName)
     }
 
     // ---- Zewen: itinerary planning ----
+
+    // Lazy initialization of TripPlannerEngine
+    private val tripPlannerEngine by lazy {
+        com.group5.roammate.logic.TripPlannerEngine(
+            poiRepository = com.group5.roammate.logic.utils.MockPoiRepository(
+                useJsonData = true,
+                context = applicationContext
+            )
+        )
+    }
 
     private fun uiGenerateItinerary(
         request: PlanMyTripRequest,
@@ -1834,23 +2007,288 @@ class MainActivity : ComponentActivity() {
         // owner: Zewen
         // input: destination/date/time/interests/transport/required places
         // output: generated itinerary stops
-        // TODO(Zewen): Replace with itinerary algorithm result.
-        return listOf(
-            TripTimelineStop("09:00", "Federation Square", TripStopStatus.Done),
-            TripTimelineStop("10:00", "Melbourne Museum", TripStopStatus.Current),
-            TripTimelineStop("12:00", "Lunch nearby", TripStopStatus.Upcoming),
-            TripTimelineStop("14:00", "Royal Botanic Gardens", TripStopStatus.Upcoming),
-        )
+
+        try {
+            // Step 1: Convert UI date format "12 Sep 2026" to backend format "2026-09-12"
+            val backendDate = convertUIDateToBackendFormat(request.date)
+
+            // Step 2: Convert UI interests to backend POICategory
+            val userProfile = com.group5.roammate.logic.models.UserProfile(
+                interests = convertInterestsToPOICategories(request.interests),
+                budgetPreference = com.group5.roammate.logic.models.BudgetLevel.MEDIUM,
+                transportMode = convertTransportMode(request.transportMode),
+                transportPreference = 1.0f
+            )
+
+            // Step 3: Convert required places to pinned POIs
+            val pinnedPOIs = convertToPinnedPOIs(
+                placeNames = request.specificPlaces,
+                destination = request.destination
+            )
+
+            // Step 4: Get starting location
+            // TODO(Alex): Replace with real GPS location from currentSensorLocation
+            val startingLocation = com.group5.roammate.logic.models.Coordinates(
+                latitude = -37.8136,
+                longitude = 144.9631
+            )
+
+            // Step 5: Parse number of days (default to 1 day for now)
+            val numberOfDays = 1 // TODO: Calculate from date range if multi-day
+
+            // Step 6: Call backend to generate itinerary
+            val itinerary = tripPlannerEngine.generateInitialTrip(
+                tripId = "trip_${System.currentTimeMillis()}",
+                destination = request.destination,
+                startDate = backendDate, // Use converted date format
+                numberOfDays = numberOfDays,
+                userProfile = userProfile,
+                startingLocation = startingLocation,
+                dailyStartTime = request.startTime,
+                dailyEndTime = "18:00",
+                weatherStatus = com.group5.roammate.logic.models.WeatherStatus.SUNNY,
+                includeFillers = true,
+                pinnedPOIs = pinnedPOIs
+            )
+
+            // Step 7: Save itinerary for later use (trip summary, adjustments)
+            currentItinerary = itinerary
+
+            // Step 8: Convert backend Itinerary to UI TripTimelineStop list
+            return convertItineraryToTimelineStops(itinerary)
+
+        } catch (e: Exception) {
+            android.util.Log.e("RoamMate", "Error generating itinerary", e)
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            // Return fallback data on error
+            return listOf(
+                TripTimelineStop("09:00", "Federation Square", TripStopStatus.Current),
+                TripTimelineStop("10:00", "Melbourne Museum", TripStopStatus.Upcoming),
+            )
+        }
     }
+
+    /**
+     * Convert UI date format "12 Sep 2026" or "12 Sep 2026 - 13 Sep 2026" to backend format "2026-09-12"
+     */
+    private fun convertUIDateToBackendFormat(uiDate: String): String {
+        return try {
+            // Handle date range: take the first date only
+            val firstDate = if (uiDate.contains(" - ")) {
+                uiDate.split(" - ")[0].trim()
+            } else {
+                uiDate.trim()
+            }
+
+            // Parse "12 Sep 2026" format
+            val parts = firstDate.split(" ")
+            if (parts.size != 3) {
+                android.util.Log.w("RoamMate", "Invalid date format: $uiDate, using default")
+                return "2026-09-12" // Default fallback
+            }
+
+            val day = parts[0].toInt()
+            val monthStr = parts[1]
+            val year = parts[2].toInt()
+
+            // Convert month name to number
+            val month = when (monthStr.lowercase()) {
+                "jan" -> 1
+                "feb" -> 2
+                "mar" -> 3
+                "apr" -> 4
+                "may" -> 5
+                "jun" -> 6
+                "jul" -> 7
+                "aug" -> 8
+                "sep" -> 9
+                "oct" -> 10
+                "nov" -> 11
+                "dec" -> 12
+                else -> {
+                    android.util.Log.w("RoamMate", "Unknown month: $monthStr, using 9")
+                    9
+                }
+            }
+
+            // Format as "yyyy-MM-dd"
+            val result = String.format("%04d-%02d-%02d", year, month, day)
+            android.util.Log.d("RoamMate", "Converted date: $uiDate -> $result")
+            result
+        } catch (e: Exception) {
+            android.util.Log.e("RoamMate", "Error converting date: $uiDate", e)
+            "2026-09-12" // Default fallback
+        }
+    }
+
+    /**
+     * Convert UI interest strings to backend POICategory enums
+     */
+    private fun convertInterestsToPOICategories(interests: List<String>): List<com.group5.roammate.logic.models.POICategory> {
+        return interests.mapNotNull { interest ->
+            when (interest.lowercase()) {
+                "museums" -> com.group5.roammate.logic.models.POICategory.MUSEUM
+                "parks" -> com.group5.roammate.logic.models.POICategory.PARK
+                "food", "restaurants" -> com.group5.roammate.logic.models.POICategory.RESTAURANT
+                "shopping" -> com.group5.roammate.logic.models.POICategory.SHOPPING
+                "entertainment" -> com.group5.roammate.logic.models.POICategory.ENTERTAINMENT
+                "historical" -> com.group5.roammate.logic.models.POICategory.HISTORICAL
+                "nature" -> com.group5.roammate.logic.models.POICategory.NATURE
+                "beach", "beaches" -> com.group5.roammate.logic.models.POICategory.BEACH
+                "sports" -> com.group5.roammate.logic.models.POICategory.SPORTS
+                "cultural" -> com.group5.roammate.logic.models.POICategory.CULTURAL
+                "nightlife" -> com.group5.roammate.logic.models.POICategory.NIGHTLIFE
+                "cafes", "coffee" -> com.group5.roammate.logic.models.POICategory.CAFE
+                "landmarks" -> com.group5.roammate.logic.models.POICategory.LANDMARK
+                "scenic spots", "viewpoints" -> com.group5.roammate.logic.models.POICategory.SCENIC_SPOT
+                else -> null // Ignore unknown interests
+            }
+        }
+    }
+
+    /**
+     * Convert UI transport mode string to backend TransportMode enum
+     */
+    private fun convertTransportMode(transportMode: String): com.group5.roammate.logic.models.TransportMode {
+        return when (transportMode.lowercase()) {
+            "walking", "walk" -> com.group5.roammate.logic.models.TransportMode.WALKING
+            "public transit", "transit", "public" -> com.group5.roammate.logic.models.TransportMode.PUBLIC_TRANSIT
+            "driving", "car" -> com.group5.roammate.logic.models.TransportMode.DRIVING
+            "cycling", "bike" -> com.group5.roammate.logic.models.TransportMode.CYCLING
+            else -> com.group5.roammate.logic.models.TransportMode.WALKING // Default to walking
+        }
+    }
+
+    /**
+     * Convert place names to backend PinnedPOI objects
+     */
+    private fun convertToPinnedPOIs(
+        placeNames: List<String>,
+        destination: String
+    ): List<com.group5.roammate.logic.models.PinnedPOI> {
+        if (placeNames.isEmpty()) return emptyList()
+
+        // Get all POIs for the destination
+        val allPOIs = tripPlannerEngine.getPOIsForDestination(
+            destination = destination,
+            includeFillers = false
+        )
+
+        // Find matching POIs by name
+        return placeNames.mapNotNull { placeName ->
+            val matchingPOI = allPOIs.find { poi ->
+                poi.name.equals(placeName, ignoreCase = true) ||
+                poi.name.contains(placeName, ignoreCase = true)
+            }
+
+            if (matchingPOI != null) {
+                com.group5.roammate.logic.models.PinnedPOI(
+                    poiId = matchingPOI.id,
+                    dayNumber = 1, // Pin to first day by default
+                    preferredStartTime = null // No specific time preference
+                )
+            } else {
+                android.util.Log.w("RoamMate", "Could not find POI: $placeName")
+                null
+            }
+        }
+    }
+
+    /**
+     * Convert backend Itinerary to UI TripTimelineStop list
+     */
+    private fun convertItineraryToTimelineStops(
+        itinerary: com.group5.roammate.logic.models.Itinerary
+    ): List<TripTimelineStop> {
+        val allStops = mutableListOf<TripTimelineStop>()
+
+        itinerary.days.forEach { day ->
+            day.pois.forEach { itineraryPOI ->
+                allStops.add(
+                    TripTimelineStop(
+                        time = itineraryPOI.startTime,
+                        title = itineraryPOI.poi.name,
+                        status = TripStopStatus.Upcoming, // Default status
+                        hiddenTag = if (itineraryPOI.isFiller) "Hidden gem · nearby" else null
+                    )
+                )
+            }
+        }
+
+        // Set first stop as current
+        if (allStops.isNotEmpty()) {
+            allStops[0] = allStops[0].copy(status = TripStopStatus.Current)
+        }
+
+        return allStops
+    }
+
+    // Store the latest generated itinerary for summary generation
+    private var currentItinerary: com.group5.roammate.logic.models.Itinerary? = null
 
     private fun uiLoadTripSummary(): TripSummary {
         // function: uiLoadTripSummary
         // owner: Zewen
         // output: short trip summary for Trip screen
-        // TODO(Zewen): Return real multi-day summary with itinerary.
+
+        val itinerary = currentItinerary
+        if (itinerary == null) {
+            // Fallback if no itinerary generated yet
+            return TripSummary(
+                title = "3 days in Melbourne",
+                description = "Day 1: Melbourne Museum, State Library and ACMI. Day 2: gardens and markets. Day 3: beach and riverside walk.",
+            )
+        }
+
+        // Generate summary from real itinerary
+        val dayDescriptions = itinerary.days.mapIndexed { index, day ->
+            val topPOIs = day.pois.take(3).joinToString(", ") { it.poi.name }
+            "Day ${index + 1}: $topPOIs"
+        }
+
+        val cityName = itinerary.days.firstOrNull()?.pois?.firstOrNull()?.poi?.city ?: "Melbourne"
+
         return TripSummary(
-            title = "3 days in Melbourne",
-            description = "Day 1: Melbourne Museum, State Library and ACMI. Day 2: gardens and markets. Day 3: beach and riverside walk.",
+            title = "${itinerary.days.size} days in $cityName",
+            description = dayDescriptions.joinToString(". "),
+        )
+    }
+
+    private fun uiLoadTripDays(
+        currentDayStops: List<TripTimelineStop>,
+    ): List<TripDayPlan> {
+        // function: uiLoadTripDays
+        // owner: Zewen
+        // output: full multi-day itinerary for Trip screen
+        // TODO(Zewen): Replace with backend generated days and stops.
+        return listOf(
+            TripDayPlan(
+                dayTitle = "Day 1",
+                dateText = "Today",
+                stops = currentDayStops,
+            ),
+            TripDayPlan(
+                dayTitle = "Day 2",
+                dateText = "Tomorrow",
+                stops = listOf(
+                    TripTimelineStop("10:00", "State Library Victoria", TripStopStatus.Upcoming),
+                    TripTimelineStop(
+                        time = "13:30",
+                        title = "Pidapipo Gelato",
+                        status = TripStopStatus.Upcoming,
+                        hiddenTag = "Hidden gem · nearby",
+                    ),
+                    TripTimelineStop("15:00", "Queen Victoria Market", TripStopStatus.Upcoming),
+                ),
+            ),
+            TripDayPlan(
+                dayTitle = "Day 3",
+                dateText = "Final day",
+                stops = listOf(
+                    TripTimelineStop("09:30", "Brighton Beach", TripStopStatus.Upcoming),
+                    TripTimelineStop("13:00", "Southbank walk", TripStopStatus.Upcoming),
+                ),
+            ),
         )
     }
 
@@ -1862,8 +2300,26 @@ class MainActivity : ComponentActivity() {
         // storage provider: Yuxiang saves final itinerary
         // input: added/removed/reordered stops
         // output: recalculated itinerary
-        // TODO(Zewen): Recalculate time/order after manual edit.
-        return rebalanceTripStopsAfterManualEdit(editedStops)
+
+        try {
+            // If no backend itinerary exists, use frontend fallback
+            val itinerary = currentItinerary
+            if (itinerary == null || itinerary.days.isEmpty()) {
+                return rebalanceTripStopsAfterManualEdit(editedStops)
+            }
+
+            // TODO(Zewen): For now, use frontend rebalancing
+            // Full backend integration would:
+            // 1. Convert editedStops back to ItineraryPOI list
+            // 2. Call ItineraryEditService.reoptimizeDay()
+            // 3. Convert result back to TripTimelineStop list
+
+            return rebalanceTripStopsAfterManualEdit(editedStops)
+
+        } catch (e: Exception) {
+            android.util.Log.e("RoamMate", "Error updating itinerary after edit", e)
+            return rebalanceTripStopsAfterManualEdit(editedStops)
+        }
     }
 
     private fun uiAdjustItineraryForWeather(
@@ -1874,8 +2330,157 @@ class MainActivity : ComponentActivity() {
         // input provider: LeYan weather forecast
         // input: weather reason
         // output: alternative itinerary plans
-        // TODO(Zewen): Generate alternatives based on weather forecast.
-        return sampleAdjustedItineraryPlans()
+
+        android.util.Log.d("WeatherAdjust", "START weather adjustment algorithm")
+        android.util.Log.d("WeatherAdjust", "Reason: $reason")
+
+        try {
+            val itinerary = currentItinerary
+            if (itinerary == null || itinerary.days.isEmpty()) {
+                // No itinerary to adjust, return sample data
+                android.util.Log.w("WeatherAdjust", "FALLBACK currentItinerary is null or empty")
+                android.util.Log.w("WeatherAdjust", "itinerary null: ${itinerary == null}")
+                if (itinerary != null) {
+                    android.util.Log.w("WeatherAdjust", "days empty: ${itinerary.days.isEmpty()}")
+                }
+                return sampleAdjustedItineraryPlans()
+            }
+
+            android.util.Log.d("WeatherAdjust", "SUCCESS Found valid itinerary, executing real algorithm")
+            android.util.Log.d("WeatherAdjust", "Days: ${itinerary.days.size}")
+            android.util.Log.d("WeatherAdjust", "POIs in day 1: ${itinerary.days.firstOrNull()?.pois?.size ?: 0}")
+
+            // Get current day (assume day 0 for now)
+            val currentDay = itinerary.days.firstOrNull() ?: return sampleAdjustedItineraryPlans()
+
+            // Get user profile from stored itinerary context
+            val userProfile = com.group5.roammate.logic.models.UserProfile(
+                interests = listOf(com.group5.roammate.logic.models.POICategory.MUSEUM),
+                budgetPreference = com.group5.roammate.logic.models.BudgetLevel.MEDIUM,
+                transportMode = com.group5.roammate.logic.models.TransportMode.WALKING
+            )
+
+            // Create context payload for rainy weather
+            val contextPayload = com.group5.roammate.logic.models.ContextPayload(
+                currentLocation = com.group5.roammate.logic.models.Coordinates(-37.8136, 144.9631),
+                currentTime = "${currentDay.date}T${currentDay.pois.firstOrNull()?.startTime ?: "09:00"}:00",
+                weatherStatus = com.group5.roammate.logic.models.WeatherStatus.RAINY,
+                currentWeather = com.group5.roammate.logic.models.WeatherStatus.RAINY,
+                itineraryProgress = com.group5.roammate.logic.models.ItineraryProgress(
+                    completedPOIs = emptyList(),
+                    delayMinutes = 0
+                )
+            )
+
+            // Initialize weather replanning service
+            val weatherService = com.group5.roammate.logic.engine.WeatherReplanningService(
+                userProfile = userProfile,
+                travelDurationMatrix = null
+            )
+
+            // Get all POIs for destination
+            val destination = currentDay.pois.firstOrNull()?.poi?.city ?: "Melbourne"
+            val allPOIs = tripPlannerEngine.getPOIsForDestination(
+                destination = destination,
+                includeFillers = false
+            )
+
+            // Calculate available time (assume 9 hours = 540 minutes)
+            val availableTimeMinutes = 540
+
+            // Get rainy day options
+            android.util.Log.d("WeatherAdjust", "Calling WeatherReplanningService.handleRainyDayScenario")
+            android.util.Log.d("WeatherAdjust", "Available POIs: ${allPOIs.size}")
+            android.util.Log.d("WeatherAdjust", "Indoor POIs: ${allPOIs.count { it.environment == com.group5.roammate.logic.models.Environment.INDOOR }}")
+
+            val rainyOptions = weatherService.handleRainyDayScenario(
+                currentItinerary = currentDay,
+                contextPayload = contextPayload,
+                allPOIs = allPOIs,
+                startLocation = com.group5.roammate.logic.models.Coordinates(-37.8136, 144.9631),
+                availableTimeMinutes = availableTimeMinutes
+            )
+
+            android.util.Log.d("WeatherAdjust", "Backend returned options:")
+            android.util.Log.d("WeatherAdjust", "  Experience First: ${rainyOptions.experienceFirst.pois.size} POIs")
+            android.util.Log.d("WeatherAdjust", "  Efficiency First: ${rainyOptions.efficiencyFirst.pois.size} POIs")
+            android.util.Log.d("WeatherAdjust", "  Trigger reason: ${rainyOptions.triggerReason}")
+
+            // Convert backend options to UI format
+            val result = convertRainyOptionsToAdjustmentPlans(rainyOptions, currentDay)
+            android.util.Log.d("WeatherAdjust", "COMPLETE Converted to ${result.size} UI plans")
+            return result
+
+        } catch (e: Exception) {
+            android.util.Log.e("RoamMate", "Error adjusting itinerary for weather", e)
+            return sampleAdjustedItineraryPlans()
+        }
+    }
+
+    /**
+     * Convert backend RainyDayOptions to UI AdjustItineraryPlan list
+     */
+    private fun convertRainyOptionsToAdjustmentPlans(
+        rainyOptions: com.group5.roammate.logic.engine.RainyDayOptions,
+        originalDay: com.group5.roammate.logic.models.DayItinerary
+    ): List<AdjustItineraryPlan> {
+        // Option 1: Experience First (maximizes total EV)
+        val experienceFirstPlan = AdjustItineraryPlan(
+            reasonLabel = "rain",
+            reasonDescription = rainyOptions.triggerReason,
+            stops = rainyOptions.experienceFirst.pois.map { itineraryPOI ->
+                val wasInOriginal = originalDay.pois.any { it.poi.id == itineraryPOI.poi.id }
+                AdjustItineraryStop(
+                    time = itineraryPOI.startTime,
+                    title = itineraryPOI.poi.name,
+                    changeLabel = if (wasInOriginal) "Kept" else "New · indoor",
+                    changeTone = if (wasInOriginal) AdjustChangeTone.Neutral else AdjustChangeTone.Positive
+                )
+            },
+            removedStop = findRemovedOutdoorStop(originalDay, rainyOptions.experienceFirst)
+        )
+
+        // Option 2: Efficiency First (maximizes EV/Cost ratio)
+        val efficiencyFirstPlan = AdjustItineraryPlan(
+            reasonLabel = "rain",
+            reasonDescription = rainyOptions.triggerReason,
+            stops = rainyOptions.efficiencyFirst.pois.map { itineraryPOI ->
+                val wasInOriginal = originalDay.pois.any { it.poi.id == itineraryPOI.poi.id }
+                AdjustItineraryStop(
+                    time = itineraryPOI.startTime,
+                    title = itineraryPOI.poi.name,
+                    changeLabel = if (wasInOriginal) "Kept" else "New · indoor",
+                    changeTone = if (wasInOriginal) AdjustChangeTone.Neutral else AdjustChangeTone.Positive
+                )
+            },
+            removedStop = findRemovedOutdoorStop(originalDay, rainyOptions.efficiencyFirst)
+        )
+
+        return listOf(experienceFirstPlan, efficiencyFirstPlan)
+    }
+
+    /**
+     * Find the first outdoor POI that was removed
+     */
+    private fun findRemovedOutdoorStop(
+        originalDay: com.group5.roammate.logic.models.DayItinerary,
+        newDay: com.group5.roammate.logic.models.DayItinerary
+    ): AdjustRemovedStop? {
+        val newPoiIds = newDay.pois.map { it.poi.id }.toSet()
+
+        val removedOutdoorPOI = originalDay.pois.find { itineraryPOI ->
+            itineraryPOI.poi.id !in newPoiIds &&
+            itineraryPOI.poi.environment == com.group5.roammate.logic.models.Environment.OUTDOOR
+        }
+
+        return if (removedOutdoorPOI != null) {
+            AdjustRemovedStop(
+                title = removedOutdoorPOI.poi.name,
+                reason = "outdoor · rain"
+            )
+        } else {
+            null
+        }
     }
 
     // ---- LeYan: weather ----
@@ -2299,32 +2904,26 @@ class MainActivity : ComponentActivity() {
         return listOf(
             AddStopPlace(
                 name = "Melbourne Museum",
-                distanceText = "1.8 km",
                 environmentType = "Indoor",
             ),
             AddStopPlace(
                 name = "National Gallery of Victoria",
-                distanceText = "1.2 km",
                 environmentType = "Indoor",
             ),
             AddStopPlace(
                 name = "State Library Victoria",
-                distanceText = "1.1 km",
                 environmentType = "Indoor",
             ),
             AddStopPlace(
                 name = "ACMI",
-                distanceText = "1.0 km",
                 environmentType = "Indoor",
             ),
             AddStopPlace(
                 name = "Royal Botanic Gardens",
-                distanceText = "2.4 km",
                 environmentType = "Outdoor",
             ),
             AddStopPlace(
                 name = "Queen Victoria Market",
-                distanceText = "1.6 km",
                 environmentType = "Outdoor",
             ),
         )

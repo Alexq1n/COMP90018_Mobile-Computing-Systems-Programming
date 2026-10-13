@@ -285,7 +285,7 @@ private fun NearbyResultsPanel(
     }
 }
 
-// ---- one place card (icon · name · environment · >) ; tap = open detail ----
+// ---- one place card (icon · name · environment · tag · >) ; tap = open detail ----
 @Composable
 private fun NearbyPlaceCard(
     place: ExplorePlace,
@@ -344,6 +344,25 @@ private fun NearbyPlaceCard(
                     lineHeight = 16.sp,
                     fontWeight = FontWeight.Bold,
                 )
+
+                // hidden-gem tag (only shows when tagText is not empty)
+                if (place.tagText.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = RoamMateLightTeal,
+                    ) {
+                        Text(
+                            text = place.tagText,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            color = RoamMateTeal,
+                            fontSize = 12.sp,
+                            lineHeight = 14.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            maxLines = 1,
+                        )
+                    }
+                }
             }
 
             // chevron

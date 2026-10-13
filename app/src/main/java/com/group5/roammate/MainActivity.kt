@@ -77,6 +77,7 @@ import com.group5.roammate.weather.context.WeatherContextEvent
 import com.group5.roammate.weather.data.WeatherRepository
 import com.group5.roammate.weather.model.DailyWeatherForecast
 
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -104,6 +105,7 @@ import com.group5.roammate.weather.model.CurrentWeather
 import com.group5.roammate.weather.model.HourlyWeather
 import com.group5.roammate.weather.model.WeatherStatus
 import java.time.LocalDateTime
+
 
 // [NEW] Sensor module
 import com.group5.roammate.sensor.RoamMateApp
@@ -876,7 +878,12 @@ class MainActivity : ComponentActivity() {
                                 // Apply this plan:
                                 // 把 Zewen 给出的候选方案转换成 Trip/Home 共用的 tripTimelineStops。
                                 onApplyPlanClick = { plan ->
+                                    // Update tripTimelineStops for current day display
                                     tripTimelineStops = plan.toTripTimelineStops()
+
+                                    // Apply the selected plan to currentItinerary
+                                    applyWeatherAdjustmentToItinerary(adjustPlanIndex)
+
                                     Toast.makeText(this, "New itinerary applied", Toast.LENGTH_SHORT).show()
                                     currentScreen = AuthScreen.Trip
                                 },
@@ -2026,8 +2033,8 @@ class MainActivity : ComponentActivity() {
                 longitude = 144.9631
             )
 
-            // Step 5: Parse number of days (default to 1 day for now)
-            val numberOfDays = 1 // TODO: Calculate from date range if multi-day
+            // Step 5: Calculate number of days from date range
+            val numberOfDays = calculateNumberOfDays(request.startDate, request.endDate)
 
             // Step 6: Call backend to generate itinerary
             val itinerary = tripPlannerEngine.generateInitialTrip(
@@ -2111,6 +2118,39 @@ class MainActivity : ComponentActivity() {
         } catch (e: Exception) {
             android.util.Log.e("RoamMate", "Error converting date: $uiDate", e)
             "2026-09-12" // Default fallback
+        }
+    }
+
+    /**
+     * Calculate number of days between startDate and endDate
+     * UI date format: "13 Oct 2026"
+     * Returns the number of days (inclusive), minimum 1 day
+     */
+    private fun calculateNumberOfDays(startDate: String, endDate: String): Int {
+        return try {
+            val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH)
+
+            val start = dateFormat.parse(startDate.trim())
+            val end = dateFormat.parse(endDate.trim())
+
+            if (start == null || end == null) {
+                android.util.Log.w("RoamMate", "Failed to parse dates: startDate=$startDate, endDate=$endDate")
+                return 1
+            }
+
+            val diffInMillis = end.time - start.time
+            val diffInDays = (diffInMillis / (1000 * 60 * 60 * 24)).toInt()
+
+            // Add 1 because we want inclusive count (e.g., Oct 13 to Oct 16 = 4 days)
+            val numberOfDays = diffInDays + 1
+
+            android.util.Log.d("RoamMate", "Calculated days: $startDate to $endDate = $numberOfDays days")
+
+            // Return at least 1 day
+            return maxOf(1, numberOfDays)
+        } catch (e: Exception) {
+            android.util.Log.e("RoamMate", "Error calculating number of days", e)
+            return 1 // Default to 1 day on error
         }
     }
 
@@ -2239,6 +2279,9 @@ class MainActivity : ComponentActivity() {
     // Store the latest generated itinerary for summary generation
     private var currentItinerary: com.group5.roammate.logic.models.Itinerary? = null
 
+    // Store weather adjustment options for applying to currentItinerary
+    private var weatherAdjustmentOptions: com.group5.roammate.logic.engine.RainyDayOptions? = null
+
     private fun uiLoadTripSummary(): TripSummary {
         // function: uiLoadTripSummary
         // owner: Zewen
@@ -2273,36 +2316,68 @@ class MainActivity : ComponentActivity() {
         // function: uiLoadTripDays
         // owner: Zewen
         // output: full multi-day itinerary for Trip screen
-        // TODO(Zewen): Replace with backend generated days and stops.
-        return listOf(
+
+        val itinerary = currentItinerary
+        if (itinerary == null || itinerary.days.isEmpty()) {
+            // Fallback to single day if no itinerary generated yet
+            return listOf(
+                TripDayPlan(
+                    dayTitle = "Day 1",
+                    dateText = "Today",
+                    stops = currentDayStops,
+                )
+            )
+        }
+
+        // Convert each DayItinerary to TripDayPlan
+        return itinerary.days.mapIndexed { index, dayItinerary ->
+            // Convert POIs to TripTimelineStop list
+            val dayStops = dayItinerary.pois.map { itineraryPOI ->
+                TripTimelineStop(
+                    time = itineraryPOI.startTime,
+                    title = itineraryPOI.poi.name,
+                    status = if (index == 0 && dayItinerary.pois.firstOrNull() == itineraryPOI) {
+                        TripStopStatus.Current // First stop of first day is current
+                    } else {
+                        TripStopStatus.Upcoming
+                    },
+                    hiddenTag = if (itineraryPOI.isFiller) "Hidden gem · nearby" else null
+                )
+            }
+
+            // Format date text
+            val dateText = when (index) {
+                0 -> "Today"
+                1 -> "Tomorrow"
+                itinerary.days.size - 1 -> "Final day"
+                else -> formatDayDate(dayItinerary.date)
+            }
+
             TripDayPlan(
-                dayTitle = "Day 1",
-                dateText = "Today",
-                stops = currentDayStops,
-            ),
-            TripDayPlan(
-                dayTitle = "Day 2",
-                dateText = "Tomorrow",
-                stops = listOf(
-                    TripTimelineStop("10:00", "State Library Victoria", TripStopStatus.Upcoming),
-                    TripTimelineStop(
-                        time = "13:30",
-                        title = "Pidapipo Gelato",
-                        status = TripStopStatus.Upcoming,
-                        hiddenTag = "Hidden gem · nearby",
-                    ),
-                    TripTimelineStop("15:00", "Queen Victoria Market", TripStopStatus.Upcoming),
-                ),
-            ),
-            TripDayPlan(
-                dayTitle = "Day 3",
-                dateText = "Final day",
-                stops = listOf(
-                    TripTimelineStop("09:30", "Brighton Beach", TripStopStatus.Upcoming),
-                    TripTimelineStop("13:00", "Southbank walk", TripStopStatus.Upcoming),
-                ),
-            ),
-        )
+                dayTitle = "Day ${dayItinerary.dayNumber}",
+                dateText = dateText,
+                stops = dayStops,
+            )
+        }
+    }
+
+    /**
+     * Format backend date "yyyy-MM-dd" to readable format like "Oct 15"
+     */
+    private fun formatDayDate(backendDate: String): String {
+        return try {
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH)
+            val outputFormat = SimpleDateFormat("MMM d", Locale.ENGLISH)
+            val date = inputFormat.parse(backendDate)
+            if (date != null) {
+                outputFormat.format(date)
+            } else {
+                backendDate
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("RoamMate", "Error formatting date: $backendDate", e)
+            backendDate
+        }
     }
 
     private fun uiUpdateItineraryAfterEdit(
@@ -2419,6 +2494,9 @@ class MainActivity : ComponentActivity() {
             android.util.Log.d("WeatherAdjust", "  Efficiency First: ${rainyOptions.efficiencyFirst.pois.size} POIs")
             android.util.Log.d("WeatherAdjust", "  Trigger reason: ${rainyOptions.triggerReason}")
 
+            // Save weather adjustment options for later application
+            weatherAdjustmentOptions = rainyOptions
+
             // Convert backend options to UI format
             val result = convertRainyOptionsToAdjustmentPlans(rainyOptions, currentDay)
             android.util.Log.d("WeatherAdjust", "COMPLETE Converted to ${result.size} UI plans")
@@ -2494,6 +2572,45 @@ class MainActivity : ComponentActivity() {
         } else {
             null
         }
+    }
+
+    /**
+     * Apply weather adjustment plan to currentItinerary
+     * @param planIndex 0 = Experience First, 1 = Efficiency First
+     */
+    private fun applyWeatherAdjustmentToItinerary(planIndex: Int) {
+        val options = weatherAdjustmentOptions
+        val itinerary = currentItinerary
+
+        if (options == null || itinerary == null || itinerary.days.isEmpty()) {
+            android.util.Log.w("WeatherAdjust", "Cannot apply adjustment: options or itinerary is null")
+            return
+        }
+
+        // Select the chosen plan
+        val selectedDayItinerary = when (planIndex) {
+            0 -> options.experienceFirst
+            1 -> options.efficiencyFirst
+            else -> {
+                android.util.Log.w("WeatherAdjust", "Invalid plan index: $planIndex")
+                return
+            }
+        }
+
+        // Update Day 1 with the selected plan
+        val updatedDays = itinerary.days.toMutableList()
+        updatedDays[0] = selectedDayItinerary
+
+        // Create updated itinerary
+        currentItinerary = itinerary.copy(
+            days = updatedDays,
+            totalExpectedValue = updatedDays.sumOf { day ->
+                day.pois.sumOf { it.expectedValue }
+            }
+        )
+
+        android.util.Log.d("WeatherAdjust", "Applied plan $planIndex to currentItinerary")
+        android.util.Log.d("WeatherAdjust", "Updated Day 1 POIs: ${selectedDayItinerary.pois.size}")
     }
 
     // ---- LeYan: weather ----

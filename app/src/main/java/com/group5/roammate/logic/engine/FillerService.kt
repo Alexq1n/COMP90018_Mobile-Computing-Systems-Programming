@@ -25,17 +25,24 @@ class FillerService(
     /**
      * Inject filler POIs into an existing day itinerary
      * Scans for time gaps > MIN_GAP_MINUTES and inserts suitable fillers
+     * @param visitedPOIIds Set of POI IDs that have been visited in previous days
      */
     fun injectFillers(
         dayItinerary: DayItinerary,
         city: String,
         weatherStatus: WeatherStatus = WeatherStatus.SUNNY,
-        dailyEndTime: String = "18:00"
+        dailyEndTime: String = "18:00",
+        visitedPOIIds: Set<String> = emptySet()
     ): DayItinerary {
         if (dayItinerary.pois.isEmpty()) return dayItinerary
 
         val enrichedPOIs = mutableListOf<ItineraryPOI>()
         val fillerPOIs = poiRepository.getFillerPOIs(city)
+
+        // Track fillers used within this day to prevent duplicates
+        val usedFillerIds = mutableSetOf<String>()
+        // Also track main POIs from the day
+        dayItinerary.pois.forEach { usedFillerIds.add(it.poi.id) }
 
         for (i in dayItinerary.pois.indices) {
             val currentPOI = dayItinerary.pois[i]
@@ -89,12 +96,15 @@ class FillerService(
                             availableMinutes = effectiveGap,
                             currentTime = currentPOI.endTime,
                             weatherStatus = weatherStatus,
-                            dailyEndTime = dailyEndTime
+                            dailyEndTime = dailyEndTime,
+                            visitedPOIIds = visitedPOIIds,
+                            usedTodayIds = usedFillerIds  // Pass same-day used fillers
                         )
 
                         if (filler != null) {
                             println("  [FillerService] [CHECK] Injected filler: ${filler.poi.name}")
                             enrichedPOIs.add(filler)
+                            usedFillerIds.add(filler.poi.id)  // Mark this filler as used
                         } else {
                             println("  [FillerService] ✗ No suitable filler found")
                         }
@@ -127,6 +137,8 @@ class FillerService(
 
     /**
      * Find the best filler POI within radius that fits the time gap
+     * @param visitedPOIIds Set of POI IDs that have been visited in previous days
+     * @param usedTodayIds Set of POI IDs that have been used today (same day)
      */
     private fun findBestFiller(
         fillerPOIs: List<POI>,
@@ -134,15 +146,23 @@ class FillerService(
         availableMinutes: Int,
         currentTime: String,
         weatherStatus: WeatherStatus,
-        dailyEndTime: String
+        dailyEndTime: String,
+        visitedPOIIds: Set<String> = emptySet(),
+        usedTodayIds: Set<String> = emptySet()
     ): ItineraryPOI? {
-        // Find fillers within search radius (exclude restaurants)
+        // Find fillers within search radius (exclude restaurants, already visited POIs, and POIs used today)
         val nearbyFillers = poiRepository.getPOIsWithinRadius(
             latitude = nearLocation.latitude,
             longitude = nearLocation.longitude,
             radiusMeters = FILLER_SEARCH_RADIUS_METERS,
             city = fillerPOIs.firstOrNull()?.city ?: "Melbourne"
-        ).filter { it.isFiller && it.recommendedVisitDuration <= MAX_FILLER_DURATION && it.category != POICategory.RESTAURANT }
+        ).filter {
+            it.isFiller &&
+            it.recommendedVisitDuration <= MAX_FILLER_DURATION &&
+            it.category != POICategory.RESTAURANT &&
+            it.id !in visitedPOIIds &&  // Exclude visited in previous days
+            it.id !in usedTodayIds       // Exclude used today (same day)
+        }
 
         println("    [FillerService] Found ${nearbyFillers.size} fillers within ${FILLER_SEARCH_RADIUS_METERS/1000}km (duration <= ${MAX_FILLER_DURATION}min)")
 

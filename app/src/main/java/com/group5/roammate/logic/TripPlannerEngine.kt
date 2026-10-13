@@ -74,8 +74,24 @@ class TripPlannerEngine(
         // Inject fillers if requested
         return if (includeFillers) {
             val fillerService = FillerService(poiRepository, userProfile)
+            val visitedPOIIds = mutableSetOf<String>()
+
             val enrichedDays = baseItinerary.days.map { dayItinerary ->
-                fillerService.injectFillers(dayItinerary, destination, weatherStatus, dailyEndTime)
+                // Inject fillers for this day, excluding already visited POIs
+                val enrichedDay = fillerService.injectFillers(
+                    dayItinerary,
+                    destination,
+                    weatherStatus,
+                    dailyEndTime,
+                    visitedPOIIds
+                )
+
+                // Mark all POIs from this day as visited (including newly added fillers)
+                enrichedDay.pois.forEach { itineraryPOI ->
+                    visitedPOIIds.add(itineraryPOI.poi.id)
+                }
+
+                enrichedDay
             }
 
             baseItinerary.copy(days = enrichedDays)

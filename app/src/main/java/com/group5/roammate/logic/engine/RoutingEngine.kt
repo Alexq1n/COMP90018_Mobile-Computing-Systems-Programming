@@ -51,6 +51,7 @@ class RoutingEngine(
 
         val dayItineraries = mutableListOf<DayItinerary>()
         val rolloverQueue = mutableListOf<POI>()
+        val visitedPOIIds = mutableSetOf<String>()  // Track visited POIs across all days
 
         for (dayNumber in 1..numberOfDays) {
             val dayPOIs = if (dayNumber <= dailyClusters.size) {
@@ -61,7 +62,10 @@ class RoutingEngine(
 
             // Add rollover POIs from previous day and ALL restaurants to each day
             // This ensures restaurants are available every day for lunch scheduling
-            val candidatePOIs = (rolloverQueue + dayPOIs + restaurants).distinct()
+            // BUT exclude POIs that have already been visited in previous days
+            val candidatePOIs = (rolloverQueue + dayPOIs + restaurants)
+                .filter { it.id !in visitedPOIIds }  // Exclude visited POIs
+                .distinct()
             rolloverQueue.clear()
 
             // Get pinned POIs for this day
@@ -81,6 +85,11 @@ class RoutingEngine(
             )
 
             dayItineraries.add(dayItinerary)
+
+            // Mark all POIs from this day as visited (including fillers)
+            dayItinerary.pois.forEach { itineraryPOI ->
+                visitedPOIIds.add(itineraryPOI.poi.id)
+            }
         }
 
         val totalCost = dayItineraries.sumOf { day ->

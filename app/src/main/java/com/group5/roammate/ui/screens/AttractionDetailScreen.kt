@@ -83,7 +83,6 @@ data class AttractionOpeningHours(
 fun AttractionDetailScreen(
     attraction: AttractionDetail,
     onBackClick: () -> Unit,
-    onAddToTripClick: (AttractionDetail) -> Unit,
     onNavigateClick: (AttractionDetail) -> Unit,
     onWebsiteClick: (AttractionDetail) -> Unit,
     modifier: Modifier = Modifier,
@@ -94,7 +93,6 @@ fun AttractionDetailScreen(
         contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
             AttractionDetailActionBar(
-                onAddToTripClick = { onAddToTripClick(attraction) },
                 onNavigateClick = { onNavigateClick(attraction) },
             )
         },
@@ -132,18 +130,19 @@ private fun AttractionHero(
             .background(RoamMateHeroBackground)
             .statusBarsPadding(),
     ) {
-        BackCircleButton(
-            onClick = onBackClick,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 28.dp, top = 24.dp),
-        )
-
         // photo
         AttractionHeroPhoto(
             photoUrl = attraction.photoUrl,
             fallbackText = attraction.imageSymbol,
             modifier = Modifier.fillMaxSize(),
+        )
+
+        // back button
+        BackCircleButton(
+            onClick = onBackClick,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 28.dp, top = 24.dp),
         )
 
         Surface(
@@ -508,7 +507,6 @@ private fun DividerLine() {
 // ---- bottom actions ----
 @Composable
 private fun AttractionDetailActionBar(
-    onAddToTripClick: () -> Unit,
     onNavigateClick: () -> Unit,
 ) {
     Surface(
@@ -522,29 +520,10 @@ private fun AttractionDetailActionBar(
                 .padding(horizontal = 28.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            OutlinedButton(
-                onClick = onAddToTripClick,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(58.dp),
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, RoamMateTeal),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = RoamMateTeal,
-                ),
-            ) {
-                Text(
-                    text = "Add to trip",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.Center,
-                )
-            }
-
             Button(
                 onClick = onNavigateClick,
                 modifier = Modifier
-                    .weight(1f)
+                    .fillMaxWidth()
                     .height(58.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -584,7 +563,6 @@ private fun AttractionDetailScreenPreview() {
                 imageSymbol = "M",
             ),
             onBackClick = {},
-            onAddToTripClick = {},
             onNavigateClick = {},
             onWebsiteClick = {},
             modifier = Modifier.fillMaxSize(),

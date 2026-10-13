@@ -54,6 +54,7 @@ import com.group5.roammate.ui.screens.SavedTrip
 import com.group5.roammate.ui.screens.SavedTripsScreen
 import com.group5.roammate.ui.screens.TripScreen
 import com.group5.roammate.ui.screens.TripStopStatus
+import com.group5.roammate.ui.screens.TripDayPlan
 import com.group5.roammate.ui.screens.TripSummary
 import com.group5.roammate.ui.screens.TripTimelineStop
 import com.group5.roammate.ui.screens.TripWeatherSummary
@@ -665,16 +666,15 @@ class MainActivity : ComponentActivity() {
                                 condition = if (petWeather.isCurrent) "${petWeather.label} · ${petWeather.locationLabel}" else "Weather unavailable",
                             ),
 
-                            // TODO(Zewen, function: uiLoadTripSummary): Connect generated multi-day trip summary.
-                            // 例如：3 days in Melbourne + Day 1 / Day 2 / Day 3 简介。
-                            tripSummary = TripSummary(
-                                title = "3 days in Melbourne",
-                                description = "Day 1: Melbourne Museum, State Library and ACMI. Day 2: Royal Botanic Gardens and Queen Victoria Market. Day 3: Brighton Beach and Southbank.",
-                            ),
+                            // TODO(Zewen, function: uiLoadTripSummary): Connect trip title/overview.
+                            tripSummary = uiLoadTripSummary(),
 
                             // TODO(Zewen, function: uiUpdateTripProgress): Replace with real itinerary order and progress status.
                             // input provider: Alex GPS location.
                             stops = tripTimelineStops,
+
+                            // TODO(Zewen, function: uiLoadTripDays): Connect full multi-day itinerary.
+                            tripDays = uiLoadTripDays(tripTimelineStops),
 
                             // TODO(Leyan, function: uiLoadAttractionDetail): Open detail with real attraction id.
                             // storage provider: Yuxiang database if needed.
@@ -684,9 +684,10 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.AttractionDetail
                             },
 
-                            // TODO: 之后这里跳转 Edit itinerary 页面，手动增加/删除站点。
-                            onEditItineraryClick = {
-                                currentScreen = AuthScreen.EditItinerary
+                            // End trip: close the current active trip and return Home.
+                            onEndTripClick = {
+                                Toast.makeText(this, "Trip ended", Toast.LENGTH_SHORT).show()
+                                currentScreen = AuthScreen.Home
                             },
 
                             // Start navigation 和 Home 提醒条共用外部地图逻辑。
@@ -729,7 +730,9 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 .distinctBy { place -> place.name }
-                                .rotateLeft(exploreShakeRefreshCount)
+                                .take(10)       // 先取附近 10 个作为候选池
+                                .shuffled()     // 打乱
+                                .take(8)       // 随机选 8 个
                         }
 
                         ExploreScreen(
@@ -768,20 +771,6 @@ class MainActivity : ComponentActivity() {
                             // 返回到打开详情页的来源页面：Explore 或 Trip。
                             onBackClick = {
                                 currentScreen = attractionDetailReturnScreen
-                            },
-
-                            // Add to trip: 先加入当前行程假数据，并回到 Trip。
-                            // TODO(Zewen, function: uiAddAttractionToTrip): Send attraction id to backend for insert/reorder.
-                            onAddToTripClick = { attraction ->
-                                tripTimelineStops = rebalanceTripStopsAfterManualEdit(
-                                    tripTimelineStops.withAddedTemporaryAttraction(attraction),
-                                )
-                                Toast.makeText(
-                                    this,
-                                    "${attraction.name} added to itinerary",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                                currentScreen = AuthScreen.Trip
                             },
 
                             // Navigate: 打开外部地图，和 Home/Trip 共用同一个入口。
@@ -1522,10 +1511,42 @@ class MainActivity : ComponentActivity() {
         // sensor source: Alex GPS
         // input: category filter, GPS, limit
         // output: POI list mapped to ExplorePlace
+<<<<<<< Updated upstream
         // TODO(Alex): Rank POI repository by nearby/category; UI hides exact distance.
         return sampleNearbyExplorePlaces()
             .filter { place -> place.category == category }
             .take(limit)
+=======
+        val repository = MockPOI(context)
+        val searchService = POISearchService(repository)
+
+        return searchService.search(
+            query = "",
+            userLatitude = userLatitude,
+            userLongitude = userLongitude,
+            category = category,
+            limit = limit,
+        ).map { result ->
+            val place = result.place
+            ExplorePlace(
+                name = place.name,
+                distanceText = result.distanceMeters?.let { distance ->
+                    if (distance < 1000.0) {
+                        "${distance.toInt()} m"
+                    } else {
+                        String.format(java.util.Locale.US, "%.1f km", distance / 1000.0)
+                    }
+                } ?: "",
+                category = category,
+                environmentLabel = place.environment.name
+                    .lowercase()
+                    .replaceFirstChar { it.uppercase() },
+                tagText = result.tagText,
+                mapX = 0.5f,
+                mapY = 0.5f,
+            )
+        }
+>>>>>>> Stashed changes
     }
 
     // ---- Leyan: attraction data ----
@@ -1561,11 +1582,49 @@ class MainActivity : ComponentActivity() {
     private fun uiLoadTripSummary(): TripSummary {
         // function: uiLoadTripSummary
         // owner: Zewen
-        // output: short trip summary for Trip screen
-        // TODO(Zewen): Return real multi-day summary with itinerary.
+        // output: trip title/overview for Trip screen
+        // TODO(Zewen): Return real trip title and short overview.
         return TripSummary(
             title = "3 days in Melbourne",
-            description = "Day 1: Melbourne Museum, State Library and ACMI. Day 2: gardens and markets. Day 3: beach and riverside walk.",
+            description = "Full multi-day itinerary.",
+        )
+    }
+
+    private fun uiLoadTripDays(
+        currentDayStops: List<TripTimelineStop>,
+    ): List<TripDayPlan> {
+        // function: uiLoadTripDays
+        // owner: Zewen
+        // output: full multi-day itinerary for Trip screen
+        // TODO(Zewen): Replace with backend generated days and stops.
+        return listOf(
+            TripDayPlan(
+                dayTitle = "Day 1",
+                dateText = "Today",
+                stops = currentDayStops,
+            ),
+            TripDayPlan(
+                dayTitle = "Day 2",
+                dateText = "Tomorrow",
+                stops = listOf(
+                    TripTimelineStop("10:00", "State Library Victoria", TripStopStatus.Upcoming),
+                    TripTimelineStop(
+                        time = "13:30",
+                        title = "Pidapipo Gelato",
+                        status = TripStopStatus.Upcoming,
+                        hiddenTag = "Hidden gem · nearby",
+                    ),
+                    TripTimelineStop("15:00", "Queen Victoria Market", TripStopStatus.Upcoming),
+                ),
+            ),
+            TripDayPlan(
+                dayTitle = "Day 3",
+                dateText = "Final day",
+                stops = listOf(
+                    TripTimelineStop("09:30", "Brighton Beach", TripStopStatus.Upcoming),
+                    TripTimelineStop("13:00", "Southbank walk", TripStopStatus.Upcoming),
+                ),
+            ),
         )
     }
 

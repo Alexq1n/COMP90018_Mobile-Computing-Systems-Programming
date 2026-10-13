@@ -15,6 +15,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.example.localdatebase.cloud.CloudResultCallback
+import com.example.localdatebase.cloud.CloudUserSession
+import com.example.localdatebase.cloud.FirebaseCloudUserRepository
+import com.example.localdatebase.cloud.UserPreferences
 import com.group5.roammate.backend_alex.MockPOI
 import com.group5.roammate.backend_alex.POISearchService
 import com.group5.roammate.ui.pet.rememberPetEnvironment
@@ -107,6 +111,8 @@ Keep each owner in a small function below, then connect the screen callbacks to 
 
 
 class MainActivity : ComponentActivity() {
+
+    private val cloudUserRepository by lazy { FirebaseCloudUserRepository() }
 
     private val geocodingRepository by lazy {
         GeocodingRepository(applicationContext)
@@ -300,9 +306,11 @@ class MainActivity : ComponentActivity() {
                 val petWeather = petEnvironment.weather
                 val petState = PetStateEngine.buildUiState(petProfile, petWeather)
 
-                // User name
-                // TODO(Yuxiang, function: uiLoadUserProfile): Replace with Firebase user profile.
-                var userName by rememberSaveable { mutableStateOf("Yufei") }
+                // Firebase keeps the account session across app restarts.
+                var userName by rememberSaveable {
+                    mutableStateOf(uiLoadUserProfile())
+                }
+                var isCloudRequestRunning by rememberSaveable { mutableStateOf(false) }
 
                 // Loading states
                 // TODO(Yufei, function: uiLoadingState): Set true while backend / Firebase requests are running.
@@ -416,6 +424,22 @@ class MainActivity : ComponentActivity() {
                     mutableStateOf(listOf("Museums", "Parks", "Food"))
                 }
 
+                LaunchedEffect(currentScreen) {
+                    if (
+                        cloudUserRepository.currentUser() != null &&
+                        (currentScreen == AuthScreen.Home ||
+                            currentScreen == AuthScreen.Profile ||
+                            currentScreen == AuthScreen.ProfileInterests)
+                    ) {
+                        uiLoadProfileInterests(
+                            onSuccess = { interests ->
+                                if (interests.isNotEmpty()) profileDefaultInterests = interests
+                            },
+                            onError = { /* Keep the local defaults when no cloud document exists. */ },
+                        )
+                    }
+                }
+
                 // Plan My Trip 入口使用：只属于当前这次行程的兴趣。
                 // TODO(Zewen, function: uiSaveTripOnlyInterests): pass one-trip interests into itinerary request only.
                 var tripInterests by rememberSaveable {
@@ -515,8 +539,7 @@ class MainActivity : ComponentActivity() {
                         LoginScreen(
                             modifier = Modifier.fillMaxSize(),
 
-                            // This will run when the user clicks "Log in".
-                            // TODO(Yuxiang, function: uiLoginWithFirebase): connect Firebase login.
+                            // Enter Home only after Firebase accepts the credentials.
                             onLoginClick = { email, password ->
                                 if (email.isBlank() || password.isBlank()) {
                                     Toast.makeText(
@@ -524,10 +547,21 @@ class MainActivity : ComponentActivity() {
                                         "Please enter email and password",
                                         Toast.LENGTH_SHORT,
                                     ).show()
-                                } else {
-                                    // 登录成功后进入 Home 页面。
-                                    // TODO(Yuxiang, function: uiLoginWithFirebase): Navigate only after Firebase login success.
-                                    currentScreen = AuthScreen.Home
+                                } else if (!isCloudRequestRunning) {
+                                    isCloudRequestRunning = true
+                                    uiLoginWithFirebase(
+                                        email = email,
+                                        password = password,
+                                        onSuccess = { session ->
+                                            isCloudRequestRunning = false
+                                            userName = session.readableName()
+                                            currentScreen = AuthScreen.Home
+                                        },
+                                        onError = { error ->
+                                            isCloudRequestRunning = false
+                                            showCloudError(error)
+                                        },
+                                    )
                                 }
                             },
 
@@ -552,17 +586,24 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.Login
                             },
 
-                            // Received the name, email and password
-                            // TODO(Yuxiang, function: uiCreateAccountWithFirebase): connect Firebase register.
-                            onCreateAccountClick = { fullName, _, _ ->
-                                // 注册成功后进入 Home 页面。
-                                // TODO(Yuxiang, function: uiCreateAccountWithFirebase): Navigate only after Firebase register success.
-                                Toast.makeText(
-                                    this,
-                                    "Create account clicked for $fullName",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                                currentScreen = AuthScreen.Home
+                            onCreateAccountClick = { fullName, email, password ->
+                                if (!isCloudRequestRunning) {
+                                    isCloudRequestRunning = true
+                                    uiCreateAccountWithFirebase(
+                                        fullName = fullName,
+                                        email = email,
+                                        password = password,
+                                        onSuccess = { session ->
+                                            isCloudRequestRunning = false
+                                            userName = session.readableName()
+                                            currentScreen = AuthScreen.Home
+                                        },
+                                        onError = { error ->
+                                            isCloudRequestRunning = false
+                                            showCloudError(error)
+                                        },
+                                    )
+                                }
                             },
 
                             // An error prompt on the login page
@@ -1153,8 +1194,9 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.EditProfile
                             },
 
-                            // TODO(Yuxiang, function: uiLogout): connect Firebase logout.
                             onLogoutClick = {
+                                cloudUserRepository.signOut()
+                                userName = ""
                                 currentScreen = AuthScreen.Login
                             },
 
@@ -1198,16 +1240,23 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.Profile
                             },
 
-                            // Save button.
-                            // TODO(Yuxiang, function: uiSaveUserProfile): Send updatedName to Firebase user profile.
                             onSaveChangesClick = { updatedName ->
-                                userName = updatedName
-                                Toast.makeText(
-                                    this,
-                                    "Profile updated",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                                currentScreen = AuthScreen.Profile
+                                if (!isCloudRequestRunning) {
+                                    isCloudRequestRunning = true
+                                    uiSaveUserProfile(
+                                        updatedName = updatedName,
+                                        onSuccess = { session ->
+                                            isCloudRequestRunning = false
+                                            userName = session.readableName()
+                                            Toast.makeText(this, "Profile updated", Toast.LENGTH_SHORT).show()
+                                            currentScreen = AuthScreen.Profile
+                                        },
+                                        onError = { error ->
+                                            isCloudRequestRunning = false
+                                            showCloudError(error)
+                                        },
+                                    )
+                                }
                             },
 
                             // Error toast.
@@ -1228,10 +1277,22 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AuthScreen.Profile
                             },
 
-                            // Done 后更新长期默认兴趣；之后接 Yuxiang 的 Firebase 永久保存。
                             onDoneClick = { updatedInterests ->
-                                profileDefaultInterests = updatedInterests
-                                currentScreen = AuthScreen.Profile
+                                if (!isCloudRequestRunning) {
+                                    isCloudRequestRunning = true
+                                    uiSaveProfileInterests(
+                                        interests = updatedInterests,
+                                        onSuccess = { savedInterests ->
+                                            isCloudRequestRunning = false
+                                            profileDefaultInterests = savedInterests
+                                            currentScreen = AuthScreen.Profile
+                                        },
+                                        onError = { error ->
+                                            isCloudRequestRunning = false
+                                            showCloudError(error)
+                                        },
+                                    )
+                                }
                             },
                         )
                     }
@@ -1454,52 +1515,106 @@ class MainActivity : ComponentActivity() {
     private fun uiLoginWithFirebase(
         email: String,
         password: String,
-    ): Boolean {
-        // function: uiLoginWithFirebase
-        // owner: Yuxiang
-        // input: email, password
-        // output: login success
-        // TODO(Yuxiang): Replace with Firebase Auth signIn.
-        return email.isNotBlank() && password.isNotBlank()
+        onSuccess: (CloudUserSession) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.signIn(email, password, cloudCallback(onSuccess, onError))
+        } catch (error: Exception) {
+            onError(error)
+        }
     }
 
     private fun uiCreateAccountWithFirebase(
         fullName: String,
         email: String,
         password: String,
-    ): Boolean {
-        // function: uiCreateAccountWithFirebase
-        // owner: Yuxiang
-        // input: fullName, email, password
-        // output: register success
-        // TODO(Yuxiang): Replace with Firebase Auth createUser + user profile save.
-        return fullName.isNotBlank() && email.isNotBlank() && password.isNotBlank()
+        onSuccess: (CloudUserSession) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.register(
+                fullName,
+                email,
+                password,
+                cloudCallback(onSuccess, onError),
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
     }
 
-    private fun uiLoadUserProfile(): String {
-        // function: uiLoadUserProfile
-        // owner: Yuxiang
-        // output: displayName
-        // TODO(Yuxiang): Load user display name from Firebase.
-        return "Yufei"
+    private fun uiLoadUserProfile(): String =
+        cloudUserRepository.currentUser()?.readableName().orEmpty()
+
+    private fun uiSaveUserProfile(
+        updatedName: String,
+        onSuccess: (CloudUserSession) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.updateDisplayName(
+                updatedName,
+                cloudCallback(onSuccess, onError),
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
     }
 
-    private fun uiSaveUserProfile(updatedName: String): String {
-        // function: uiSaveUserProfile
-        // owner: Yuxiang
-        // input: updatedName
-        // output: saved displayName
-        // TODO(Yuxiang): Save updated name to Firebase user profile.
-        return updatedName.trim()
+    private fun uiSaveProfileInterests(
+        interests: List<String>,
+        onSuccess: (List<String>) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.savePreferences(
+                UserPreferences("system", "en-AU", interests, true),
+                object : CloudResultCallback<Void> {
+                    override fun onSuccess(value: Void?) = onSuccess(interests)
+                    override fun onError(error: Exception) = onError(error)
+                },
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
     }
 
-    private fun uiSaveProfileInterests(interests: List<String>): List<String> {
-        // function: uiSaveProfileInterests
-        // owner: Yuxiang
-        // input: long-term interest ids
-        // output: saved interest ids
-        // TODO(Yuxiang): Save default interests permanently.
-        return interests
+    private fun uiLoadProfileInterests(
+        onSuccess: (List<String>) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            cloudUserRepository.loadPreferences(
+                object : CloudResultCallback<UserPreferences> {
+                    override fun onSuccess(value: UserPreferences) =
+                        onSuccess(value.preferredCategories)
+
+                    override fun onError(error: Exception) = onError(error)
+                },
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
+    }
+
+    private fun <T> cloudCallback(
+        onSuccess: (T) -> Unit,
+        onError: (Exception) -> Unit,
+    ) = object : CloudResultCallback<T> {
+        override fun onSuccess(value: T) = onSuccess(value)
+        override fun onError(error: Exception) = onError(error)
+    }
+
+    private fun CloudUserSession.readableName(): String =
+        displayName.ifBlank { email.substringBefore('@').ifBlank { "Traveller" } }
+
+    private fun showCloudError(error: Exception) {
+        Toast.makeText(
+            this,
+            error.localizedMessage ?: "Cloud request failed",
+            Toast.LENGTH_LONG,
+        ).show()
     }
 
     private fun uiSaveTripOnlyInterests(interests: List<String>): List<String> {

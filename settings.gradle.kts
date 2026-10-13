@@ -15,4 +15,12 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "RoamMate"
-include(":app", ":backend")
+include(
+    ":app",
+    ":backend",
+    ":core:database",
+    ":feature:cloud",
+    ":feature:planner",
+    ":feature:poi",
+    ":feature:sensor",
+)

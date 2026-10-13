@@ -781,7 +781,8 @@ class MainActivity : ComponentActivity() {
                             currentSensorLocation.value.longitude,
                         ) {
                             val location = currentSensorLocation.value
-                            ExplorePlaceCategory.entries
+                            // nearest 10, already sorted near -> far by backend
+                            val pool = ExplorePlaceCategory.entries
                                 .flatMap { category ->
                                     uiExploreNearbyPlaces(
                                         context = this@MainActivity,
@@ -792,9 +793,14 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 .distinctBy { place -> place.name }
-                                .take(10)       // 先取附近 10 个作为候选池
-                                .shuffled(kotlin.random.Random(exploreShakeRefreshCount))   // 固定种子：只有摇一摇才换
-                                .take(8)       // 随机选 8 个
+                                .take(10)
+
+                            // shake picks a random 8, but keep near -> far order
+                            val keepIndices = pool.indices
+                                .shuffled(kotlin.random.Random(exploreShakeRefreshCount))
+                                .take(8)
+                                .toSet()
+                            pool.filterIndexed { index, _ -> index in keepIndices }
                         }
 
                         ExploreScreen(
@@ -1655,7 +1661,7 @@ class MainActivity : ComponentActivity() {
                 environmentLabel = place.environment.name
                     .lowercase()
                     .replaceFirstChar { it.uppercase() },
-                tagText = "",
+                tagText = result.tagText,
                 mapX = 0.5f,
                 mapY = 0.5f,
             )

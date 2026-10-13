@@ -3,7 +3,7 @@ package com.group5.roammate.weather.monitor
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.group5.roammate.weather.data.WeatherRepository
+import com.group5.roammate.weather.data.WeatherService
 import com.group5.roammate.weather.model.CurrentWeather
 
 /**
@@ -11,7 +11,7 @@ import com.group5.roammate.weather.model.CurrentWeather
  * Current weather is requested immediately and then every 10 minutes.
  */
 class CurrentWeatherMonitor(
-    private val weatherRepository: WeatherRepository,
+    private val weatherService: WeatherService,
 
     // Connected to the GPS function provided by the sensor/GPS module.
     private val getCurrentLocation:
@@ -64,7 +64,7 @@ class CurrentWeatherMonitor(
             "GPS: $latitude, $longitude"
         )
 
-        weatherRepository.getCurrentWeather(
+        weatherService.getCurrentWeather(
             latitude = latitude,
             longitude = longitude
         ) { weather ->

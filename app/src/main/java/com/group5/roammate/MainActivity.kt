@@ -69,7 +69,8 @@ import com.group5.roammate.ui.sensor.SensorTestScreen
 import com.group5.roammate.ui.pet.CompanionsScreen
 import com.group5.roammate.ui.pet.PetCameraScreen
 import com.group5.roammate.ui.theme.RoamMateTheme
-import com.group5.roammate.poi.data.geoapify.GeoapifyRepository
+
+import com.group5.roammate.weather.data.WeatherService
 import com.group5.roammate.weather.monitor.CurrentWeatherMonitor
 import com.group5.roammate.weather.monitor.WeatherForecastMonitor
 import com.group5.roammate.weather.context.WeatherContextDetector
@@ -141,18 +142,20 @@ class MainActivity : ComponentActivity() {
         WeatherContextDetector()
     }
 
-    private val weatherGeoapifyRepository by lazy {
-        GeoapifyRepository()
+    private val weatherService by lazy {
+        WeatherService(
+            weatherRepository = weatherRepository
+        )
     }
 
     private val currentWeatherMonitor by lazy {
         CurrentWeatherMonitor(
-            weatherRepository = weatherRepository,
+            weatherService = weatherService,
             getCurrentLocation = {
                 sensorRepository
                     .getCurrentLocation()
-                    ?.let { location ->
-                        location.latitude to location.longitude
+                    ?.let {
+                        it.latitude to it.longitude
                     }
             }
         )
@@ -312,8 +315,8 @@ class MainActivity : ComponentActivity() {
         // ==================== Weather Demo ====================
         startWeatherDemoScenario()
 
-        // UI observes the latest current weather from the repository.
-        weatherRepository.currentWeather.observe(this) { weather ->
+        // UI observes the latest current weather through WeatherService.
+        weatherService.currentWeather.observe(this) { weather ->
 
             android.util.Log.d(
                 "ROAMMATE_WEATHER",
@@ -906,7 +909,6 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             destinationTitle = "Today in Melbourne",
 
-                            // TODO(LeYan, function: uiLoadWeatherSummary): Connect real weather data.
                             // LeYan: live current weather from WeatherRepository + CurrentWeatherMonitor + Alex GPS
                             weatherSummary = currentWeatherSummaryState.value,
 
@@ -2016,7 +2018,7 @@ class MainActivity : ComponentActivity() {
             )
 
             // Step 5: Parse number of days (default to 1 day for now)
-            val numberOfDays = 1 // TODO: Calculate from date range if multi-day
+            val numberOfDays = weatherForecasts.size // Calculate from date range if multi-day
 
             // Step 6: Call backend to generate itinerary
             val itinerary = tripPlannerEngine.generateInitialTrip(
@@ -2598,20 +2600,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun uiLoadWeatherSummary(): TripWeatherSummary {
-        // function: uiLoadWeatherSummary
-        // owner: LeYan
-        // source: Alex GPS -> CurrentWeatherMonitor -> WeatherRepository
-        return currentWeatherSummaryState.value
-    }
-
     private fun uiLoadPlannedWeather(
         request: PlanMyTripRequest,
         onResult: (List<DailyWeatherForecast>?) -> Unit,
     ) {
 
-        // UI date format:
-        // "12 Oct 2026"
         val startDate =
             try {
                 LocalDate.parse(
@@ -2634,55 +2627,25 @@ class MainActivity : ComponentActivity() {
                 return
             }
 
-
-        // Invalid range
-        if (endDate.isBefore(startDate)) {
-            onResult(null)
-            return
-        }
-
-
-        // GeoapifyRepository is suspend,
-        // so run it inside lifecycleScope.
         lifecycleScope.launch {
 
-            // destination -> latitude / longitude
-            val coordinates =
-                weatherGeoapifyRepository
-                    .geocodeDestination(
-                        request.destination
-                    )
+            val forecasts =
+                weatherService.getPlannedWeather(
+                    destination = request.destination,
+                    startDate = startDate,
+                    endDate = endDate
+                )
 
-            if (coordinates == null) {
-                onResult(null)
-                return@launch
+            if (forecasts != null) {
+                latestPlannedWeather = forecasts
+
+                android.util.Log.d(
+                    "PLANNED_WEATHER",
+                    "Loaded ${forecasts.size} planned weather forecasts"
+                )
             }
-            android.util.Log.d(
-                "PLANNED_WEATHER",
-                "Geocoded ${request.destination}: " +
-                        "lat=${coordinates.latitude}, " +
-                        "lon=${coordinates.longitude}"
-            )
 
-
-            // latitude / longitude + date range
-            // -> daily weather forecast
-            weatherRepository.getPlannedWeather(
-                latitude = coordinates.latitude,
-                longitude = coordinates.longitude,
-                startDate = startDate,
-                endDate = endDate,
-            ) { forecasts ->
-
-                if (forecasts != null) {
-                    latestPlannedWeather = forecasts
-                }
-
-                // Weather API callback may be on background thread.
-                runOnUiThread {
-                    onResult(forecasts)
-                }
-            }
+            onResult(forecasts)
         }
     }
 

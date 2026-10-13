@@ -19,6 +19,9 @@ import com.example.localdatebase.cloud.CloudResultCallback
 import com.example.localdatebase.cloud.CloudUserSession
 import com.example.localdatebase.cloud.FirebaseCloudUserRepository
 import com.example.localdatebase.cloud.UserPreferences
+import com.example.localdatebase.planner.FirebasePlannerRepository
+import com.example.localdatebase.planner.PlannerResultCallback
+import com.example.localdatebase.planner.SavedTripSummary as CloudSavedTripSummary
 import com.group5.roammate.backend.POISearchService
 import com.group5.roammate.backend.PlaceRepository
 
@@ -196,6 +199,10 @@ class MainActivity : ComponentActivity() {
 
     private val cloudUserRepository by lazy {
         FirebaseCloudUserRepository()
+    }
+
+    private val plannerRepository by lazy {
+        FirebasePlannerRepository()
     }
 
     private val geocodingRepository by lazy {
@@ -440,8 +447,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             // RoamMateTheme responsible for unifying colors, fonts and the overall visual style.
             RoamMateTheme(dynamicColor = false) {
-                // This is a temporary page status.
-                var currentScreen by rememberSaveable { mutableStateOf(AuthScreen.PlanMyTrip) }
+                // A signed-out user must authenticate before entering the app.
+                var currentScreen by rememberSaveable {
+                    mutableStateOf(
+                        if (cloudUserRepository.currentUser() == null) {
+                            AuthScreen.Login
+                        } else {
+                            AuthScreen.Home
+                        },
+                    )
+                }
 
                 // Jie pet feature state: one koala, live weather gear and a persisted fashion choice.
                 val petPreferences = remember { PetPreferences(applicationContext) }
@@ -562,8 +577,7 @@ class MainActivity : ComponentActivity() {
                     mutableStateOf(AuthScreen.Explore)
                 }
 
-                // Profile 入口使用：长期默认兴趣偏好。
-                // TODO(Yuxiang, function: uiSaveProfileInterests): connect Firebase default interests, permanent save.
+                // Profile 入口使用：长期默认兴趣偏好，由 Firebase 持久化。
                 var profileDefaultInterests by rememberSaveable {
                     mutableStateOf(listOf("Museums", "Parks", "Food"))
                 }
@@ -617,11 +631,19 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                // Saved trips
-                // TODO(Yuxiang, function: uiLoadSavedTrips): Load saved trips from Firebase.
-                // input provider: Zewen trip summary shape.
-                val savedTrips = remember {
-                    sampleSavedTrips()
+                // Saved trips are loaded from the signed-in user's Firestore document.
+                var savedTrips by remember { mutableStateOf(emptyList<SavedTrip>()) }
+
+                LaunchedEffect(currentScreen) {
+                    if (
+                        currentScreen == AuthScreen.SavedTrips &&
+                        cloudUserRepository.currentUser() != null
+                    ) {
+                        uiLoadSavedTrips(
+                            onSuccess = { trips -> savedTrips = trips },
+                            onError = ::showCloudError,
+                        )
+                    }
                 }
 
                 // TODO: 这组 Trip timeline 是临时演示假数据。
@@ -703,6 +725,8 @@ class MainActivity : ComponentActivity() {
                                         },
                                         onError = { error ->
                                             isCloudRequestRunning = false
+                                            // A failed login must leave no authenticated session.
+                                            cloudUserRepository.signOut()
                                             showCloudError(error)
                                         },
                                     )
@@ -737,13 +761,23 @@ class MainActivity : ComponentActivity() {
                                         fullName = fullName,
                                         email = email,
                                         password = password,
-                                        onSuccess = { session ->
+                                        onSuccess = {
                                             isCloudRequestRunning = false
-                                            userName = session.readableName()
-                                            currentScreen = AuthScreen.Home
+                                            cloudUserRepository.signOut()
+                                            userName = ""
+                                            Toast.makeText(
+                                                this,
+                                                "Account created. Please log in.",
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
+                                            currentScreen = AuthScreen.Login
                                         },
                                         onError = { error ->
                                             isCloudRequestRunning = false
+                                            // Account creation signs into Firebase before the
+                                            // profile is written. If that write fails, return to
+                                            // a fully signed-out state instead of bypassing Login.
+                                            cloudUserRepository.signOut()
                                             showCloudError(error)
                                         },
                                     )
@@ -1375,7 +1409,6 @@ class MainActivity : ComponentActivity() {
                         ProfileScreen(
                             modifier = Modifier.fillMaxSize(),
 
-                            // TODO(Yuxiang, function: uiLoadUserProfile): Replace with Firebase display name.
                             userName = userName,
 
                             // 从 Profile 进入 Interests，保存为用户长期默认偏好。
@@ -1396,6 +1429,7 @@ class MainActivity : ComponentActivity() {
                             onLogoutClick = {
                                 cloudUserRepository.signOut()
                                 userName = ""
+                                savedTrips = emptyList()
                                 currentScreen = AuthScreen.Login
                             },
 
@@ -1829,13 +1863,35 @@ class MainActivity : ComponentActivity() {
         return interests
     }
 
-    private fun uiLoadSavedTrips(): List<SavedTrip> {
+    private fun uiLoadSavedTrips(
+        onSuccess: (List<SavedTrip>) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
         // function: uiLoadSavedTrips
         // owner: Yuxiang
         // contributor: Zewen trip summary shape
         // output: saved trip cards
-        // TODO(Yuxiang): Load saved trip summaries from Firebase/backend.
-        return sampleSavedTrips()
+        try {
+            plannerRepository.listTrips(
+                object : PlannerResultCallback<List<CloudSavedTripSummary>> {
+                    override fun onSuccess(value: List<CloudSavedTripSummary>) {
+                        onSuccess(
+                            value.map { trip ->
+                                SavedTrip(
+                                    destination = trip.destination,
+                                    durationText = trip.durationText,
+                                    dateText = trip.dateText,
+                                )
+                            },
+                        )
+                    }
+
+                    override fun onError(error: Exception) = onError(error)
+                },
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
     }
 
     // ---- Alex: sensor + fuzzy search trigger ----
@@ -2857,28 +2913,6 @@ class MainActivity : ComponentActivity() {
             ?: 10
 
         return "%02d:00".format(nextHour.coerceAtMost(22))
-    }
-
-    private fun sampleSavedTrips(): List<SavedTrip> {
-        // TODO: Replace with Yuxiang Firebase saved trips.
-        // Empty list shows the empty state.
-        return listOf(
-            SavedTrip(
-                destination = "Melbourne",
-                durationText = "3 days",
-                dateText = "May 2025",
-            ),
-            SavedTrip(
-                destination = "Great Ocean Road",
-                durationText = "1 day",
-                dateText = "Mar 2025",
-            ),
-            SavedTrip(
-                destination = "Sydney",
-                durationText = "2 days",
-                dateText = "Jan 2025",
-            ),
-        )
     }
 
     private fun melbournePopularAddStopPlaces(): List<AddStopPlace> {

@@ -153,7 +153,7 @@ fun CreateAccountScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Email will be used by Firebase Authentication later.
+            // Email is used by Firebase Authentication.
             CreateAccountTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -233,8 +233,8 @@ fun CreateAccountScreen(
 
             Button(
                 onClick = {
-                    // Keep simple validation in the UI for now.
-                    // Firebase registration will be connected outside this screen later.
+                    // Keep immediate field validation in the UI. Firebase performs
+                    // the account creation and final credential validation.
                     when {
                         fullName.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() -> {
                             onValidationError("Please fill in all fields")

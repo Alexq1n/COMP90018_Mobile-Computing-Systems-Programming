@@ -14,7 +14,7 @@ data class StepData(val steps: Float, val timestamp: Long)
 
 class StepCounterSensor(
     context: Context,
-    private val intervalMillis: Long = 100L,
+    private val intervalMillis: Long = 60_000L,
     private val maxPoints: Int = 100,
     private val onStepsUpdated: (Int, Int?) -> Unit = { _, _ -> },
     private val onHistoryRecorded: (StepData) -> Unit = {}
@@ -115,10 +115,8 @@ class StepCounterSensor(
         Log.d("STEP_SENSOR", "EstimatedSteps=$estimatedSteps")
 
 
-        // Multiply estimated steps by 10
-        val boostedSteps = estimatedSteps * 100f
 
-        return boostedSteps.toInt()
+        return estimatedSteps.toInt()
     }
 
     fun disableStepCounter() {

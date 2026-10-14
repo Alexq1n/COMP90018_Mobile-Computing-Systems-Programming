@@ -2086,7 +2086,50 @@ class MainActivity : ComponentActivity() {
             // Step 5: Calculate number of days from date range
             val numberOfDays = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate).toInt() + 1
 
-            // Step 6: Call backend to generate itinerary
+            // Step 6: Determine weather status from actual forecasts
+            android.util.Log.d("RoamMate", "Step 6: Processing weather forecasts")
+            android.util.Log.d("RoamMate", "  - weatherForecasts size: ${weatherForecasts.size}")
+            weatherForecasts.forEachIndexed { index, forecast ->
+                android.util.Log.d("RoamMate", "  - Forecast[$index]: date=${forecast.date}, status=${forecast.status}")
+            }
+
+            val weatherStatus = when {
+                weatherForecasts.isEmpty() -> {
+                    android.util.Log.w("RoamMate", "  - Using DEFAULT weather: SUNNY (no forecasts available)")
+                    com.group5.roammate.logic.models.WeatherStatus.SUNNY
+                }
+                else -> {
+                    val validForecasts = weatherForecasts.mapNotNull { it.status }
+                    android.util.Log.d("RoamMate", "  - Valid forecasts count: ${validForecasts.size}")
+
+                    if (validForecasts.isEmpty()) {
+                        android.util.Log.w("RoamMate", "  - Using DEFAULT weather: SUNNY (all forecasts have null status)")
+                        com.group5.roammate.logic.models.WeatherStatus.SUNNY
+                    } else {
+                        // Find most common weather status and convert to logic model type
+                        val weatherCounts = validForecasts.groupingBy { it }.eachCount()
+                        android.util.Log.d("RoamMate", "  - Weather distribution: $weatherCounts")
+
+                        val mostCommonWeather = weatherCounts.maxByOrNull { it.value }?.key
+                        android.util.Log.i("RoamMate", "  - Using REAL weather API data: $mostCommonWeather (most frequent)")
+
+                        when (mostCommonWeather) {
+                            com.group5.roammate.weather.model.WeatherStatus.SUNNY -> com.group5.roammate.logic.models.WeatherStatus.SUNNY
+                            com.group5.roammate.weather.model.WeatherStatus.CLOUDY -> com.group5.roammate.logic.models.WeatherStatus.CLOUDY
+                            com.group5.roammate.weather.model.WeatherStatus.RAINY -> com.group5.roammate.logic.models.WeatherStatus.RAINY
+                            com.group5.roammate.weather.model.WeatherStatus.STORMY -> com.group5.roammate.logic.models.WeatherStatus.STORMY
+                            com.group5.roammate.weather.model.WeatherStatus.SNOWY -> com.group5.roammate.logic.models.WeatherStatus.SNOWY
+                            null -> {
+                                android.util.Log.w("RoamMate", "  - Using DEFAULT weather: SUNNY (mostCommonWeather is null)")
+                                com.group5.roammate.logic.models.WeatherStatus.SUNNY
+                            }
+                        }
+                    }
+                }
+            }
+            android.util.Log.i("RoamMate", "Step 6: Final weatherStatus for itinerary generation: $weatherStatus")
+
+            // Step 7: Call backend to generate itinerary
             val itinerary = tripPlannerEngine.generateInitialTrip(
                 tripId = "trip_${System.currentTimeMillis()}",
                 destination = request.destination,
@@ -2096,11 +2139,7 @@ class MainActivity : ComponentActivity() {
                 startingLocation = startingLocation,
                 dailyStartTime = request.startTime,
                 dailyEndTime = dailyEndTime,
-                weatherStatus = if (weatherForecasts.none { it.status != null }) {
-                    com.group5.roammate.logic.models.WeatherStatus.CLOUDY
-                } else {
-                    com.group5.roammate.logic.models.WeatherStatus.SUNNY
-                },
+                weatherStatus = weatherStatus,
                 includeFillers = true,
                 pinnedPOIs = pinnedPOIs
             ).requireScheduledStops()

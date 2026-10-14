@@ -1,10 +1,5 @@
 package com.group5.roammate.ui.pet
 
-import android.content.Context
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
 import android.os.SystemClock
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -24,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -39,7 +33,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -48,18 +41,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.group5.roammate.pet.PetAction
 import com.group5.roammate.pet.PetBehaviorCue
 import com.group5.roammate.pet.PetBehaviorEngine
 import com.group5.roammate.pet.PetInteraction
 import com.group5.roammate.pet.PetTripContext
 import com.group5.roammate.pet.PetUiState
+import com.group5.roammate.sensor.SensorRepository
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.roundToInt
-import kotlin.math.sqrt
 
 private val StageTeal = Color(0xFF008B8F)
 private val StageText = Color(0xFF17212B)
@@ -77,6 +70,7 @@ fun InteractivePetStage(
     onNextOutfit: () -> Unit,
     tripContext: PetTripContext = PetTripContext(),
     isMoving: Boolean = false,
+    sensorRepository: SensorRepository? = null,
     modifier: Modifier = Modifier,
 ) {
     var queuedReaction by remember { mutableStateOf<PetBehaviorCue?>(null) }
@@ -102,7 +96,7 @@ fun InteractivePetStage(
 
     fun react(interaction: PetInteraction) = showCue(PetBehaviorEngine.reaction(interaction))
 
-    ShakeDetectorEffect {
+    SharedShakeEffect(sensorRepository) {
         shakeCount += 1
         showCue(PetBehaviorEngine.weatherAdvice(state.weather, tripContext, shakeCount))
     }
@@ -271,43 +265,13 @@ private enum class GestureMode {
 }
 
 @Composable
-private fun ShakeDetectorEffect(onShake: () -> Unit) {
-    val context = LocalContext.current
+private fun SharedShakeEffect(sensorRepository: SensorRepository?, onShake: () -> Unit) {
     val latestOnShake by rememberUpdatedState(onShake)
-
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(context, lifecycleOwner) {
-        val manager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        val accelerometer = manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        var lastShake = 0L
-        val listener = object : SensorEventListener {
-            override fun onSensorChanged(event: SensorEvent) {
-                val x = event.values[0] / SensorManager.GRAVITY_EARTH
-                val y = event.values[1] / SensorManager.GRAVITY_EARTH
-                val z = event.values[2] / SensorManager.GRAVITY_EARTH
-                val gForce = sqrt(x * x + y * y + z * z)
-                val now = SystemClock.elapsedRealtime()
-                if (gForce > 2.35f && now - lastShake > 3_000L) {
-                    lastShake = now
-                    latestOnShake()
-                }
-            }
-
-            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
-        }
-
-        fun updateRegistration() {
-            manager.unregisterListener(listener)
-            if (accelerometer != null && lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-                manager.registerListener(listener, accelerometer, SensorManager.SENSOR_DELAY_GAME)
-            }
-        }
-        val observer = LifecycleEventObserver { _, _ -> updateRegistration() }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        updateRegistration()
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            manager.unregisterListener(listener)
+    LaunchedEffect(sensorRepository, lifecycleOwner) {
+        val repository = sensorRepository ?: return@LaunchedEffect
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            repository.shakeEvents.collect { latestOnShake() }
         }
     }
 }

@@ -354,6 +354,9 @@ class MainActivity : ComponentActivity() {
             uiHandleWeatherContextEvent(event)
         }
 
+        // ----- Weather Demo -----
+        startWeatherDemoScenario()
+
         // UI observes the latest current weather through WeatherService.
         weatherService.currentWeather.observe(this) { weather ->
 
@@ -2596,7 +2599,7 @@ class MainActivity : ComponentActivity() {
             )
 
             // Wait 1 minutes after app launch.
-            delay(60 * 1000L)
+            delay(6 * 1000L)
 
             val now = LocalDateTime.now()
 

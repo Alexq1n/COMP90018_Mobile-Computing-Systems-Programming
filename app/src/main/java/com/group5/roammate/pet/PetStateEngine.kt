@@ -44,8 +44,8 @@ object PetStateEngine {
             weather.condition == PetWeatherCondition.Storm ||
                 weather.condition == PetWeatherCondition.Rain -> PetOutfit.Raincoat
             weather.condition == PetWeatherCondition.Snow || weather.temperatureC <= 9.0 -> PetOutfit.Winter
-            weather.windSpeedKmh >= 25.0 -> PetOutfit.Windbreaker
-            weather.isDay && weather.condition == PetWeatherCondition.Clear &&
+            weather.windSpeedKmh.isFinite() && weather.windSpeedKmh >= 25.0 -> PetOutfit.Windbreaker
+            weather.daylightKnown && weather.isDay && weather.condition == PetWeatherCondition.Clear &&
                 weather.temperatureC >= 25.0 -> PetOutfit.Sunshine
             else -> null
         }

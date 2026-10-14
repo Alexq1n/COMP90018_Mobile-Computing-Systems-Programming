@@ -25,24 +25,26 @@ Use this guide when connecting backend, Firebase, sensor, weather, search, pet, 
 | `uiLoginWithFirebase` | Yuxiang | - | Login | Firebase Auth connected |
 | `uiCreateAccountWithFirebase` | Yuxiang | - | Create account | Firebase Auth + Firestore connected |
 | `uiLoadUserProfile` | Yuxiang | - | Home, Profile, Edit profile | Firebase connected |
-| `uiSaveUserProfile` | Yuxiang | - | Edit profile | Firebase connected |
+| `uiSaveUserProfile` | Yuxiang | - | Edit profile | Name stored in Firebase Authentication; no extra Firestore field |
 | `uiSaveProfileInterests` | Yuxiang | - | Interests from Profile | Firestore connected |
 | `uiSaveTripOnlyInterests` | Zewen | - | Interests from Plan My Trip | Helper in `MainActivity` |
 | `uiLoadSavedTrips` | Yuxiang | Zewen trip summary shape | Saved trips | Firestore connected |
+| `uiSaveGeneratedTrip` | Yufei | Yuxiang repository + Zewen itinerary | Generation result | Existing saveTrip API connected |
+| `uiLoadSavedTrip` | Yufei | Yuxiang repository + Zewen itinerary | Saved trip card | Existing loadTrip API connected |
 | `uiGetCurrentLocation` | Alex | Sensor GPS | Home, Explore, Add stop, Trip | Sensor connected |
 | `uiObserveShakeEvents` | Alex | ShakeDetector | Explore, Add stop, Trip | Sensor connected |
 | `uiSearchPlacesByName` | Alex | Leyan POI data | Add stop | Mock/search hook |
 | `uiExploreNearbyPlaces` | Alex | Leyan POI data + GPS | Explore | Mock/search hook |
-| `uiLoadAttractionDetail` | Leyan | Yuxiang database if needed | Attraction detail | Mock in `MainActivity` |
-| `uiGenerateItinerary` | Zewen | Plan request | Plan My Trip | Mock in `MainActivity` |
-| `uiLoadTripSummary` | Zewen | Itinerary result | Trip | Mock in `MainActivity` |
-| `uiUpdateItineraryAfterEdit` | Zewen | Yuxiang save after update | Edit itinerary | Mock in `MainActivity` |
-| `uiAdjustItineraryForWeather` | Zewen | LeYan weather | Adjust itinerary | Mock in `MainActivity` |
+| `uiLoadAttractionDetail` | Leyan | Enriched POI resource + SQLite | Attraction detail | Actual source fields connected; missing metadata stays null |
+| `uiGenerateItinerary` | Zewen | Plan request + GPS | Plan My Trip | Planner and GPS connected; per-day weather input pending |
+| `uiLoadTripSummary` | Zewen | Itinerary result + shared UI timeline | Trip | Connected to generated trip and saved UI edits |
+| `uiUpdateItineraryAfterEdit` | Zewen | Yuxiang save after update | Reserved for edit integration | Route recalculation and cloud saving pending |
+| `uiAdjustItineraryForWeather` | Zewen | LeYan weather + current generated context | Adjust itinerary | Today's day, request profile, clock, GPS and completed IDs connected; edited/restored context pending |
 | `uiLoadWeatherSummary` | LeYan | Weather API | Home, Trip | Mock in `MainActivity` |
 | `uiIsWeatherAvailableForDate` | LeYan | Weather API | Plan My Trip | Mock in `MainActivity` |
 | `uiPetStatusCard` | Xiajie | Pet module | Home, Pet | In progress |
 | `uiLoadingState` | Yufei | Any async request | Shared loading UI | Done |
-| `uiOpenExternalMap` | Yufei | Android map intent | Home, Trip, Detail | Done |
+| `uiOpenExternalMap` | Yufei | Android map intent | Trip, Detail | Trip uses its next unfinished stop |
 
 ## UI Data Models
 
@@ -54,6 +56,7 @@ These models match the current UI files.
 data class AddStopPlace(
     val name: String,
     val environmentType: String,
+    val poiId: String? = null,
 )
 ```
 
@@ -87,6 +90,7 @@ data class ExplorePlace(
     val tagText: String,
     val mapX: Float,
     val mapY: Float,
+    val poiId: String? = null,
 )
 ```
 
@@ -164,6 +168,8 @@ data class TripTimelineStop(
     val title: String,
     val status: TripStopStatus,
     val hiddenTag: String? = null,
+    val date: String? = null, // yyyy-MM-dd, inherited from the generated day
+    val poiId: String? = null, // inherited from the source POI; never required from the UI user
 )
 
 enum class TripStopStatus {
@@ -181,7 +187,20 @@ data class TripWeatherSummary(
     val temperature: String,
     val condition: String,
 )
+
+data class TripDayPlan(
+    val dayTitle: String,
+    val dateText: String,
+    val stops: List<TripTimelineStop>,
+    val date: String? = null, // yyyy-MM-dd, used to select the day being edited
+)
 ```
+
+Trip displays the complete generated itinerary, including future days. Without a generated itinerary, it displays an empty state. Treasure stops remain in the timeline, but their tags are not rendered. Home's Today's trip selects only stops whose `date` matches today; it never falls back to the first day.
+
+Each day has an edit action. `MainActivity` owns the shared timeline and a separate draft for the selected day. `EditItineraryScreen.onStopsChanged` updates the draft, including drag order; Add Stop updates the same draft. Save commits only that day, preserving completed stops and all other days. Back discards the draft. Trip, Home and navigation all read the committed timeline. These changes do not introduce a backend API; route/time recalculation and cloud persistence remain separate integration work.
+
+Navigation prefers today's current stop, then today's next unfinished stop, then the earliest future day with an unfinished stop. Past and completed stops are excluded. If no destination remains, the navigation button is disabled.
 
 ### Saved Trips
 
@@ -190,6 +209,7 @@ data class SavedTrip(
     val destination: String,
     val durationText: String,
     val dateText: String,
+    val tripId: String = "",
 )
 ```
 
@@ -326,7 +346,7 @@ Notes:
 
 Owner: Zewen
 
-Used by: `EditItineraryScreen`
+Reserved for backend integration after the frontend edit is saved.
 
 Input:
 
@@ -342,8 +362,8 @@ List<TripTimelineStop>
 
 Notes:
 
-- Used after delete/add/reorder.
-- Backend can recalculate time/order.
+- The current frontend commits edits with `applyTripDayEdits`; this placeholder is not called by the Save callback.
+- Backend recalculation of visit times/routes and cloud persistence are not connected yet.
 
 ### `uiAdjustItineraryForWeather`
 
@@ -451,7 +471,7 @@ Owner: Yuxiang
 Input:
 
 ```kotlin
-fullName: String
+fullName: String // optional; an empty string is accepted
 email: String
 password: String
 ```
@@ -464,6 +484,8 @@ onError: (Exception) -> Unit
 ```
 
 Firebase creates the account first. The UI then signs out and returns to Login so the user can authenticate with the new credentials.
+
+The UI requires email, password and matching confirmation; confirmation is not sent to Firebase. The optional name is stored in Firebase Authentication. Registration writes only `email`, `createdAt` and `updatedAt` to Firestore, matching the database rules.
 
 ### `uiLoadUserProfile`
 
@@ -557,6 +579,15 @@ Notes:
 - Permanent interests.
 - Saved trips.
 - Final saved itinerary if needed.
+
+## Remaining Integration Boundaries
+
+- `uiUpdateItineraryAfterEdit` still needs a backend result that preserves the selected day, manual POI order and completed stops while recalculating visit/route times. Update the backend snapshot before saving edited plans to the cloud.
+- `weatherForecasts` is fetched but the generator accepts a single weather status. Zewen and LeYan must connect date-specific weather and define the unavailable-forecast policy.
+- GPS is available, but arrival/completion thresholds and deduplication are not defined. Shake-to-advance and the automatic fake-rain injection are disabled.
+- Stored Itinerary JSON does not contain the original request profile or actual progress. Restored plans can be viewed and navigated; personalized replanning requires restoring that context. The UI does not invent a replacement profile.
+- Display names are stored in Firebase Authentication. Firestore registration keeps its existing three-field payload. Auth names take precedence over legacy stored display names on sign-in.
+- Generated plans use `saveTrip`; saved cards retain `tripId` and use `loadTrip`. Both Kotlin model packages share the existing JSON schema, covered by adapter round-trip tests. Navigating back cancels the UI request token, so late responses cannot replace a newer selection.
 
 ## Related Guides
 

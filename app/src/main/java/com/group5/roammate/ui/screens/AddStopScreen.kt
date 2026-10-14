@@ -55,6 +55,7 @@ private val RoamMateGreen = Color(0xFF22A866)
 data class AddStopPlace(
     val name: String,
     val environmentType: String,
+    val poiId: String? = null,
 )
 
 @Composable

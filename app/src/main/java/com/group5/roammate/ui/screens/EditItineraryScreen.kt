@@ -1,5 +1,6 @@
 package com.group5.roammate.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -63,15 +64,14 @@ private val RoamMateFieldBorder = Color(0xFFE3E8EF)
 fun EditItineraryScreen(
     stops: List<TripTimelineStop>,
     onBackClick: () -> Unit,
-    onRemoveStopClick: (TripTimelineStop) -> Unit,
+    onStopsChanged: (List<TripTimelineStop>) -> Unit,
     onAddStopClick: () -> Unit,
     onSaveClick: (List<TripTimelineStop>) -> Unit,
+    dayLabel: String = "",
     modifier: Modifier = Modifier,
 ) {
-    // local order
-    var editableStops by remember(stops) {
-        mutableStateOf(stops)
-    }
+    BackHandler(onBack = onBackClick)
+    val editableStops = stops
 
     // move row
     fun moveStop(fromIndex: Int, toIndex: Int) {
@@ -79,9 +79,10 @@ fun EditItineraryScreen(
         val safeToIndex = toIndex.coerceIn(editableStops.indices)
         if (fromIndex == safeToIndex) return
 
-        editableStops = editableStops.toMutableList().apply {
+        val reorderedStops = editableStops.toMutableList().apply {
             add(safeToIndex, removeAt(fromIndex))
         }
+        onStopsChanged(reorderedStops)
     }
 
     Scaffold(
@@ -120,17 +121,18 @@ fun EditItineraryScreen(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Text(
-                text = "Remove, add, or drag to reorder",
-                color = RoamMateMutedText,
-                fontSize = 18.sp,
-                lineHeight = 22.sp,
-                fontWeight = FontWeight.SemiBold,
-            )
+            if (dayLabel.isNotBlank()) {
+                Text(
+                    text = dayLabel,
+                    color = RoamMateMutedText,
+                    fontSize = 18.sp,
+                    lineHeight = 22.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // TODO: 之后这里接 Zewen 的真实行程站点列表。
             if (editableStops.isEmpty()) {
                 EmptyEditItineraryCard()
             } else {
@@ -138,7 +140,7 @@ fun EditItineraryScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     editableStops.forEachIndexed { index, stop ->
-                        key(stop.time, stop.title) {
+                        key(stop.date, stop.time, stop.title) {
                             EditItineraryStopCard(
                                 stop = stop,
                                 onMoveUp = {
@@ -148,10 +150,9 @@ fun EditItineraryScreen(
                                     moveStop(index, index + 1)
                                 },
                                 onRemoveClick = {
-                                    editableStops = editableStops.filterNot { currentStop ->
-                                        currentStop.sameStopKey(stop)
-                                    }
-                                    onRemoveStopClick(stop)
+                                    onStopsChanged(editableStops.filterIndexed { stopIndex, _ ->
+                                        stopIndex != index
+                                    })
                                 },
                             )
                         }
@@ -201,10 +202,10 @@ private fun EditItineraryStopCard(
     val dragThresholdPx = with(LocalDensity.current) { 54.dp.toPx() }
     val moveUp by rememberUpdatedState(onMoveUp)
     val moveDown by rememberUpdatedState(onMoveDown)
-    var dragOffsetY by remember(stop.time, stop.title) {
+    var dragOffsetY by remember(stop.date, stop.time, stop.title) {
         mutableStateOf(0f)
     }
-    var isDragging by remember(stop.time, stop.title) {
+    var isDragging by remember(stop.date, stop.time, stop.title) {
         mutableStateOf(false)
     }
 
@@ -216,7 +217,7 @@ private fun EditItineraryStopCard(
                 IntOffset(0, dragOffsetY.roundToInt())
             }
             .zIndex(if (isDragging) 1f else 0f)
-            .pointerInput(stop.time, stop.title) {
+            .pointerInput(stop.date, stop.time, stop.title) {
                 detectDragGesturesAfterLongPress(
                     onDragStart = {
                         isDragging = true
@@ -290,13 +291,6 @@ private fun EditItineraryStopCard(
             RemoveStopButton(onClick = onRemoveClick)
         }
     }
-}
-
-// ---- same stop ----
-private fun TripTimelineStop.sameStopKey(
-    other: TripTimelineStop,
-): Boolean {
-    return time == other.time && title == other.title
 }
 
 // ---- remove button ----
@@ -402,17 +396,23 @@ private fun SaveItineraryButton(
 @Preview(showBackground = true)
 @Composable
 private fun EditItineraryScreenPreview() {
-    RoamMateTheme(dynamicColor = false) {
-        EditItineraryScreen(
-            stops = listOf(
+    var stops by remember {
+        mutableStateOf(
+            listOf(
                 TripTimelineStop("10:00", "Melbourne Museum", TripStopStatus.Current),
                 TripTimelineStop("12:00", "Lunch nearby", TripStopStatus.Upcoming),
                 TripTimelineStop("14:00", "Royal Botanic Gardens", TripStopStatus.Upcoming),
             ),
+        )
+    }
+    RoamMateTheme(dynamicColor = false) {
+        EditItineraryScreen(
+            stops = stops,
             onBackClick = {},
-            onRemoveStopClick = {},
+            onStopsChanged = { stops = it },
             onAddStopClick = {},
             onSaveClick = { _ -> },
+            dayLabel = "Day 1 - Today",
             modifier = Modifier.fillMaxSize(),
         )
     }

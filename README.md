@@ -718,28 +718,6 @@ Example:
 
 ### Home
 
-Zewen/Sitao: leaveNowReminder
-
-```kotlin
-data class HomeLeaveNowReminder(
-    val placeName: String,
-    val scheduledTime: String,
-    val delayMinutes: Int,
-    val navigationQuery: String,
-)
-```
-
-Example:
-
-```json
-{
-  "placeName": "Melbourne Museum",
-  "scheduledTime": "10:00",
-  "delayMinutes": 3,
-  "navigationQuery": "Melbourne Museum"
-}
-```
-
 Yan/Zewen: smartSuggestion
 
 ```kotlin

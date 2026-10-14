@@ -143,7 +143,7 @@ fun CreateAccountScreen(
             CreateAccountTextField(
                 value = fullName,
                 onValueChange = { fullName = it },
-                placeholder = "Full name",
+                placeholder = "Full name (optional)",
                 leadingIcon = CreateAccountIcon.User,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
@@ -236,8 +236,8 @@ fun CreateAccountScreen(
                     // Keep immediate field validation in the UI. Firebase performs
                     // the account creation and final credential validation.
                     when {
-                        fullName.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() -> {
-                            onValidationError("Please fill in all fields")
+                        email.isBlank() || password.isBlank() || confirmPassword.isBlank() -> {
+                            onValidationError("Please enter your email and both password fields")
                         }
 
                         password != confirmPassword -> {

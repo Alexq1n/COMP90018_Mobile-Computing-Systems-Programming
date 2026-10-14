@@ -73,6 +73,7 @@ data class ExplorePlace(
     val tagText: String,
     val mapX: Float,
     val mapY: Float,
+    val poiId: String? = null,
 )
 
 // ---- screen ----

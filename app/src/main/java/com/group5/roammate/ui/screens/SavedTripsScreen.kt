@@ -1,8 +1,10 @@
 package com.group5.roammate.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,6 +60,7 @@ data class SavedTrip(
     val destination: String,
     val durationText: String,
     val dateText: String,
+    val tripId: String = "",
 )
 
 // screen
@@ -65,8 +69,11 @@ fun SavedTripsScreen(
     savedTrips: List<SavedTrip>,
     onBackClick: () -> Unit,
     onCreateNewTripClick: () -> Unit,
+    onTripClick: (SavedTrip) -> Unit = {},
+    isLoadingTrip: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    BackHandler(onBack = onBackClick)
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -109,6 +116,10 @@ fun SavedTripsScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            Box(modifier = Modifier.fillMaxWidth().height(4.dp)) {
+                if (isLoadingTrip) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+
             // body
             if (savedTrips.isEmpty()) {
                 EmptySavedTripsState(
@@ -118,6 +129,8 @@ fun SavedTripsScreen(
             } else {
                 SavedTripsList(
                     savedTrips = savedTrips,
+                    onTripClick = onTripClick,
+                    enabled = !isLoadingTrip,
                     modifier = Modifier.weight(1f),
                 )
 
@@ -139,6 +152,8 @@ fun SavedTripsScreen(
 @Composable
 private fun SavedTripsList(
     savedTrips: List<SavedTrip>,
+    onTripClick: (SavedTrip) -> Unit,
+    enabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -160,7 +175,11 @@ private fun SavedTripsList(
         ) {
             savedTrips.forEach { trip ->
                 // trip card
-                SavedTripCard(savedTrip = trip)
+                SavedTripCard(
+                    savedTrip = trip,
+                    enabled = enabled && trip.tripId.isNotBlank(),
+                    onClick = { onTripClick(trip) },
+                )
             }
         }
 
@@ -172,11 +191,14 @@ private fun SavedTripsList(
 @Composable
 private fun SavedTripCard(
     savedTrip: SavedTrip,
+    enabled: Boolean,
+    onClick: () -> Unit,
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(108.dp),
+            .height(108.dp)
+            .clickable(enabled = enabled, onClick = onClick),
         shape = RoundedCornerShape(18.dp),
         color = Color.White,
         border = BorderStroke(1.dp, RoamMateFieldBorder),

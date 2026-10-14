@@ -53,9 +53,9 @@ public final class FirebaseCloudUserRepository implements CloudUserRepository {
                     }
                     Map<String, Object> profile = new HashMap<>();
                     profile.put("email", cleanEmail);
-                    profile.put("displayName", cleanName);
                     profile.put("createdAt", FieldValue.serverTimestamp());
                     profile.put("updatedAt", FieldValue.serverTimestamp());
+                    // Keep optional names in Auth; Firestore permits only these three fields.
                     UserProfileChangeRequest authProfile = new UserProfileChangeRequest.Builder()
                             .setDisplayName(cleanName)
                             .build();
@@ -99,14 +99,7 @@ public final class FirebaseCloudUserRepository implements CloudUserRepository {
         UserProfileChangeRequest authProfile = new UserProfileChangeRequest.Builder()
                 .setDisplayName(cleanName)
                 .build();
-        Map<String, Object> profile = new HashMap<>();
-        profile.put("displayName", cleanName);
-        profile.put("updatedAt", FieldValue.serverTimestamp());
         user.updateProfile(authProfile)
-                .continueWithTask(task -> {
-                    if (!task.isSuccessful()) throw task.getException();
-                    return userDocument(user).set(profile, SetOptions.merge());
-                })
                 .addOnSuccessListener(unused -> callback.onSuccess(session(user, cleanName)))
                 .addOnFailureListener(callback::onError);
     }
@@ -160,8 +153,8 @@ public final class FirebaseCloudUserRepository implements CloudUserRepository {
     }
 
     private static CloudUserSession session(FirebaseUser user, String storedName) {
-        String name = cleanDisplayName(storedName);
-        if (name.isEmpty()) name = cleanDisplayName(user.getDisplayName());
+        String name = cleanDisplayName(user.getDisplayName());
+        if (name.isEmpty()) name = cleanDisplayName(storedName);
         return new CloudUserSession(user.getUid(), user.getEmail(), name);
     }
 

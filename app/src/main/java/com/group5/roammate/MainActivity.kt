@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +22,16 @@ import com.example.localdatebase.cloud.FirebaseCloudUserRepository
 import com.example.localdatebase.cloud.UserPreferences
 import com.example.localdatebase.planner.FirebasePlannerRepository
 import com.example.localdatebase.planner.PlannerResultCallback
+import com.example.localdatebase.poi.PoiRepository
+import com.google.gson.Gson
+import com.group5.roammate.logic.models.Itinerary as UiItinerary
+import com.group5.roammate.poi.model.POI as DetailPoi
+import com.group5.roammate.ui.integration.destinationPlanningOrigin
+import com.group5.roammate.ui.integration.requireScheduledStops
+import com.group5.roammate.ui.integration.toAttractionDetail
+import com.group5.roammate.ui.integration.toStoredTrip
+import com.group5.roammate.ui.integration.toUiTrip
+import com.group5.roammate.ui.integration.unavailableAttractionDetail
 import com.example.localdatebase.planner.SavedTripSummary as CloudSavedTripSummary
 import com.group5.roammate.backend.POISearchService
 import com.group5.roammate.backend.PlaceRepository
@@ -47,7 +58,6 @@ import com.group5.roammate.ui.screens.EditItineraryScreen
 import com.group5.roammate.ui.screens.ExplorePlace
 import com.group5.roammate.ui.screens.ExplorePlaceCategory
 import com.group5.roammate.ui.screens.ExploreScreen
-import com.group5.roammate.ui.screens.HomeLeaveNowReminder
 import com.group5.roammate.ui.screens.HomePetStatus
 import com.group5.roammate.ui.screens.HomeScreen
 import com.group5.roammate.ui.screens.HomeSmartSuggestion
@@ -68,6 +78,12 @@ import com.group5.roammate.ui.screens.TripDayPlan
 import com.group5.roammate.ui.screens.TripSummary
 import com.group5.roammate.ui.screens.TripTimelineStop
 import com.group5.roammate.ui.screens.TripWeatherSummary
+import com.group5.roammate.ui.screens.applyTripDayEdits
+import com.group5.roammate.ui.screens.matchesTimeline
+import com.group5.roammate.ui.screens.nextNavigationStop
+import com.group5.roammate.ui.screens.replaceTripDayStops
+import com.group5.roammate.ui.screens.stopsOnDate
+import com.group5.roammate.ui.screens.toTripDayPlans
 import com.group5.roammate.ui.sensor.SensorTestScreen
 import com.group5.roammate.ui.pet.CompanionsScreen
 import com.group5.roammate.ui.pet.PetCameraScreen
@@ -83,6 +99,7 @@ import com.group5.roammate.weather.model.DailyWeatherForecast
 
 import java.text.SimpleDateFormat
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import android.Manifest
@@ -97,6 +114,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.group5.roammate.backend.DatabasePOI
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.filterNotNull
@@ -210,6 +228,23 @@ class MainActivity : ComponentActivity() {
         FirebasePlannerRepository()
     }
 
+    private val detailPois: List<DetailPoi> by lazy {
+        runCatching {
+            resources.openRawResource(R.raw.pois_enriched).bufferedReader().use { reader ->
+                Gson().fromJson(reader, Array<DetailPoi>::class.java).toList()
+            }
+        }.getOrElse { error ->
+            android.util.Log.w("RoamMate", "Unable to read enriched POIs", error)
+            emptyList()
+        }
+    }
+
+    private val detailPoiRepository by lazy {
+        PoiRepository(applicationContext).apply {
+            if (count() == 0) importBundledPois()
+        }
+    }
+
     private val geocodingRepository by lazy {
         GeocodingRepository(applicationContext)
     }
@@ -320,9 +355,6 @@ class MainActivity : ComponentActivity() {
         weatherForecastMonitor.onContextEvent = { event ->
             uiHandleWeatherContextEvent(event)
         }
-
-        // ==================== Weather Demo ====================
-        startWeatherDemoScenario()
 
         // UI observes the latest current weather through WeatherService.
         weatherService.currentWeather.observe(this) { weather ->
@@ -499,7 +531,6 @@ class MainActivity : ComponentActivity() {
                 // Alex emits shake events; Yufei maps them to the current page action below.
                 var exploreShakeRefreshCount by rememberSaveable { mutableStateOf(0) }
                 var addStopShakeRefreshCount by rememberSaveable { mutableStateOf(0) }
-                var tripShakeProgressCount by rememberSaveable { mutableStateOf(0) }
 
                 // Update existing UI location using GPS StateFlow.
                 LaunchedEffect(sensorRepository) {
@@ -543,12 +574,6 @@ class MainActivity : ComponentActivity() {
                             Toast.makeText(this, "Nearby places refreshed", Toast.LENGTH_SHORT).show()
                         }
 
-                        AuthScreen.Trip -> {
-                            // Trip: shake re-checks current progress.
-                            tripShakeProgressCount += 1
-                            Toast.makeText(this, "Trip progress updated", Toast.LENGTH_SHORT).show()
-                        }
-
                         AuthScreen.PlanMyTrip,
                         AuthScreen.PlanAddStop,
                         AuthScreen.EditAddStop -> {
@@ -574,7 +599,7 @@ class MainActivity : ComponentActivity() {
 
                 // Attraction detail 当前展示的景点。之后由 Explore/Trip 点击的真实景点数据替换。
                 var selectedAttractionDetail by remember {
-                    mutableStateOf(sampleAttractionDetail("Melbourne Museum"))
+                    mutableStateOf(uiLoadAttractionDetail("Melbourne Museum"))
                 }
 
                 // 记录详情页从哪里进来，返回按钮才能回到正确页面。
@@ -638,6 +663,7 @@ class MainActivity : ComponentActivity() {
 
                 // Saved trips are loaded from the signed-in user's Firestore document.
                 var savedTrips by remember { mutableStateOf(emptyList<SavedTrip>()) }
+                var savedTripLoadToken by remember { mutableStateOf<String?>(null) }
 
                 LaunchedEffect(currentScreen) {
                     if (
@@ -651,50 +677,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // TODO: 这组 Trip timeline 是临时演示假数据。
-                // TODO(Zewen, function: uiGenerateItinerary): Replace with real itinerary returned by backend.
+                // A trip stays empty until a real itinerary has been generated.
                 var tripTimelineStops by remember {
-                    mutableStateOf(
-                        listOf(
-                            TripTimelineStop(
-                                time = "09:00",
-                                title = "Federation Square",
-                                status = TripStopStatus.Done,
-                            ),
-                            TripTimelineStop(
-                                time = "10:00",
-                                title = "Melbourne Museum",
-                                status = TripStopStatus.Current,
-                            ),
-                            TripTimelineStop(
-                                time = "12:00",
-                                title = "Lunch nearby",
-                                status = TripStopStatus.Upcoming,
-                            ),
-                            TripTimelineStop(
-                                time = "13:30",
-                                title = "Pidapipo Gelato",
-                                status = TripStopStatus.Upcoming,
-                                // TODO: 这是 hidden 小条的临时演示；之后由 Zewen 的 isFiller/hidden-gem 数据决定。
-                                hiddenTag = "Hidden gem · nearby",
-                            ),
-                            TripTimelineStop(
-                                time = "14:00",
-                                title = "Royal Botanic Gardens",
-                                status = TripStopStatus.Upcoming,
-                            ),
-                        ),
-                    )
+                    mutableStateOf(emptyList<TripTimelineStop>())
                 }
-
-                // Trip progress demo
-                // TODO(Zewen, function: uiUpdateTripProgress): Replace with real progress logic.
-                // input provider: Alex GPS location.
-                LaunchedEffect(tripShakeProgressCount) {
-                    if (tripShakeProgressCount > 0) {
-                        tripTimelineStops = tripTimelineStops.advanceCurrentStopForDemo()
-                    }
-                }
+                var editedTripDay by remember { mutableStateOf<TripDayPlan?>(null) }
 
                 // Adjust itinerary 弹窗当前显示第几个候选方案。
                 var adjustPlanIndex by rememberSaveable { mutableStateOf(0) }
@@ -800,13 +787,7 @@ class MainActivity : ComponentActivity() {
                         // Home page multi-owner integration.
                         // Each teammate owns one small function below, then UI wires the result here.
                         val homeUserName = uiLoadUserProfile()
-                        val homeCurrentLocation = uiLoadCurrentLocation(currentSensorLocation.value)
-                        val homeNextTripStop = uiLoadNextTripStop(tripTimelineStops)
                         val homeTodayTripStops = uiBuildHomeTodayTripStops(tripTimelineStops)
-                        val homeLeaveNowReminder = uiBuildLeaveNowReminder(
-                            nextTripStop = homeNextTripStop,
-                            currentLocation = homeCurrentLocation,
-                        )
                         val homeSmartSuggestion = uiBuildHomeSmartSuggestion(
                             weather = petWeather,
                             petStatusLine = petState.statusLine,
@@ -822,13 +803,11 @@ class MainActivity : ComponentActivity() {
                             // input provider: Zewen itinerary.
                             todayTripStops = homeTodayTripStops,
 
-                            // function: uiBuildLeaveNowReminder; owner: Yufei; status: UI done.
-                            // input providers: Zewen next stop, Alex location.
-                            leaveNowReminder = homeLeaveNowReminder,
-
                             // function: uiBuildHomeSmartSuggestion; owner: Yufei; status: UI done.
                             // input providers: LeYan weather, Xiajie pet status.
-                            smartSuggestion = weatherSuggestionState.value,
+                            smartSuggestion = if (homeTodayTripStops.any { it.status != HomeTripStopStatus.Done }) {
+                                weatherSuggestionState.value
+                            } else null,
 
                             // Jie pet module: Home, Pet and Camera share the same koala outfit.
                             petStatus = HomePetStatus(
@@ -838,20 +817,20 @@ class MainActivity : ComponentActivity() {
                                 petState = petState,
                             ),
 
-                            // function: uiOpenExternalMap; owner: Yufei; status: UI done.
-                            onNavigateReminderClick = {
-                                homeLeaveNowReminder?.let { reminder ->
-                                    openExternalMap(reminder.navigationQuery)
-                                }
-                            },
-
                             // function: uiAdjustItineraryForWeather; owner: Zewen.
                             // UI entry is wired by Yufei.
                             onSmartSuggestionClick = {
                                 // Calculate weather adjustment plans RIGHT BEFORE entering the screen
-                                adjustedItineraryPlans = uiAdjustItineraryForWeather("Heavy rain expected")
-                                adjustPlanIndex = 0 // Reset to first plan
-                                currentScreen = AuthScreen.AdjustItinerary
+                                adjustedItineraryPlans = uiAdjustItineraryForWeather(
+                                    weatherSuggestionState.value?.message ?: "Weather change",
+                                    tripTimelineStops,
+                                )
+                                if (adjustedItineraryPlans.isNotEmpty()) {
+                                    adjustPlanIndex = 0
+                                    currentScreen = AuthScreen.AdjustItinerary
+                                } else {
+                                    Toast.makeText(this, "No adjustment available for today's trip", Toast.LENGTH_SHORT).show()
+                                }
                             },
 
                             onPetCardClick = {
@@ -889,7 +868,11 @@ class MainActivity : ComponentActivity() {
                         // Ensure plans are loaded when entering this screen
                         if (adjustedItineraryPlans.isEmpty()) {
                             LaunchedEffect(Unit) {
-                                adjustedItineraryPlans = uiAdjustItineraryForWeather("Heavy rain expected")
+                                adjustedItineraryPlans = uiAdjustItineraryForWeather(
+                                    weatherSuggestionState.value?.message ?: "Weather change",
+                                    tripTimelineStops,
+                                )
+                                if (adjustedItineraryPlans.isEmpty()) currentScreen = AuthScreen.Home
                             }
                         }
 
@@ -912,17 +895,22 @@ class MainActivity : ComponentActivity() {
                                 plan = selectedPlan,
                                 canRegenerateAnother = adjustPlanIndex < adjustedItineraryPlans.lastIndex,
 
-                                // Apply this plan:
-                                // 把 Zewen 给出的候选方案转换成 Trip/Home 共用的 tripTimelineStops。
-                                onApplyPlanClick = { plan ->
-                                    // Update tripTimelineStops for current day display
-                                    tripTimelineStops = plan.toTripTimelineStops()
-
-                                    // Apply the selected plan to currentItinerary
-                                    applyWeatherAdjustmentToItinerary(adjustPlanIndex)
-
-                                    Toast.makeText(this, "New itinerary applied", Toast.LENGTH_SHORT).show()
-                                    currentScreen = AuthScreen.Trip
+                                onApplyPlanClick = {
+                                    val date = weatherAdjustmentDate
+                                    if (date != null && weatherAdjustmentOptions != null) {
+                                        applyWeatherAdjustmentToItinerary(adjustPlanIndex)
+                                        val adjustedStops = currentItinerary.toTripDayPlans()
+                                            .flatMap { it.stops }
+                                            .filter { it.date == date }
+                                        tripTimelineStops = tripTimelineStops.replaceTripDayStops(
+                                            date,
+                                            adjustedStops,
+                                        )
+                                        Toast.makeText(this, "New itinerary applied", Toast.LENGTH_SHORT).show()
+                                        currentScreen = AuthScreen.Trip
+                                    } else {
+                                        Toast.makeText(this, "No trip to adjust", Toast.LENGTH_SHORT).show()
+                                    }
                                 },
 
                                 // Regenerate another:
@@ -946,40 +934,62 @@ class MainActivity : ComponentActivity() {
                     }
 
                     AuthScreen.Trip -> {
+                        val tripSummary = uiLoadTripSummary(tripTimelineStops)
+                        val navigationStop = tripTimelineStops.nextNavigationStop()
                         TripScreen(
                             modifier = Modifier.fillMaxSize(),
-                            destinationTitle = "Today in Melbourne",
+                            destinationTitle = tripSummary?.title ?: "No active trip",
 
                             // LeYan: live current weather from WeatherRepository + CurrentWeatherMonitor + Alex GPS
                             weatherSummary = currentWeatherSummaryState.value,
 
                             // Call Zewen's backend to get trip summary
-                            tripSummary = uiLoadTripSummary(),
+                            tripSummary = tripSummary,
 
                             // TODO(Zewen, function: uiUpdateTripProgress): Replace with real itinerary order and progress status.
                             // input provider: Alex GPS location.
-                            stops = tripTimelineStops,
+                            stops = if (currentItinerary == null) emptyList() else tripTimelineStops,
 
-                            // TODO(Zewen, function: uiLoadTripDays): Connect full multi-day itinerary.
+                            // Read saved edits and progress from the shared UI timeline.
                             tripDays = uiLoadTripDays(tripTimelineStops),
+
+                            onEditDayClick = { day ->
+                                if (day.date != null) {
+                                    editedTripDay = day.copy(
+                                        stops = day.stops.filter { it.status != TripStopStatus.Done },
+                                    )
+                                    currentScreen = AuthScreen.EditItinerary
+                                }
+                            },
 
                             // TODO(Leyan, function: uiLoadAttractionDetail): Open detail with real attraction id.
                             // storage provider: Yuxiang database if needed.
                             onStopClick = { stop ->
-                                selectedAttractionDetail = sampleAttractionDetail(stop.title)
+                                selectedAttractionDetail = uiLoadAttractionDetail(stop.poiId ?: stop.title)
                                 attractionDetailReturnScreen = AuthScreen.Trip
                                 currentScreen = AuthScreen.AttractionDetail
                             },
 
                             // End trip: close the current active trip and return Home.
                             onEndTripClick = {
+                                currentItinerary = null
+                                tripTimelineStops = emptyList()
+                                editedTripDay = null
+                                weatherAdjustmentOptions = null
+                                weatherAdjustmentDate = null
+                                weatherSuggestionState.value = null
+                                currentPlanningProfile = null
+                                adjustedItineraryPlans = emptyList()
                                 Toast.makeText(this, "Trip ended", Toast.LENGTH_SHORT).show()
                                 currentScreen = AuthScreen.Home
                             },
 
-                            // Start navigation 和 Home 提醒条共用外部地图逻辑。
+                            // Start navigation opens the external map.
+                            canStartNavigation = navigationStop != null,
                             onStartNavigationClick = {
-                                openExternalMap("Melbourne Museum")
+                                tripTimelineStops.nextNavigationStop()?.let { stop ->
+                                    openExternalMap(stop.title)
+                                }
                             },
 
                             // Trip 当前页点 Trip 不动，其余已完成页面正常切换。
@@ -1088,47 +1098,36 @@ class MainActivity : ComponentActivity() {
                     }
 
                     AuthScreen.EditItinerary -> {
-                        EditItineraryScreen(
-                            modifier = Modifier.fillMaxSize(),
-
-                            // 已完成的站点不显示在编辑页；只编辑当前及后面的行程。
-                            stops = tripTimelineStops.filter { stop ->
-                                stop.status != TripStopStatus.Done
-                            },
-
-                            // 返回 Trip，不保存额外修改。
-                            onBackClick = {
-                                currentScreen = AuthScreen.Trip
-                            },
-
-                            // TODO(Zewen, function: uiUpdateItineraryAfterEdit): Send removed stop list for recalculation.
-                            onRemoveStopClick = { removedStop ->
-                                tripTimelineStops = rebalanceTripStopsAfterManualEdit(
-                                    tripTimelineStops.filterNot { stop ->
-                                        stop.time == removedStop.time && stop.title == removedStop.title
-                                    },
-                                )
-                            },
-
-                            // TODO(Zewen, function: uiUpdateItineraryAfterEdit): Add stop via search, then recalculate.
-                            // input provider: Alex place search.
-                            onAddStopClick = {
-                                currentScreen = AuthScreen.EditAddStop
-                            },
-
-                            // TODO(Zewen, function: uiUpdateItineraryAfterEdit): Recalculate reordered stops.
-                            // storage provider: Yuxiang saves final itinerary.
-                            onSaveClick = { reorderedStops ->
-                                val doneStops = tripTimelineStops.filter { stop ->
-                                    stop.status == TripStopStatus.Done
-                                }
-                                tripTimelineStops = rebalanceTripStopsAfterManualEdit(
-                                    doneStops + reorderedStops,
-                                )
-                                Toast.makeText(this, "Itinerary saved", Toast.LENGTH_SHORT).show()
-                                currentScreen = AuthScreen.Trip
-                            },
-                        )
+                        val draft = editedTripDay
+                        if (draft == null || draft.date == null) {
+                            LaunchedEffect(Unit) { currentScreen = AuthScreen.Trip }
+                        } else {
+                            EditItineraryScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                stops = draft.stops,
+                                dayLabel = listOf(draft.dayTitle, draft.dateText)
+                                    .filter { it.isNotBlank() }.joinToString(" - "),
+                                onBackClick = {
+                                    editedTripDay = null
+                                    currentScreen = AuthScreen.Trip
+                                },
+                                onStopsChanged = { stops ->
+                                    editedTripDay = draft.copy(stops = stops)
+                                },
+                                onAddStopClick = {
+                                    currentScreen = AuthScreen.EditAddStop
+                                },
+                                onSaveClick = { reorderedStops ->
+                                    tripTimelineStops = tripTimelineStops.applyTripDayEdits(
+                                        date = draft.date,
+                                        editedStops = reorderedStops,
+                                    )
+                                    editedTripDay = null
+                                    Toast.makeText(this, "Itinerary saved", Toast.LENGTH_SHORT).show()
+                                    currentScreen = AuthScreen.Trip
+                                },
+                            )
+                        }
                     }
 
                     AuthScreen.PlanMyTrip -> {
@@ -1190,27 +1189,26 @@ class MainActivity : ComponentActivity() {
 
                                     if (forecasts == null) {
 
-                                        android.util.Log.e(
+                                        android.util.Log.w(
                                             "PLANNED_WEATHER",
-                                            "Failed to load planned weather"
+                                            "Weather unavailable; continuing destination-local planning"
                                         )
 
                                         Toast.makeText(
                                             this,
-                                            "Planned weather request failed",
+                                            "Weather unavailable. Planning without a forecast.",
                                             Toast.LENGTH_SHORT,
                                         ).show()
-
-                                        isGeneratingItinerary = false
-                                        return@uiLoadPlannedWeather
                                     }
+
+                                    val availableForecasts = forecasts.orEmpty()
 
                                     android.util.Log.d(
                                         "PLANNED_WEATHER",
-                                        "Forecast count = ${forecasts.size}"
+                                        "Forecast count = ${availableForecasts.size}"
                                     )
 
-                                    forecasts.forEach { forecast ->
+                                    availableForecasts.forEach { forecast ->
                                         android.util.Log.d(
                                             "PLANNED_WEATHER",
                                             "date=${forecast.date}, status=${forecast.status}"
@@ -1218,13 +1216,30 @@ class MainActivity : ComponentActivity() {
                                     }
 
                                     // Pass trip request + planned weather to Zewen
-                                    tripTimelineStops =
-                                        uiGenerateItinerary(
-                                            request = request,
-                                            weatherForecasts = forecasts,
-                                        )
+                                    val generatedStops = uiGenerateItinerary(
+                                        request = request,
+                                        weatherForecasts = availableForecasts,
+                                    )
 
                                     isGeneratingItinerary = false
+                                    if (generatedStops == null) return@uiLoadPlannedWeather
+                                    tripTimelineStops = generatedStops
+                                    editedTripDay = null
+                                    weatherAdjustmentOptions = null
+                                    weatherAdjustmentDate = null
+
+                                    currentItinerary?.let { generatedTrip ->
+                                        uiSaveGeneratedTrip(
+                                            generatedTrip,
+                                            onError = { error ->
+                                                Toast.makeText(
+                                                    this,
+                                                    "Trip generated, but cloud save failed: ${error.localizedMessage}",
+                                                    Toast.LENGTH_LONG,
+                                                ).show()
+                                            },
+                                        )
+                                    }
 
                                     Toast.makeText(
                                         this,
@@ -1299,6 +1314,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     AuthScreen.EditAddStop -> {
+                        BackHandler { currentScreen = AuthScreen.EditItinerary }
                         AddStopScreen(
                             modifier = Modifier.fillMaxSize(),
                             currentCity = "Melbourne",
@@ -1345,16 +1361,21 @@ class MainActivity : ComponentActivity() {
                                 ).rotateLeft(addStopShakeRefreshCount)
                             },
 
-                            // TODO(Zewen, function: uiUpdateItineraryAfterEdit): Send added place for insert and recalculation.
                             onAddPlaceClick = { place ->
-                                tripTimelineStops = rebalanceTripStopsAfterManualEdit(
-                                    tripTimelineStops.withAddedTemporaryStop(place),
-                                )
-                                Toast.makeText(
-                                    this,
-                                    "${place.name} added to itinerary",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                                val draft = editedTripDay
+                                if (draft != null && draft.date != null) {
+                                    val updatedStops = draft.stops.withAddedTemporaryStop(place, draft.date)
+                                    editedTripDay = draft.copy(stops = updatedStops)
+                                    Toast.makeText(
+                                        this,
+                                        if (updatedStops.size > draft.stops.size) {
+                                            "${place.name} added to itinerary"
+                                        } else {
+                                            "${place.name} is already in this day"
+                                        },
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
                                 currentScreen = AuthScreen.EditItinerary
                             },
                         )
@@ -1380,9 +1401,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     AuthScreen.Pet -> {
-                        val nextStop = tripTimelineStops.firstOrNull {
-                            it.status != TripStopStatus.Done
-                        }
+                        val nextStop = tripTimelineStops.nextNavigationStop()
                         CompanionsScreen(
                             state = petState,
                             environment = petEnvironment,
@@ -1445,6 +1464,14 @@ class MainActivity : ComponentActivity() {
                                 cloudUserRepository.signOut()
                                 userName = ""
                                 savedTrips = emptyList()
+                                currentItinerary = null
+                                tripTimelineStops = emptyList()
+                                editedTripDay = null
+                                weatherAdjustmentOptions = null
+                                weatherAdjustmentDate = null
+                                weatherSuggestionState.value = null
+                                currentPlanningProfile = null
+                                adjustedItineraryPlans = emptyList()
                                 currentScreen = AuthScreen.Login
                             },
 
@@ -1465,14 +1492,52 @@ class MainActivity : ComponentActivity() {
                         SavedTripsScreen(
                             modifier = Modifier.fillMaxSize(),
                             savedTrips = savedTrips,
+                            isLoadingTrip = savedTripLoadToken != null,
+                            onTripClick = { trip ->
+                                val requestedUid = cloudUserRepository.currentUser()?.uid
+                                if (savedTripLoadToken == null && requestedUid != null && trip.tripId.isNotBlank()) {
+                                    val requestToken = java.util.UUID.randomUUID().toString()
+                                    savedTripLoadToken = requestToken
+                                    uiLoadSavedTrip(
+                                        trip.tripId,
+                                        onSuccess = { itinerary ->
+                                            if (savedTripLoadToken == requestToken) {
+                                                savedTripLoadToken = null
+                                                if (currentScreen == AuthScreen.SavedTrips &&
+                                                    cloudUserRepository.currentUser()?.uid == requestedUid
+                                                ) {
+                                                    currentItinerary = itinerary
+                                                    tripTimelineStops = convertItineraryToTimelineStops(itinerary)
+                                                    editedTripDay = null
+                                                    weatherAdjustmentOptions = null
+                                                    weatherAdjustmentDate = null
+                                                    weatherSuggestionState.value = null
+                                                    currentPlanningProfile = null
+                                                    currentScreen = AuthScreen.Trip
+                                                }
+                                            }
+                                        },
+                                        onError = { error ->
+                                            if (savedTripLoadToken == requestToken) {
+                                                savedTripLoadToken = null
+                                                if (currentScreen == AuthScreen.SavedTrips &&
+                                                    cloudUserRepository.currentUser()?.uid == requestedUid
+                                                ) showCloudError(error)
+                                            }
+                                        },
+                                    )
+                                }
+                            },
 
                             // Back button.
                             onBackClick = {
+                                savedTripLoadToken = null
                                 currentScreen = AuthScreen.Profile
                             },
 
                             // Create button.
                             onCreateNewTripClick = {
+                                savedTripLoadToken = null
                                 currentScreen = AuthScreen.PlanMyTrip
                             },
                         )
@@ -1710,26 +1775,6 @@ class MainActivity : ComponentActivity() {
         return latestLocation
     }
 
-    private fun uiBuildLeaveNowReminder(
-        nextTripStop: TripTimelineStop?,
-        currentLocation: SensorLocation,
-    ): HomeLeaveNowReminder? {
-        // function: uiBuildLeaveNowReminder
-        // owner: Yufei
-        // input: Zewen next stop + Alex current location
-        // output: Home leave-now card data
-        // TODO(Yufei): Replace demo delay with route-time comparison after backend/sensor is ready.
-        if (nextTripStop == null) return null
-
-        val demoDelayMinutes = if (currentLocation.isSample) 3 else 3
-        return HomeLeaveNowReminder(
-            placeName = nextTripStop.title,
-            scheduledTime = nextTripStop.time,
-            delayMinutes = demoDelayMinutes,
-            navigationQuery = nextTripStop.title,
-        )
-    }
-
     private fun uiBuildHomeTodayTripStops(
         stops: List<TripTimelineStop>,
     ): List<HomeTripStop> {
@@ -1737,7 +1782,8 @@ class MainActivity : ComponentActivity() {
         // owner: Yufei
         // input: Zewen itinerary stops
         // output: Home compact trip list
-        return stops.toHomeTripStops()
+        if (currentItinerary == null) return emptyList()
+        return stops.stopsOnDate().toHomeTripStops()
     }
 
     private fun uiBuildHomeSmartSuggestion(
@@ -1893,6 +1939,7 @@ class MainActivity : ComponentActivity() {
                         onSuccess(
                             value.map { trip ->
                                 SavedTrip(
+                                    tripId = trip.tripId,
                                     destination = trip.destination,
                                     durationText = trip.durationText,
                                     dateText = trip.dateText,
@@ -1909,8 +1956,47 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // ---- Alex: sensor + fuzzy search trigger ----
+    // ---- Yuxiang: generated-trip persistence ----
 
+    private fun uiSaveGeneratedTrip(itinerary: UiItinerary, onError: (Exception) -> Unit) {
+        try {
+            plannerRepository.saveTrip(
+                itinerary.toStoredTrip(),
+                object : PlannerResultCallback<Unit> {
+                    override fun onSuccess(value: Unit) = Unit
+                    override fun onError(error: Exception) = onError(error)
+                },
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
+    }
+
+    private fun uiLoadSavedTrip(
+        tripId: String,
+        onSuccess: (UiItinerary) -> Unit,
+        onError: (Exception) -> Unit,
+    ) {
+        try {
+            plannerRepository.loadTrip(
+                tripId,
+                object : PlannerResultCallback<com.roammate.logic.models.Itinerary> {
+                    override fun onSuccess(value: com.roammate.logic.models.Itinerary) {
+                        try {
+                            onSuccess(value.toUiTrip(tripId))
+                        } catch (error: Exception) {
+                            onError(error)
+                        }
+                    }
+                    override fun onError(error: Exception) = onError(error)
+                },
+            )
+        } catch (error: Exception) {
+            onError(error)
+        }
+    }
+
+    // ---- Alex: sensor + fuzzy search trigger ----
     private suspend fun uiGetCurrentLocation(): SensorLocation {
         // function: uiGetCurrentLocation
         // owner: Alex
@@ -1975,6 +2061,7 @@ class MainActivity : ComponentActivity() {
         ).map { result ->
             AddStopPlace(
                 name = result.place.name,
+                poiId = result.place.id,
                 environmentType = result.place.environment.name
                     .lowercase()
                     .replaceFirstChar { it.uppercase() },
@@ -2024,6 +2111,7 @@ class MainActivity : ComponentActivity() {
                 tagText = result.tagText,
                 mapX = 0.5f,
                 mapY = 0.5f,
+                poiId = place.id,
             )
         }
     }
@@ -2036,8 +2124,19 @@ class MainActivity : ComponentActivity() {
         // storage: Yuxiang database if needed
         // input: attraction id or attraction name
         // output: POI detail mapped to AttractionDetail
-        // TODO(Leyan): Load POI photo, hours, indoor/outdoor, website from real database.
-        return sampleAttractionDetail(attractionIdOrName)
+        detailPois.firstOrNull {
+            it.id == attractionIdOrName || it.name.equals(attractionIdOrName, ignoreCase = true)
+        }?.let { poi ->
+            runCatching { poi.toAttractionDetail() }.getOrNull()?.let { return it }
+        }
+        try {
+            detailPoiRepository.getAllPois().firstOrNull {
+                it.id == attractionIdOrName || it.name.equals(attractionIdOrName, ignoreCase = true)
+            }?.let { return it.toAttractionDetail() }
+        } catch (error: Exception) {
+            android.util.Log.w("RoamMate", "Unable to load attraction details", error)
+        }
+        return unavailableAttractionDetail(attractionIdOrName)
     }
 
     // ---- Zewen: itinerary planning ----
@@ -2055,7 +2154,7 @@ class MainActivity : ComponentActivity() {
     private fun uiGenerateItinerary(
         request: PlanMyTripRequest,
         weatherForecasts: List<DailyWeatherForecast>,
-    ): List<TripTimelineStop> {
+    ): List<TripTimelineStop>? {
         // function: uiGenerateItinerary
         // owner: Zewen
         // input: destination/date/time/interests/transport/required places
@@ -2063,7 +2162,14 @@ class MainActivity : ComponentActivity() {
 
         try {
             // Step 1: Convert UI date format "12 Sep 2026" to backend format "2026-09-12"
-            val backendDate = convertUIDateToBackendFormat(request.date)
+            val startDate = LocalDate.parse(request.startDate.trim(), planDateFormatter)
+            val endDate = LocalDate.parse(request.endDate.trim(), planDateFormatter)
+            require(!endDate.isBefore(startDate)) { "End date must not precede start date" }
+            val backendDate = startDate.toString()
+            val dailyEndTime = "18:00"
+            require(LocalTime.parse(request.startTime).isBefore(LocalTime.parse(dailyEndTime))) {
+                "Choose a start time before $dailyEndTime"
+            }
 
             // Step 2: Convert UI interests to backend POICategory
             val userProfile = com.group5.roammate.logic.models.UserProfile(
@@ -2084,15 +2190,13 @@ class MainActivity : ComponentActivity() {
                 android.util.Log.d("RoamMate", "  - PinnedPOI: poiId=${pinned.poiId}, dayNumber=${pinned.dayNumber}")
             }
 
-            // Step 4: Get starting location
-            // TODO(Alex): Replace with real GPS location from currentSensorLocation
-            val startingLocation = com.group5.roammate.logic.models.Coordinates(
-                latitude = -37.8136,
-                longitude = 144.9631
+            // Initial plans start inside the destination; live GPS is for an ongoing trip.
+            val startingLocation = destinationPlanningOrigin(
+                tripPlannerEngine.getPOIsForDestination(request.destination, includeFillers = true)
             )
 
             // Step 5: Calculate number of days from date range
-            val numberOfDays = calculateNumberOfDays(request.startDate, request.endDate)
+            val numberOfDays = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate).toInt() + 1
 
             // Step 6: Call backend to generate itinerary
             val itinerary = tripPlannerEngine.generateInitialTrip(
@@ -2103,26 +2207,29 @@ class MainActivity : ComponentActivity() {
                 userProfile = userProfile,
                 startingLocation = startingLocation,
                 dailyStartTime = request.startTime,
-                dailyEndTime = "18:00",
-                weatherStatus = com.group5.roammate.logic.models.WeatherStatus.SUNNY,
+                dailyEndTime = dailyEndTime,
+                weatherStatus = if (weatherForecasts.none { it.status != null }) {
+                    com.group5.roammate.logic.models.WeatherStatus.CLOUDY
+                } else {
+                    com.group5.roammate.logic.models.WeatherStatus.SUNNY
+                },
                 includeFillers = true,
                 pinnedPOIs = pinnedPOIs
-            )
+            ).requireScheduledStops()
+
+            // Validate and map before replacing the user's existing trip.
+            val generatedStops = convertItineraryToTimelineStops(itinerary)
 
             // Step 7: Save itinerary for later use (trip summary, adjustments)
             currentItinerary = itinerary
+            currentPlanningProfile = userProfile
 
-            // Step 8: Convert backend Itinerary to UI TripTimelineStop list
-            return convertItineraryToTimelineStops(itinerary)
+            return generatedStops
 
         } catch (e: Exception) {
             android.util.Log.e("RoamMate", "Error generating itinerary", e)
             Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-            // Return fallback data on error
-            return listOf(
-                TripTimelineStop("09:00", "Federation Square", TripStopStatus.Current),
-                TripTimelineStop("10:00", "Melbourne Museum", TripStopStatus.Upcoming),
-            )
+            return null
         }
     }
 
@@ -2310,53 +2417,26 @@ class MainActivity : ComponentActivity() {
      */
     private fun convertItineraryToTimelineStops(
         itinerary: com.group5.roammate.logic.models.Itinerary
-    ): List<TripTimelineStop> {
-        val allStops = mutableListOf<TripTimelineStop>()
-
-        itinerary.days.forEach { day ->
-            day.pois.forEach { itineraryPOI ->
-                allStops.add(
-                    TripTimelineStop(
-                        time = itineraryPOI.startTime,
-                        title = itineraryPOI.poi.name,
-                        status = TripStopStatus.Upcoming, // Default status
-                        hiddenTag = if (itineraryPOI.isFiller) "Hidden gem · nearby" else null
-                    )
-                )
-            }
-        }
-
-        // Set first stop as current
-        if (allStops.isNotEmpty()) {
-            allStops[0] = allStops[0].copy(status = TripStopStatus.Current)
-        }
-
-        return allStops
-    }
+    ): List<TripTimelineStop> = itinerary.toTripDayPlans().flatMap { it.stops }
 
     // Store the latest generated itinerary for summary generation
     private var currentItinerary: com.group5.roammate.logic.models.Itinerary? = null
 
     // Store weather adjustment options for applying to currentItinerary
     private var weatherAdjustmentOptions: com.group5.roammate.logic.engine.RainyDayOptions? = null
+    private var weatherAdjustmentDate: String? = null
+    private var currentPlanningProfile: com.group5.roammate.logic.models.UserProfile? = null
 
-    private fun uiLoadTripSummary(): TripSummary {
+    private fun uiLoadTripSummary(stops: List<TripTimelineStop>): TripSummary? {
         // function: uiLoadTripSummary
         // owner: Zewen
         // output: short trip summary for Trip screen
 
-        val itinerary = currentItinerary
-        if (itinerary == null) {
-            // Fallback if no itinerary generated yet
-            return TripSummary(
-                title = "3 days in Melbourne",
-                description = "Day 1: Melbourne Museum, State Library and ACMI. Day 2: gardens and markets. Day 3: beach and riverside walk.",
-            )
-        }
+        val itinerary = currentItinerary ?: return null
 
         // Generate summary from real itinerary
-        val dayDescriptions = itinerary.days.mapIndexed { index, day ->
-            val topPOIs = day.pois.take(3).joinToString(", ") { it.poi.name }
+        val dayDescriptions = uiLoadTripDays(stops).mapIndexed { index, day ->
+            val topPOIs = day.stops.take(3).joinToString(", ") { it.title }
             "Day ${index + 1}: $topPOIs"
         }
 
@@ -2368,74 +2448,12 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private fun uiLoadTripDays(
-        currentDayStops: List<TripTimelineStop>,
-    ): List<TripDayPlan> {
+    private fun uiLoadTripDays(stops: List<TripTimelineStop>): List<TripDayPlan> {
         // function: uiLoadTripDays
         // owner: Zewen
         // output: full multi-day itinerary for Trip screen
 
-        val itinerary = currentItinerary
-        if (itinerary == null || itinerary.days.isEmpty()) {
-            // Fallback to single day if no itinerary generated yet
-            return listOf(
-                TripDayPlan(
-                    dayTitle = "Day 1",
-                    dateText = "Today",
-                    stops = currentDayStops,
-                )
-            )
-        }
-
-        // Convert each DayItinerary to TripDayPlan
-        return itinerary.days.mapIndexed { index, dayItinerary ->
-            // Convert POIs to TripTimelineStop list
-            val dayStops = dayItinerary.pois.map { itineraryPOI ->
-                TripTimelineStop(
-                    time = itineraryPOI.startTime,
-                    title = itineraryPOI.poi.name,
-                    status = if (index == 0 && dayItinerary.pois.firstOrNull() == itineraryPOI) {
-                        TripStopStatus.Current // First stop of first day is current
-                    } else {
-                        TripStopStatus.Upcoming
-                    },
-                    hiddenTag = if (itineraryPOI.isFiller) "Hidden gem · nearby" else null
-                )
-            }
-
-            // Format date text
-            val dateText = when (index) {
-                0 -> "Today"
-                1 -> "Tomorrow"
-                itinerary.days.size - 1 -> "Final day"
-                else -> formatDayDate(dayItinerary.date)
-            }
-
-            TripDayPlan(
-                dayTitle = "Day ${dayItinerary.dayNumber}",
-                dateText = dateText,
-                stops = dayStops,
-            )
-        }
-    }
-
-    /**
-     * Format backend date "yyyy-MM-dd" to readable format like "Oct 15"
-     */
-    private fun formatDayDate(backendDate: String): String {
-        return try {
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH)
-            val outputFormat = SimpleDateFormat("MMM d", Locale.ENGLISH)
-            val date = inputFormat.parse(backendDate)
-            if (date != null) {
-                outputFormat.format(date)
-            } else {
-                backendDate
-            }
-        } catch (e: Exception) {
-            android.util.Log.w("RoamMate", "Error formatting date: $backendDate", e)
-            backendDate
-        }
+        return currentItinerary.toTripDayPlans(timelineStops = stops)
     }
 
     private fun uiUpdateItineraryAfterEdit(
@@ -2470,6 +2488,7 @@ class MainActivity : ComponentActivity() {
 
     private fun uiAdjustItineraryForWeather(
         reason: String,
+        timelineStops: List<TripTimelineStop>,
     ): List<AdjustItineraryPlan> {
         // function: uiAdjustItineraryForWeather
         // owner: Zewen
@@ -2479,41 +2498,37 @@ class MainActivity : ComponentActivity() {
 
         android.util.Log.d("WeatherAdjust", "START weather adjustment algorithm")
         android.util.Log.d("WeatherAdjust", "Reason: $reason")
+        weatherAdjustmentOptions = null
+        weatherAdjustmentDate = null
 
         try {
-            val itinerary = currentItinerary
-            if (itinerary == null || itinerary.days.isEmpty()) {
-                // No itinerary to adjust, return sample data
-                android.util.Log.w("WeatherAdjust", "FALLBACK currentItinerary is null or empty")
-                android.util.Log.w("WeatherAdjust", "itinerary null: ${itinerary == null}")
-                if (itinerary != null) {
-                    android.util.Log.w("WeatherAdjust", "days empty: ${itinerary.days.isEmpty()}")
-                }
-                return sampleAdjustedItineraryPlans()
+            val itinerary = currentItinerary ?: return emptyList()
+            val today = LocalDate.now().toString()
+            val currentDay = itinerary.days.firstOrNull { it.date == today } ?: return emptyList()
+            if (currentDay.pois.isEmpty()) return emptyList()
+            val displayedStops = timelineStops.filter { it.date == today }
+            if (!currentDay.matchesTimeline(displayedStops)) return emptyList()
+            val userProfile = currentPlanningProfile ?: return emptyList()
+            val currentTime = LocalDateTime.now()
+            val lastEndTime = currentDay.pois.maxOf { java.time.LocalTime.parse(it.endTime) }
+            val availableTimeMinutes = java.time.Duration.between(currentTime.toLocalTime(), lastEndTime)
+                .toMinutes().coerceAtLeast(0).toInt()
+            if (availableTimeMinutes == 0) return emptyList()
+            val location = sensorRepository.getCurrentLocation()?.let {
+                com.group5.roammate.logic.models.Coordinates(it.latitude, it.longitude)
+            } ?: currentDay.pois.first().poi.coordinates
+            val completedIds = displayedStops.filter { it.status == TripStopStatus.Done }.mapNotNull { stop ->
+                stop.poiId ?: currentDay.pois.firstOrNull { it.poi.name == stop.title }?.poi?.id
             }
-
-            android.util.Log.d("WeatherAdjust", "SUCCESS Found valid itinerary, executing real algorithm")
-            android.util.Log.d("WeatherAdjust", "Days: ${itinerary.days.size}")
-            android.util.Log.d("WeatherAdjust", "POIs in day 1: ${itinerary.days.firstOrNull()?.pois?.size ?: 0}")
-
-            // Get current day (assume day 0 for now)
-            val currentDay = itinerary.days.firstOrNull() ?: return sampleAdjustedItineraryPlans()
-
-            // Get user profile from stored itinerary context
-            val userProfile = com.group5.roammate.logic.models.UserProfile(
-                interests = listOf(com.group5.roammate.logic.models.POICategory.MUSEUM),
-                budgetPreference = com.group5.roammate.logic.models.BudgetLevel.MEDIUM,
-                transportMode = com.group5.roammate.logic.models.TransportMode.WALKING
-            )
 
             // Create context payload for rainy weather
             val contextPayload = com.group5.roammate.logic.models.ContextPayload(
-                currentLocation = com.group5.roammate.logic.models.Coordinates(-37.8136, 144.9631),
-                currentTime = "${currentDay.date}T${currentDay.pois.firstOrNull()?.startTime ?: "09:00"}:00",
+                currentLocation = location,
+                currentTime = currentTime.toString(),
                 weatherStatus = com.group5.roammate.logic.models.WeatherStatus.RAINY,
                 currentWeather = com.group5.roammate.logic.models.WeatherStatus.RAINY,
                 itineraryProgress = com.group5.roammate.logic.models.ItineraryProgress(
-                    completedPOIs = emptyList(),
+                    completedPOIs = completedIds,
                     delayMinutes = 0
                 )
             )
@@ -2531,9 +2546,6 @@ class MainActivity : ComponentActivity() {
                 includeFillers = false
             )
 
-            // Calculate available time (assume 9 hours = 540 minutes)
-            val availableTimeMinutes = 540
-
             // Get rainy day options
             android.util.Log.d("WeatherAdjust", "Calling WeatherReplanningService.handleRainyDayScenario")
             android.util.Log.d("WeatherAdjust", "Available POIs: ${allPOIs.size}")
@@ -2543,7 +2555,7 @@ class MainActivity : ComponentActivity() {
                 currentItinerary = currentDay,
                 contextPayload = contextPayload,
                 allPOIs = allPOIs,
-                startLocation = com.group5.roammate.logic.models.Coordinates(-37.8136, 144.9631),
+                startLocation = location,
                 availableTimeMinutes = availableTimeMinutes
             )
 
@@ -2554,6 +2566,7 @@ class MainActivity : ComponentActivity() {
 
             // Save weather adjustment options for later application
             weatherAdjustmentOptions = rainyOptions
+            weatherAdjustmentDate = currentDay.date
 
             // Convert backend options to UI format
             val result = convertRainyOptionsToAdjustmentPlans(rainyOptions, currentDay)
@@ -2562,7 +2575,7 @@ class MainActivity : ComponentActivity() {
 
         } catch (e: Exception) {
             android.util.Log.e("RoamMate", "Error adjusting itinerary for weather", e)
-            return sampleAdjustedItineraryPlans()
+            return emptyList()
         }
     }
 
@@ -2644,6 +2657,8 @@ class MainActivity : ComponentActivity() {
             android.util.Log.w("WeatherAdjust", "Cannot apply adjustment: options or itinerary is null")
             return
         }
+        val dayIndex = itinerary.days.indexOfFirst { it.date == weatherAdjustmentDate }
+        if (dayIndex < 0) return
 
         // Select the chosen plan
         val selectedDayItinerary = when (planIndex) {
@@ -2655,9 +2670,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Update Day 1 with the selected plan
         val updatedDays = itinerary.days.toMutableList()
-        updatedDays[0] = selectedDayItinerary
+        updatedDays[dayIndex] = selectedDayItinerary
 
         // Create updated itinerary
         currentItinerary = itinerary.copy(
@@ -2808,6 +2822,7 @@ class MainActivity : ComponentActivity() {
         request: PlanMyTripRequest,
         onResult: (List<DailyWeatherForecast>?) -> Unit,
     ) {
+        latestPlannedWeather = emptyList()
 
         val startDate =
             try {
@@ -2833,12 +2848,18 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
 
-            val forecasts =
+            val forecasts = try {
                 weatherService.getPlannedWeather(
                     destination = request.destination,
                     startDate = startDate,
                     endDate = endDate
                 )
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                android.util.Log.w("PLANNED_WEATHER", "Unable to load optional forecast", error)
+                null
+            }
 
             if (forecasts != null) {
                 latestPlannedWeather = forecasts
@@ -2984,6 +3005,7 @@ class MainActivity : ComponentActivity() {
 
     private fun List<TripTimelineStop>.withAddedTemporaryStop(
         place: AddStopPlace,
+        date: String,
     ): List<TripTimelineStop> {
         // TODO: 这是前端临时添加逻辑；之后应由 Zewen 决定新地点插入位置和时间。
         val alreadyExists = any { stop ->
@@ -2995,6 +3017,8 @@ class MainActivity : ComponentActivity() {
             time = nextTemporaryStopTime(lastOrNull()?.time),
             title = place.name,
             status = TripStopStatus.Upcoming,
+            date = date,
+            poiId = place.poiId,
         )
     }
 
@@ -3011,6 +3035,7 @@ class MainActivity : ComponentActivity() {
             time = nextTemporaryStopTime(lastOrNull()?.time),
             title = attraction.name,
             status = TripStopStatus.Upcoming,
+            date = lastOrNull()?.date,
         )
     }
 
@@ -3155,10 +3180,8 @@ class MainActivity : ComponentActivity() {
 
     private fun ExplorePlace.toAttractionDetail(): AttractionDetail {
         // Explore 只拿到列表卡片需要的轻量数据；详情页其余字段之后从 Leyan 的景点详情接口补齐。
-        return sampleAttractionDetail(name).copy(
+        return uiLoadAttractionDetail(poiId ?: name).copy(
             distanceText = distanceText,
-            environmentLabel = environmentLabel,
-            weatherTag = tagText,
         )
     }
 
@@ -3328,25 +3351,10 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private fun AdjustItineraryPlan.toTripTimelineStops(): List<TripTimelineStop> {
-        // TODO: 之后如果 Zewen 直接返回 TripTimelineStop 或统一 itinerary model，这里可以删除。
-        return stops.mapIndexed { index, stop ->
-            TripTimelineStop(
-                time = stop.time,
-                title = stop.title,
-                status = if (index == 0) {
-                    TripStopStatus.Current
-                } else {
-                    TripStopStatus.Upcoming
-                },
-            )
-        }
-    }
-
     private fun openExternalMap(placeName: String) {
         // function: uiOpenExternalMap
         // owner: Yufei
-        // 外部地图统一入口：Home 提醒条和 Trip 的 Start navigation 都调用这里。
+        // External map entry point for Trip navigation.
         val mapUri = Uri.parse("geo:0,0?q=${Uri.encode(placeName)}")
         val mapIntent = Intent(Intent.ACTION_VIEW, mapUri)
 

@@ -71,15 +71,6 @@ data class HomePetStatus(
     val petState: PetUiState,
 )
 
-// Leave now card data.
-// Zewen/Sitao 之后可以用真实行程、当前位置和路线时间替换这里的数据。
-data class HomeLeaveNowReminder(
-    val placeName: String,
-    val scheduledTime: String,
-    val delayMinutes: Int,
-    val navigationQuery: String,
-)
-
 // Smart suggestion card data.
 // Yan 之后可以用天气变化生成 message，Zewen 再用它触发行程调整。
 data class HomeSmartSuggestion(
@@ -101,10 +92,8 @@ fun HomeScreen(
     userName: String,
     modifier: Modifier = Modifier,
     todayTripStops: List<HomeTripStop> = emptyList(),
-    leaveNowReminder: HomeLeaveNowReminder? = null,
     smartSuggestion: HomeSmartSuggestion? = null,
     petStatus: HomePetStatus,
-    onNavigateReminderClick: () -> Unit,
     onSmartSuggestionClick: () -> Unit,
     onPetCardClick: () -> Unit,
     onPlanMyTripClick: () -> Unit,
@@ -139,15 +128,6 @@ fun HomeScreen(
             HomeHeader()
 
             Spacer(modifier = Modifier.height(18.dp))
-
-            // Leave now reminder: null means no reminder now.
-            leaveNowReminder?.let { reminder ->
-                LeaveNowReminderCard(
-                    reminder = reminder,
-                    onNavigateClick = onNavigateReminderClick,
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
 
             // Smart suggestion: null means no weather adjustment suggestion now.
             smartSuggestion?.let { suggestion ->
@@ -220,72 +200,6 @@ private fun HomeHeader() {
             lineHeight = 34.sp,
             fontWeight = FontWeight.ExtraBold,
         )
-    }
-}
-
-// Leave now reminder
-@Composable
-private fun LeaveNowReminderCard(
-    reminder: HomeLeaveNowReminder,
-    onNavigateClick: () -> Unit,   //  “Navigate” to External map
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        color = RoamMateLightCoral,
-        border = BorderStroke(1.dp, RoamMateCoral.copy(alpha = 0.26f)),
-        shadowElevation = 1.dp,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 18.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // leave now logo
-            Box(
-                modifier = Modifier
-                    .size(54.dp)
-                    .background(RoamMateCoral, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "!",
-                    color = Color.White,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                )
-            }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            // leave now context
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Leave now",
-                    color = RoamMateCoral,
-                    fontSize = 19.sp,
-                    lineHeight = 22.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                )
-
-                Text(
-                    text = "${reminder.placeName} at ${reminder.scheduledTime} · " +
-                        "you're ${reminder.delayMinutes} min behind",
-                    color = RoamMateText,
-                    fontSize = 16.sp,
-                    lineHeight = 19.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            // Navigate click
-            Text(
-                text = "Navigate >",
-                modifier = Modifier.clickable(onClick = onNavigateClick),
-                color = RoamMateTeal,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.ExtraBold,
-            )
-        }
     }
 }
 
@@ -681,14 +595,6 @@ private fun samplePetStatus(): HomePetStatus = HomePetStatus(
     petState = PetStateEngine.buildUiState(PetProfile()),
 )
 
-// 预览用的 Leave now 假数据。
-private fun sampleLeaveNowReminder(): HomeLeaveNowReminder = HomeLeaveNowReminder(
-    placeName = "Melbourne Museum",
-    scheduledTime = "10:00",
-    delayMinutes = 3,
-    navigationQuery = "Melbourne Museum",
-)
-
 // 预览用的 Smart suggestion 假数据。
 private fun sampleSmartSuggestion(): HomeSmartSuggestion = HomeSmartSuggestion(
     label = "Rain",
@@ -696,7 +602,7 @@ private fun sampleSmartSuggestion(): HomeSmartSuggestion = HomeSmartSuggestion(
 )
 
 // ===== 12. Preview：Android Studio 预览（不进正式 App）=====
-// 预览一：有今日行程 + 显示超时提醒
+// Preview with today's trip.
 @Preview(showBackground = true)
 @Composable
 private fun HomeScreenPreviewWithTrip() {
@@ -704,10 +610,8 @@ private fun HomeScreenPreviewWithTrip() {
         HomeScreen(
             userName = "Yufei",
             todayTripStops = sampleHomeTripStops(),
-            leaveNowReminder = sampleLeaveNowReminder(),
             smartSuggestion = sampleSmartSuggestion(),
             petStatus = samplePetStatus(),
-            onNavigateReminderClick = {},
             onSmartSuggestionClick = {},
             onPetCardClick = {},
             onPlanMyTripClick = {},
@@ -719,7 +623,7 @@ private fun HomeScreenPreviewWithTrip() {
     }
 }
 
-// 预览二：没有今日行程（会显示 NoTripTodayCard 空状态）+ 不显示超时提醒
+// Preview without today's trip.
 @Preview(showBackground = true)
 @Composable
 private fun HomeScreenPreviewWithoutTrip() {
@@ -727,10 +631,8 @@ private fun HomeScreenPreviewWithoutTrip() {
         HomeScreen(
             userName = "Yufei",
             todayTripStops = emptyList(),
-            leaveNowReminder = null,
             smartSuggestion = null,
             petStatus = samplePetStatus(),
-            onNavigateReminderClick = {},
             onSmartSuggestionClick = {},
             onPetCardClick = {},
             onPlanMyTripClick = {},

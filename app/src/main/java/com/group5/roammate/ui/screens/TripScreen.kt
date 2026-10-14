@@ -23,6 +23,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -32,20 +34,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.group5.roammate.R
 import com.group5.roammate.ui.theme.RoamMateTheme
 
 // on-screen -> code:
 //   "Trip" + destination + weather pill  -> TripHeader / WeatherPill
 //   multi-day itinerary                  -> TripMultiDayItinerary
-//   timeline (time · dot · title · tag)  -> TripTimeline > TripTimelineRow
+//   timeline (time · dot · title)        -> TripTimeline > TripTimelineRow
 //   dot (done/current/upcoming)          -> TimelineDot
-//   "Hidden gem" tag                     -> HiddenStopTag
 //   buttons: End trip / Start navigation -> TripActionBar
 //   bottom tabs                          -> RoamMateBottomNavigation
 
@@ -57,16 +60,17 @@ private val RoamMateMutedText = Color(0xFF8A949E)
 private val RoamMateTimelineGrey = Color(0xFFC9D3D5)
 private val RoamMateWeatherBackground = Color(0xFFFFF4D7)
 private val RoamMateWeatherText = Color(0xFF8A661D)
-private val RoamMateHiddenBackground = Color(0xFFFFF7E7)
-private val RoamMateHiddenText = Color(0xFF936B16)
 
 // data: one stop in today's timeline
 data class TripTimelineStop(
     val time: String,
     val title: String,
     val status: TripStopStatus,
-    // Zewen 如果插入顺路小众点，就在这里传入小标签；普通站点保持 null。
+    // Retained as backend metadata; Trip does not display treasure tags.
     val hiddenTag: String? = null,
+    // Generated day date (yyyy-MM-dd), used to select Today's trip.
+    val date: String? = null,
+    val poiId: String? = null,
 )
 
 // data: weather summary
@@ -80,6 +84,7 @@ data class TripDayPlan(
     val dayTitle: String,
     val dateText: String,
     val stops: List<TripTimelineStop>,
+    val date: String? = null,
 )
 
 // data: trip title only
@@ -106,9 +111,23 @@ fun TripScreen(
     onStopClick: (TripTimelineStop) -> Unit,
     onEndTripClick: () -> Unit,
     onStartNavigationClick: () -> Unit,
+    onEditDayClick: (TripDayPlan) -> Unit,
     onTabClick: (RoamMateMainTab) -> Unit,
+    canStartNavigation: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
+    val visibleTripDays = when {
+        tripDays.isNotEmpty() -> tripDays
+        stops.isNotEmpty() -> listOf(
+            TripDayPlan(
+                dayTitle = "Today",
+                dateText = tripSummary?.title ?: destinationTitle,
+                stops = stops,
+            ),
+        )
+        else -> emptyList()
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.White,
@@ -116,10 +135,13 @@ fun TripScreen(
         // bottom: action buttons + tabs
         bottomBar = {
             Column {
-                TripActionBar(
-                    onEndTripClick = onEndTripClick,
-                    onStartNavigationClick = onStartNavigationClick,
-                )
+                if (visibleTripDays.isNotEmpty()) {
+                    TripActionBar(
+                        onEndTripClick = onEndTripClick,
+                        onStartNavigationClick = onStartNavigationClick,
+                        canStartNavigation = canStartNavigation,
+                    )
+                }
 
                 RoamMateBottomNavigation(
                     selectedTab = RoamMateMainTab.Trip,
@@ -147,22 +169,10 @@ fun TripScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            val visibleTripDays = if (tripDays.isNotEmpty()) {
-                tripDays
-            } else {
-                listOf(
-                    TripDayPlan(
-                        dayTitle = "Today",
-                        dateText = tripSummary?.title ?: destinationTitle,
-                        stops = stops,
-                    ),
-                )
-            }
-
-            // TODO(Zewen): Replace visibleTripDays with generated multi-day itinerary.
             TripMultiDayItinerary(
                 tripDays = visibleTripDays,
                 onStopClick = onStopClick,
+                onEditDayClick = onEditDayClick,
             )
 
             Spacer(modifier = Modifier.height(28.dp))
@@ -236,6 +246,7 @@ private fun WeatherPill(
 private fun TripMultiDayItinerary(
     tripDays: List<TripDayPlan>,
     onStopClick: (TripTimelineStop) -> Unit,
+    onEditDayClick: (TripDayPlan) -> Unit,
 ) {
     if (tripDays.isEmpty()) {
         EmptyTripTimeline()
@@ -248,6 +259,7 @@ private fun TripMultiDayItinerary(
                 TripDaySection(
                     dayPlan = dayPlan,
                     onStopClick = onStopClick,
+                    onEditClick = { onEditDayClick(dayPlan) },
                 )
             }
         }
@@ -259,7 +271,11 @@ private fun TripMultiDayItinerary(
 private fun TripDaySection(
     dayPlan: TripDayPlan,
     onStopClick: (TripTimelineStop) -> Unit,
+    onEditClick: () -> Unit,
 ) {
+    val canEdit = dayPlan.stops.isEmpty() || dayPlan.stops.any {
+        it.status != TripStopStatus.Done
+    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -292,6 +308,19 @@ private fun TripDaySection(
                         fontWeight = FontWeight.Bold,
                     )
                 }
+
+                IconButton(
+                    onClick = onEditClick,
+                    enabled = canEdit,
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_edit_itinerary),
+                        contentDescription = "Edit ${dayPlan.dayTitle}",
+                        tint = if (canEdit) RoamMateTeal else RoamMateMutedText,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -311,7 +340,13 @@ private fun TripTimeline(
     onStopClick: (TripTimelineStop) -> Unit,
 ) {
     if (stops.isEmpty()) {
-        EmptyTripTimeline()
+        Text(
+            text = "No trip stops yet",
+            modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+            color = RoamMateTeal,
+            fontSize = 18.sp,
+            textAlign = TextAlign.Center,
+        )
     } else {
         Column(modifier = Modifier.fillMaxWidth()) {
             stops.forEachIndexed { index, stop ->
@@ -347,7 +382,7 @@ private fun EmptyTripTimeline() {
     }
 }
 
-// ---- one row (time · dot · title · optional tag) ; tap = open stop ----
+// ---- one row (time · dot · title); tap = open stop ----
 @Composable
 private fun TripTimelineRow(
     stop: TripTimelineStop,
@@ -355,12 +390,7 @@ private fun TripTimelineRow(
     isLast: Boolean,
     onClick: () -> Unit,
 ) {
-    // taller row when a hidden tag is shown
-    val rowHeight = if (stop.hiddenTag == null) {
-        92.dp
-    } else {
-        112.dp
-    }
+    val rowHeight = 92.dp
 
     Row(
         modifier = Modifier
@@ -394,7 +424,7 @@ private fun TripTimelineRow(
 
         Spacer(modifier = Modifier.width(20.dp))
 
-        // title + optional hidden tag
+        // Stop title
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = stop.title,
@@ -403,34 +433,7 @@ private fun TripTimelineRow(
                 lineHeight = 27.sp,
                 fontWeight = FontWeight.ExtraBold,
             )
-
-            stop.hiddenTag?.let { tagText ->
-                Spacer(modifier = Modifier.height(8.dp))
-                HiddenStopTag(text = tagText)
-            }
         }
-    }
-}
-
-// ---- hidden-gem tag (backend-inserted stop) ----
-@Composable
-private fun HiddenStopTag(
-    text: String,
-) {
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = RoamMateHiddenBackground,
-        border = BorderStroke(1.dp, RoamMateHiddenText.copy(alpha = 0.14f)),
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-            color = RoamMateHiddenText,
-            fontSize = 12.sp,
-            lineHeight = 14.sp,
-            fontWeight = FontWeight.ExtraBold,
-            maxLines = 1,
-        )
     }
 }
 
@@ -505,6 +508,7 @@ private fun TimelineDot(
 private fun TripActionBar(
     onEndTripClick: () -> Unit,
     onStartNavigationClick: () -> Unit,
+    canStartNavigation: Boolean,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -540,6 +544,7 @@ private fun TripActionBar(
             // button: Start navigation -> external map
             Button(
                 onClick = onStartNavigationClick,
+                enabled = canStartNavigation,
                 modifier = Modifier
                     .weight(1f)
                     .height(58.dp),
@@ -617,6 +622,7 @@ private fun TripScreenPreview() {
             onStopClick = {},
             onEndTripClick = {},
             onStartNavigationClick = {},
+            onEditDayClick = {},
             onTabClick = {},
             modifier = Modifier.fillMaxSize(),
         )

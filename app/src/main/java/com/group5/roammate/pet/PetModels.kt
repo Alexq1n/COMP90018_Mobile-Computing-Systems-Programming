@@ -80,13 +80,18 @@ data class PetWeatherSnapshot(
     val todayRainChancePercent: Int? = null,
     val forecastDate: String? = null,
     val isDay: Boolean = true,
+    // Some shared providers expose receipt time but no observation time or daylight flag.
+    val receivedAtMillis: Long = 0L,
+    val daylightKnown: Boolean = true,
 ) {
     val isCurrent: Boolean get() = isFreshAt(System.currentTimeMillis())
 
-    fun isFreshAt(nowMillis: Long): Boolean =
-        source != "Demo fallback" && condition != PetWeatherCondition.Unknown &&
-            temperatureC.isFinite() && windSpeedKmh.isFinite() &&
-            observedAtMillis > 0L && nowMillis - observedAtMillis in 0L..45 * 60_000L
+    fun isFreshAt(nowMillis: Long): Boolean {
+        val referenceTime = if (observedAtMillis > 0L) observedAtMillis else receivedAtMillis
+        return source != "Demo fallback" && condition != PetWeatherCondition.Unknown &&
+            temperatureC.isFinite() && referenceTime > 0L &&
+            nowMillis - referenceTime in 0L..45 * 60_000L
+    }
 
     companion object {
         /** No fabricated conditions are used while a live request is unavailable. */

@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -495,7 +496,10 @@ class MainActivity : ComponentActivity() {
                 // Jie pet feature state: one koala, live weather gear and a persisted fashion choice.
                 val petPreferences = remember { PetPreferences(applicationContext) }
                 var petProfile by remember { mutableStateOf(petPreferences.loadProfile()) }
-                val petEnvironment = rememberPetEnvironment()
+                val petEnvironment = rememberPetEnvironment(
+                    weatherService = weatherService,
+                    sensorRepository = sensorRepository,
+                )
                 val petWeather = petEnvironment.weather
                 val petState = PetStateEngine.buildUiState(petProfile, petWeather)
 
@@ -995,6 +999,10 @@ class MainActivity : ComponentActivity() {
                         // input: GPS + selected category source
                         // output: nearby place cards for Explore
                         // Shake refreshes order now; later Alex can refresh real nearby data here.
+
+                        // Get steps in the last hour
+                        val lastHourStep by sensorRepository.stepsLastHourFlow.collectAsState()
+
                         val nearbyExplorePlaces = remember(
                             exploreShakeRefreshCount,
                             currentSensorLocation.value.latitude,
@@ -1010,7 +1018,8 @@ class MainActivity : ComponentActivity() {
                                         category = category,
                                         userLatitude = location.latitude,
                                         userLongitude = location.longitude,
-                                        limit = 10,
+                                        limit = 20,
+                                        lastHourStep = lastHourStep ?: 0,
                                     )
 
                                     // Randomly select 5 indices
@@ -1020,7 +1029,7 @@ class MainActivity : ComponentActivity() {
                                                 exploreShakeRefreshCount + category.ordinal
                                             )
                                         )
-                                        .take(5)
+                                        .take(10)
                                         .toSet()
 
                                     // Keep original ranking order
@@ -1287,6 +1296,10 @@ class MainActivity : ComponentActivity() {
                         CompanionsScreen(
                             state = petState,
                             environment = petEnvironment,
+                            sensorRepository = sensorRepository,
+                            onRequestActivityPermission = {
+                                activityPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+                            },
                             onWardrobeSelected = { wardrobeChoice ->
                                 val updatedProfile = petProfile.copy(
                                     wardrobeChoice = wardrobeChoice,
@@ -1932,6 +1945,7 @@ class MainActivity : ComponentActivity() {
             userLatitude = userLatitude,
             userLongitude = userLongitude,
             limit = limit,
+            lastHourStep = -1
         ).map { result ->
             AddStopPlace(
                 name = result.place.name,
@@ -1951,6 +1965,7 @@ class MainActivity : ComponentActivity() {
         userLatitude: Double?,
         userLongitude: Double?,
         limit: Int,
+        lastHourStep: Int
     ): List<ExplorePlace> {
         // function: uiExploreNearbyPlaces
         // owner: Alex
@@ -1967,6 +1982,7 @@ class MainActivity : ComponentActivity() {
             userLongitude = userLongitude,
             category = category,
             limit = limit,
+            lastHourStep = lastHourStep
         ).map { result ->
             val place = result.place
             ExplorePlace(
@@ -2072,7 +2088,50 @@ class MainActivity : ComponentActivity() {
             // Step 5: Calculate number of days from date range
             val numberOfDays = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate).toInt() + 1
 
-            // Step 6: Call backend to generate itinerary
+            // Step 6: Determine weather status from actual forecasts
+            android.util.Log.d("RoamMate", "Step 6: Processing weather forecasts")
+            android.util.Log.d("RoamMate", "  - weatherForecasts size: ${weatherForecasts.size}")
+            weatherForecasts.forEachIndexed { index, forecast ->
+                android.util.Log.d("RoamMate", "  - Forecast[$index]: date=${forecast.date}, status=${forecast.status}")
+            }
+
+            val weatherStatus = when {
+                weatherForecasts.isEmpty() -> {
+                    android.util.Log.w("RoamMate", "  - Using DEFAULT weather: SUNNY (no forecasts available)")
+                    com.group5.roammate.logic.models.WeatherStatus.SUNNY
+                }
+                else -> {
+                    val validForecasts = weatherForecasts.mapNotNull { it.status }
+                    android.util.Log.d("RoamMate", "  - Valid forecasts count: ${validForecasts.size}")
+
+                    if (validForecasts.isEmpty()) {
+                        android.util.Log.w("RoamMate", "  - Using DEFAULT weather: SUNNY (all forecasts have null status)")
+                        com.group5.roammate.logic.models.WeatherStatus.SUNNY
+                    } else {
+                        // Find most common weather status and convert to logic model type
+                        val weatherCounts = validForecasts.groupingBy { it }.eachCount()
+                        android.util.Log.d("RoamMate", "  - Weather distribution: $weatherCounts")
+
+                        val mostCommonWeather = weatherCounts.maxByOrNull { it.value }?.key
+                        android.util.Log.i("RoamMate", "  - Using REAL weather API data: $mostCommonWeather (most frequent)")
+
+                        when (mostCommonWeather) {
+                            com.group5.roammate.weather.model.WeatherStatus.SUNNY -> com.group5.roammate.logic.models.WeatherStatus.SUNNY
+                            com.group5.roammate.weather.model.WeatherStatus.CLOUDY -> com.group5.roammate.logic.models.WeatherStatus.CLOUDY
+                            com.group5.roammate.weather.model.WeatherStatus.RAINY -> com.group5.roammate.logic.models.WeatherStatus.RAINY
+                            com.group5.roammate.weather.model.WeatherStatus.STORMY -> com.group5.roammate.logic.models.WeatherStatus.STORMY
+                            com.group5.roammate.weather.model.WeatherStatus.SNOWY -> com.group5.roammate.logic.models.WeatherStatus.SNOWY
+                            null -> {
+                                android.util.Log.w("RoamMate", "  - Using DEFAULT weather: SUNNY (mostCommonWeather is null)")
+                                com.group5.roammate.logic.models.WeatherStatus.SUNNY
+                            }
+                        }
+                    }
+                }
+            }
+            android.util.Log.i("RoamMate", "Step 6: Final weatherStatus for itinerary generation: $weatherStatus")
+
+            // Step 7: Call backend to generate itinerary
             val itinerary = tripPlannerEngine.generateInitialTrip(
                 tripId = "trip_${System.currentTimeMillis()}",
                 destination = request.destination,
@@ -2082,11 +2141,7 @@ class MainActivity : ComponentActivity() {
                 startingLocation = startingLocation,
                 dailyStartTime = request.startTime,
                 dailyEndTime = dailyEndTime,
-                weatherStatus = if (weatherForecasts.none { it.status != null }) {
-                    com.group5.roammate.logic.models.WeatherStatus.CLOUDY
-                } else {
-                    com.group5.roammate.logic.models.WeatherStatus.SUNNY
-                },
+                weatherStatus = weatherStatus,
                 includeFillers = true,
                 pinnedPOIs = pinnedPOIs
             ).requireScheduledStops()

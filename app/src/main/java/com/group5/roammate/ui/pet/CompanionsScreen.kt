@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -45,9 +44,11 @@ import com.group5.roammate.pet.PetStateEngine
 import com.group5.roammate.pet.PetTripContext
 import com.group5.roammate.pet.PetUiState
 import com.group5.roammate.pet.PetWardrobeChoice
+import com.group5.roammate.sensor.SensorRepository
 import com.group5.roammate.ui.screens.RoamMateBottomNavigation
 import com.group5.roammate.ui.screens.RoamMateMainTab
 import com.group5.roammate.ui.theme.RoamMateTheme
+import kotlin.math.roundToInt
 
 private val PetTeal = Color(0xFF008B8F)
 private val PetLightTeal = Color(0xFFE6F5F3)
@@ -69,11 +70,13 @@ fun CompanionsScreen(
     onTabClick: (RoamMateMainTab) -> Unit,
     tripContext: PetTripContext = PetTripContext(),
     environment: PetEnvironment? = null,
+    sensorRepository: SensorRepository? = null,
+    onRequestActivityPermission: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var treatTick by remember { mutableIntStateOf(0) }
     var showEnvironment by remember { androidx.compose.runtime.mutableStateOf(false) }
-    val motion = rememberPetMotion()
+    val motion = rememberPetMotion(sensorRepository, onRequestActivityPermission)
     if (showEnvironment) {
         PetEnvironmentDialog(state, environment, motion) { showEnvironment = false }
     }
@@ -113,6 +116,7 @@ fun CompanionsScreen(
                 onNextOutfit = nextOutfit,
                 tripContext = tripContext,
                 isMoving = motion.state.isMoving,
+                sensorRepository = sensorRepository,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
@@ -189,7 +193,7 @@ private fun PetHeader(state: PetUiState, isMoving: Boolean, onWeatherClick: () -
         ) {
             Text(
                 text = if (state.weather.isCurrent) {
-                    "${state.weather.label} · ${state.weather.temperatureC.toInt()}°"
+                    "${state.weather.label} · ${state.weather.temperatureC.roundToInt()}°"
                 } else "Weather —",
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 color = PetTeal,
@@ -334,7 +338,6 @@ private fun PetEnvironmentDialog(
     motion: PetMotionController,
     onDismiss: () -> Unit,
 ) {
-    val uriHandler = LocalUriHandler.current
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Buddy's surroundings") },
@@ -343,26 +346,26 @@ private fun PetEnvironmentDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(state.weather.locationLabel, fontWeight = FontWeight.Bold)
                 Text(if (state.weather.isCurrent) {
-                    "${state.weather.label}, ${state.weather.temperatureC.toInt()}°C · wind ${state.weather.windSpeedKmh.toInt()} km/h"
+                    val windText = if (state.weather.windSpeedKmh.isFinite()) {
+                        " · wind ${state.weather.windSpeedKmh.toInt()} km/h"
+                    } else ""
+                    "${state.weather.label}, ${state.weather.temperatureC.roundToInt()}°C$windText"
                 } else "No fresh weather available. Buddy won't guess the conditions.")
                 environment?.status?.let { Text(it, fontSize = 12.sp) }
                 if (environment != null) {
                     TextButton(onClick = environment::requestLocationPermission) { Text("Use my location") }
-                    TextButton(onClick = environment::useMelbourne) { Text("Use Melbourne") }
                     TextButton(onClick = environment::refresh, enabled = !environment.isRefreshing) {
                         Text(if (environment.isRefreshing) "Updating…" else "Refresh weather")
                     }
                 }
                 Text("Weather protection comes first", fontWeight = FontWeight.Bold)
-                Text("Buddy wears fitted rain, winter, wind or sun gear when needed. Your chosen fashion is saved and returns in mild weather.")
+                Text("Buddy chooses protective clothing from the available weather data. Your chosen fashion is saved and returns in mild weather.")
                 Text("Motion: ${motion.state.source.label}")
                 if (motion.state.needsActivityPermission) {
                     TextButton(onClick = motion.requestActivityPermission) { Text("Enable step detection") }
                 }
-                Text("Without a step sensor, movement is estimated from the phone. A desk or emulator may not produce walking events.", fontSize = 12.sp)
-                TextButton(onClick = { uriHandler.openUri("https://open-meteo.com/") }) {
-                    Text("Weather data: Open-Meteo · CC BY 4.0")
-                }
+                Text("Walking needs a step sensor and activity permission. A desk or emulator may not produce walking events.", fontSize = 12.sp)
+                Text("Weather data: ${state.weather.source}", fontSize = 12.sp)
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },

@@ -93,7 +93,8 @@ fun searchPlaces(
     // Optional user GPS
     userLatitude: Double? = null,
     userLongitude: Double? = null,
-    category: ExplorePlaceCategory? = null
+    category: ExplorePlaceCategory? = null,
+    lastHourStep: Int
 ): List<SearchResult> {
 
     // ------------------------------------------
@@ -325,10 +326,25 @@ fun searchPlaces(
                     if (
                         place.isFiller == true &&
                         (place.baseScore ?: 0.0) >= 9.0 &&
-                        distanceMeters != null &&
-                        distanceMeters <= 500
+                        distanceMeters != null
                     ) {
-                        tagText = "Hidden gem"
+                        if (lastHourStep < 500) {
+                            // Low fatigue: unlock Hidden Gems within 800m
+                            if (distanceMeters <= 500) {
+                                tagText = "Hidden gem"
+                            }
+                        } else {
+                            // Higher fatigue: unlock only within 500m
+                            when {
+                                distanceMeters <= 200 -> {
+                                    tagText = "Hidden gem"
+                                }
+
+                                distanceMeters <= 500 -> {
+                                    tagText = "Hidden gem, tired"
+                                }
+                            }
+                        }
                     }
 
                 }
@@ -385,11 +401,14 @@ fun searchPlaces(
 
                 }.thenByDescending { result ->
 
-                    // Priority 2: Hidden gem
+                    // Priority 2: Hidden gem (fatigue-aware)
                     result.place.isFiller == true &&
                             (result.place.baseScore ?: 0.0) >= 9.0 &&
                             result.distanceMeters != null &&
-                            result.distanceMeters <= 500
+                            result.distanceMeters <= if (lastHourStep < 500) 500 else 200
+
+
+
 
                 }.thenBy { result ->
 

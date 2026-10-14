@@ -3,8 +3,8 @@ package com.group5.roammate.pet
 import kotlin.math.sqrt
 
 enum class PetMotionSource(val label: String) {
-    StepDetector("Step sensor"),
-    StepCounter("Step counter"),
+    StepDetector("Shared step sensor"),
+    StepCounter("Shared step counter"),
     Accelerometer("Motion estimate"),
     Unavailable("Motion unavailable"),
 }

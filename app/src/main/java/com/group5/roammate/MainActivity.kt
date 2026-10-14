@@ -333,6 +333,8 @@ class MainActivity : ComponentActivity() {
     }
 
 
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -352,6 +354,9 @@ class MainActivity : ComponentActivity() {
         weatherForecastMonitor.onContextEvent = { event ->
             uiHandleWeatherContextEvent(event)
         }
+
+        // ==================== Weather Demo ====================
+        startWeatherDemoScenario()
 
         // UI observes the latest current weather through WeatherService.
         weatherService.currentWeather.observe(this) { weather ->

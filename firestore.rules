@@ -45,7 +45,9 @@ service cloud.firestore {
       }
 
       match /trips/{tripId} {
-        allow read, delete: if isOwner(uid);
+        // Collection queries are list operations. Keep both single-document reads
+        // and Saved Trips queries scoped to the authenticated user's own UID.
+        allow get, list, delete: if isOwner(uid);
         allow create, update: if isOwner(uid)
           && request.resource.data.keys().hasOnly([
             'tripId', 'payloadJson', 'totalEstimatedCost',

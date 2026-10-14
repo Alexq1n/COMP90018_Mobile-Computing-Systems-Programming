@@ -51,10 +51,11 @@ class PoiDatabaseStore(
         }
 
         database.upsertPois(poiDataList)
+        val count = database.countPois()
 
         Log.d(
             "POI_DATABASE",
-            "Saved ${poiDataList.size} POIs to local database"
+            "Saved ${poiDataList.size} POIs. Database now contains $count POIs."
         )
     }
 }

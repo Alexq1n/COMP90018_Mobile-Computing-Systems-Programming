@@ -388,8 +388,8 @@ class MainActivity : ComponentActivity() {
             uiHandleWeatherContextEvent(event)
         }
 
-        // ----- Weather Demo -----
-        startWeatherDemoScenario()
+        // ----- Weather Demo, remove the // in front of startWeatherDemoScenario() to test
+        // startWeatherDemoScenario()
 
         // UI observes the latest current weather through WeatherService.
         weatherService.currentWeather.observe(this) { weather ->
@@ -2619,19 +2619,22 @@ class MainActivity : ComponentActivity() {
         android.util.Log.d("WeatherAdjust", "Updated Day 1 POIs: ${selectedDayItinerary.pois.size}")
     }
 
-    // ---- LeYan: weather ----
-    // demo onlu
+    /*
+     * DEMO ONLY
+     * Simulates an upcoming-rain forecast for presentation purposes.
+     * Not used in normal application execution.
+
     private fun startWeatherDemoScenario() {
 
         lifecycleScope.launch {
 
             android.util.Log.d(
                 "WEATHER_DEMO",
-                "Demo started. Fake forecast will arrive in 5 minutes."
+                "Demo started. Fake forecast will arrive in 1 minutes."
             )
 
             // Wait 1 minutes after app launch.
-            delay(6 * 1000L)
+            delay(60 * 1000L)
 
             val now = LocalDateTime.now()
 
@@ -2703,6 +2706,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    */
 
     private fun uiHandleWeatherContextEvent(
         event: WeatherContextEvent,

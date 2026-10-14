@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -999,6 +1000,10 @@ class MainActivity : ComponentActivity() {
                         // input: GPS + selected category source
                         // output: nearby place cards for Explore
                         // Shake refreshes order now; later Alex can refresh real nearby data here.
+
+                        // Get steps in the last hour
+                        val lastHourStep by sensorRepository.stepsLastHourFlow.collectAsState()
+
                         val nearbyExplorePlaces = remember(
                             exploreShakeRefreshCount,
                             currentSensorLocation.value.latitude,
@@ -1014,7 +1019,8 @@ class MainActivity : ComponentActivity() {
                                         category = category,
                                         userLatitude = location.latitude,
                                         userLongitude = location.longitude,
-                                        limit = 10,
+                                        limit = 20,
+                                        lastHourStep = lastHourStep ?: 0,
                                     )
 
                                     // Randomly select 5 indices
@@ -1024,7 +1030,7 @@ class MainActivity : ComponentActivity() {
                                                 exploreShakeRefreshCount + category.ordinal
                                             )
                                         )
-                                        .take(5)
+                                        .take(10)
                                         .toSet()
 
                                     // Keep original ranking order
@@ -1946,6 +1952,7 @@ class MainActivity : ComponentActivity() {
             userLatitude = userLatitude,
             userLongitude = userLongitude,
             limit = limit,
+            lastHourStep = -1
         ).map { result ->
             AddStopPlace(
                 name = result.place.name,
@@ -1965,6 +1972,7 @@ class MainActivity : ComponentActivity() {
         userLatitude: Double?,
         userLongitude: Double?,
         limit: Int,
+        lastHourStep: Int
     ): List<ExplorePlace> {
         // function: uiExploreNearbyPlaces
         // owner: Alex
@@ -1981,6 +1989,7 @@ class MainActivity : ComponentActivity() {
             userLongitude = userLongitude,
             category = category,
             limit = limit,
+            lastHourStep = lastHourStep
         ).map { result ->
             val place = result.place
             ExplorePlace(

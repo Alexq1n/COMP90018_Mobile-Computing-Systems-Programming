@@ -12,6 +12,7 @@ class POISearchService(
         userLongitude: Double?,
         category: ExplorePlaceCategory? = null,
         limit: Int,
+        lastHourStep: Int
     ): List<SearchResult> {
 
         val places = repository.getPlaces()
@@ -22,7 +23,8 @@ class POISearchService(
             maxResults = limit,
             userLatitude = userLatitude,
             userLongitude = userLongitude,
-            category = category
+            category = category,
+            lastHourStep = lastHourStep
         )
     }
 }

@@ -357,7 +357,7 @@ private fun NearbyPlaceCard(
 
                         val tags = when (place.tagText) {
                             "Hidden gem" -> listOf("Hidden gem")
-                            "Hidden gem, tired" -> listOf("Hidden gem", "Locked - Tired")
+                            "Hidden gem, tired" -> listOf("Hidden gem", "Tired")
                             else -> listOf(place.tagText)
                         }
 
@@ -377,7 +377,7 @@ private fun NearbyPlaceCard(
                                         horizontal = 10.dp,
                                         vertical = 4.dp
                                     ),
-                                    color = if (tag == "Locked - Tired") {
+                                    color = if (tag == "Tired") {
                                         Color(0xFFD32F2F)
                                     } else {
                                         RoamMateTeal

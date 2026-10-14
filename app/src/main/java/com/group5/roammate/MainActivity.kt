@@ -495,7 +495,10 @@ class MainActivity : ComponentActivity() {
                 // Jie pet feature state: one koala, live weather gear and a persisted fashion choice.
                 val petPreferences = remember { PetPreferences(applicationContext) }
                 var petProfile by remember { mutableStateOf(petPreferences.loadProfile()) }
-                val petEnvironment = rememberPetEnvironment()
+                val petEnvironment = rememberPetEnvironment(
+                    weatherService = weatherService,
+                    sensorRepository = sensorRepository,
+                )
                 val petWeather = petEnvironment.weather
                 val petState = PetStateEngine.buildUiState(petProfile, petWeather)
 
@@ -1288,6 +1291,10 @@ class MainActivity : ComponentActivity() {
                         CompanionsScreen(
                             state = petState,
                             environment = petEnvironment,
+                            sensorRepository = sensorRepository,
+                            onRequestActivityPermission = {
+                                activityPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+                            },
                             onWardrobeSelected = { wardrobeChoice ->
                                 val updatedProfile = petProfile.copy(
                                     wardrobeChoice = wardrobeChoice,

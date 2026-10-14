@@ -325,7 +325,7 @@ fun searchPlaces(
 
                     if (
                         place.isFiller == true &&
-                        (place.baseScore ?: 0.0) >= 9.0 &&
+                        (place.baseScore ?: 0.0) >= 7.0 &&
                         distanceMeters != null
                     ) {
                         if (lastHourStep < 500) {
@@ -336,11 +336,11 @@ fun searchPlaces(
                         } else {
                             // Higher fatigue: unlock only within 500m
                             when {
-                                distanceMeters <= 200 -> {
+                                distanceMeters <= 500 -> {
                                     tagText = "Hidden gem"
                                 }
 
-                                distanceMeters <= 500 -> {
+                                distanceMeters <= 800 -> {
                                     tagText = "Hidden gem, tired"
                                 }
                             }
@@ -403,9 +403,9 @@ fun searchPlaces(
 
                     // Priority 2: Hidden gem (fatigue-aware)
                     result.place.isFiller == true &&
-                            (result.place.baseScore ?: 0.0) >= 9.0 &&
+                            (result.place.baseScore ?: 0.0) >= 7.0 &&
                             result.distanceMeters != null &&
-                            result.distanceMeters <= if (lastHourStep < 500) 500 else 200
+                            result.distanceMeters <= if (lastHourStep < 500) 800 else 500
 
 
 

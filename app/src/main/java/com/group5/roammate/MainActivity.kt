@@ -646,11 +646,7 @@ class MainActivity : ComponentActivity() {
                 // function: uiSearchPlacesByName; owner: Alex
                 // Used only to choose must-visit places before generating a trip.
                 // Shake refreshes this default suggestion list.
-                var addStopResultPlaces by remember(
-                    addStopShakeRefreshCount,
-                    currentSensorLocation.value.latitude,
-                    currentSensorLocation.value.longitude,
-                ) {
+                var addStopResultPlaces by remember {
                     mutableStateOf(
                         uiSearchPlacesByName(
                             context = this@MainActivity,

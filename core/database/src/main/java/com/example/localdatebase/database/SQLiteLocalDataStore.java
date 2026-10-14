@@ -10,7 +10,7 @@ import java.util.List;
 
 final class SQLiteLocalDataStore extends SQLiteOpenHelper implements LocalDataStore {
     static final String DATABASE_NAME = "classified_data.db";
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 5;
 
     SQLiteLocalDataStore(Context context, String name) {
         super(context.getApplicationContext(), name, null, DATABASE_VERSION);
@@ -34,6 +34,8 @@ final class SQLiteLocalDataStore extends SQLiteOpenHelper implements LocalDataSt
             createPoiTable(db);
         } else if (oldVersion < 4) {
             migrateVersionThreePois(db);
+        } else if (oldVersion < 5) {
+            migrateVersionFourPois(db);
         }
     }
 
@@ -69,6 +71,8 @@ final class SQLiteLocalDataStore extends SQLiteOpenHelper implements LocalDataSt
                 + "longitude REAL NOT NULL, recommended_visit_duration INTEGER NOT NULL, "
                 + "open_time TEXT NOT NULL, close_time TEXT NOT NULL, is_filler INTEGER NOT NULL, "
                 + "city TEXT NOT NULL, address TEXT NOT NULL, description TEXT NOT NULL, "
+                + "photo_url TEXT NOT NULL DEFAULT '', website TEXT NOT NULL DEFAULT '', "
+                + "phone TEXT NOT NULL DEFAULT '', "
                 + "PRIMARY KEY(id, category))");
         db.execSQL("CREATE INDEX IF NOT EXISTS pois_category_city ON pois(category, city)");
         db.execSQL("CREATE INDEX IF NOT EXISTS pois_location ON pois(latitude, longitude)");
@@ -91,6 +95,12 @@ final class SQLiteLocalDataStore extends SQLiteOpenHelper implements LocalDataSt
         } finally {
             db.endTransaction();
         }
+    }
+
+    private static void migrateVersionFourPois(SQLiteDatabase db) {
+        db.execSQL("ALTER TABLE pois ADD COLUMN photo_url TEXT NOT NULL DEFAULT ''");
+        db.execSQL("ALTER TABLE pois ADD COLUMN website TEXT NOT NULL DEFAULT ''");
+        db.execSQL("ALTER TABLE pois ADD COLUMN phone TEXT NOT NULL DEFAULT ''");
     }
 
     private static void insertDefaultCategories(SQLiteDatabase db) {
@@ -308,14 +318,15 @@ final class SQLiteLocalDataStore extends SQLiteOpenHelper implements LocalDataSt
     private static String[] poiColumns() {
         return new String[]{"id", "name", "base_score", "category", "environment", "latitude",
                 "longitude", "recommended_visit_duration", "open_time", "close_time", "is_filler",
-                "city", "address", "description"};
+                "city", "address", "description", "photo_url", "website", "phone"};
     }
 
     private static PoiData readPoi(Cursor cursor) {
         return new PoiData(cursor.getString(0), cursor.getString(1), cursor.getDouble(2),
                 cursor.getString(3), cursor.getString(4), cursor.getDouble(5), cursor.getDouble(6),
                 cursor.getInt(7), cursor.getString(8), cursor.getString(9), cursor.getInt(10) != 0,
-                cursor.getString(11), cursor.getString(12), cursor.getString(13));
+                cursor.getString(11), cursor.getString(12), cursor.getString(13), cursor.getString(14),
+                cursor.getString(15), cursor.getString(16));
     }
 
     private static ContentValues poiValues(PoiData poi) {
@@ -334,6 +345,9 @@ final class SQLiteLocalDataStore extends SQLiteOpenHelper implements LocalDataSt
         values.put("city", safe(poi.city));
         values.put("address", safe(poi.address));
         values.put("description", safe(poi.description));
+        values.put("photo_url", safe(poi.photoUrl));
+        values.put("website", safe(poi.website));
+        values.put("phone", safe(poi.phone));
         return values;
     }
 

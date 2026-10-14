@@ -97,6 +97,9 @@ public class LocalDataStoreTest {
         assertEquals(2, db.countPois());
         assertEquals(2, db.getAllPois().size());
         assertEquals("Shot Tower Museum", db.getPoiById("museum-1").name);
+        assertEquals("https://example.com/photo.jpg", db.getPoiById("museum-1").photoUrl);
+        assertEquals("https://example.com", db.getPoiById("museum-1").website);
+        assertEquals("+61 3 0000 0000", db.getPoiById("museum-1").phone);
         assertEquals(1, db.getPois("MUSEUM", "Melbourne", "tower", 20).size());
         assertEquals(0, db.getPois("BEACH", "Melbourne", "tower", 20).size());
 
@@ -142,6 +145,7 @@ public class LocalDataStoreTest {
     private static PoiData poi(String id, String name, String category, double score,
                                double latitude, double longitude) {
         return new PoiData(id, name, score, category, "MIXED", latitude, longitude,
-                60, "09:00", "17:00", false, "Melbourne", "Test address", "");
+                60, "09:00", "17:00", false, "Melbourne", "Test address", "",
+                "https://example.com/photo.jpg", "https://example.com", "+61 3 0000 0000");
     }
 }

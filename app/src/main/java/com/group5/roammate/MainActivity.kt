@@ -23,6 +23,7 @@ import com.example.localdatebase.planner.FirebasePlannerRepository
 import com.example.localdatebase.planner.PlannerResultCallback
 import com.example.localdatebase.planner.SavedTripSummary as CloudSavedTripSummary
 import com.group5.roammate.backend.POISearchService
+import com.group5.roammate.backend.Place
 import com.group5.roammate.backend.PlaceRepository
 
 import com.group5.roammate.ui.pet.rememberPetEnvironment
@@ -569,7 +570,7 @@ class MainActivity : ComponentActivity() {
 
                 // Attraction detail 当前展示的景点。之后由 Explore/Trip 点击的真实景点数据替换。
                 var selectedAttractionDetail by remember {
-                    mutableStateOf(sampleAttractionDetail("Melbourne Museum"))
+                    mutableStateOf(uiLoadAttractionDetail("Melbourne Museum"))
                 }
 
                 // 记录详情页从哪里进来，返回按钮才能回到正确页面。
@@ -954,10 +955,8 @@ class MainActivity : ComponentActivity() {
                             // TODO(Zewen, function: uiLoadTripDays): Connect full multi-day itinerary.
                             tripDays = uiLoadTripDays(tripTimelineStops),
 
-                            // TODO(Leyan, function: uiLoadAttractionDetail): Open detail with real attraction id.
-                            // storage provider: Yuxiang database if needed.
                             onStopClick = { stop ->
-                                selectedAttractionDetail = sampleAttractionDetail(stop.title)
+                                selectedAttractionDetail = uiLoadAttractionDetail(stop.title)
                                 attractionDetailReturnScreen = AuthScreen.Trip
                                 currentScreen = AuthScreen.AttractionDetail
                             },
@@ -1035,8 +1034,6 @@ class MainActivity : ComponentActivity() {
                             },
                             places = nearbyExplorePlaces,
 
-                            // TODO(Leyan, function: uiLoadAttractionDetail): Open detail with real attraction id.
-                            // storage provider: Yuxiang database if needed.
                             onPlaceClick = { place ->
                                 selectedAttractionDetail = place.toAttractionDetail()
                                 attractionDetailReturnScreen = AuthScreen.Explore
@@ -1074,6 +1071,11 @@ class MainActivity : ComponentActivity() {
                             // Visit official website: 打开 Leyan 提供的景点官网。
                             onWebsiteClick = { attraction ->
                                 openExternalWebsite(attraction.websiteUrl)
+                            },
+
+                            // Phone: open the system dialler with the attraction number filled in.
+                            onPhoneClick = { attraction ->
+                                openExternalPhone(attraction.phoneNumber)
                             },
                         )
                     }
@@ -2018,11 +2020,25 @@ class MainActivity : ComponentActivity() {
     private fun uiLoadAttractionDetail(attractionIdOrName: String): AttractionDetail {
         // function: uiLoadAttractionDetail
         // owner: Leyan
-        // storage: Yuxiang database if needed
+        // storage: Yuxiang local SQLite database
         // input: attraction id or attraction name
         // output: POI detail mapped to AttractionDetail
-        // TODO(Leyan): Load POI photo, hours, indoor/outdoor, website from real database.
-        return sampleAttractionDetail(attractionIdOrName)
+        val key = attractionIdOrName.trim()
+        val place = DatabasePOI(applicationContext).getPlaces().firstOrNull { candidate ->
+            candidate.id.equals(key, ignoreCase = true) ||
+                candidate.name.equals(key, ignoreCase = true)
+        }
+        return place?.toAttractionDetail() ?: AttractionDetail(
+            name = key.ifBlank { "Unknown attraction" },
+            distanceText = "",
+            environmentLabel = "Unknown",
+            weatherTag = null,
+            todayHours = null,
+            weeklyHours = emptyList(),
+            websiteUrl = null,
+            photoUrl = null,
+            imageSymbol = key.firstOrNull()?.uppercase() ?: "A",
+        )
     }
 
     // ---- Zewen: itinerary planning ----
@@ -3043,103 +3059,45 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun ExplorePlace.toAttractionDetail(): AttractionDetail {
-        // Explore 只拿到列表卡片需要的轻量数据；详情页其余字段之后从 Leyan 的景点详情接口补齐。
-        return sampleAttractionDetail(name).copy(
+        return uiLoadAttractionDetail(name).copy(
             distanceText = distanceText,
             environmentLabel = environmentLabel,
             weatherTag = tagText,
         )
     }
 
-    private fun sampleAttractionDetail(
-        name: String,
-    ): AttractionDetail {
-        // TODO: 之后替换为真实景点详情：
-        // Leyan 提供名称、图片、室内外、天气适配、营业时间、官网；
-        // Alex sensor/GPS 提供用户当前位置，再计算 distanceText。
-        val defaultWeeklyHours = listOf(
-            AttractionOpeningHours("Mon", "10:00 am - 5:00 pm"),
-            AttractionOpeningHours("Tue", "10:00 am - 5:00 pm"),
-            AttractionOpeningHours("Wed", "10:00 am - 5:00 pm"),
-            AttractionOpeningHours("Thu", "10:00 am - 5:00 pm"),
-            AttractionOpeningHours("Fri", "10:00 am - 5:00 pm"),
-            AttractionOpeningHours("Sat", "10:00 am - 5:00 pm"),
-            AttractionOpeningHours("Sun", "10:00 am - 5:00 pm"),
-        )
-
-        return when (name) {
-            "Melbourne Museum" -> AttractionDetail(
-                name = "Melbourne Museum",
-                distanceText = "0.8 km",
-                environmentLabel = "Indoor",
-                weatherTag = "Good for rain",
-                todayHours = AttractionOpeningHours("Today", "10:00 am - 5:00 pm"),
-                weeklyHours = defaultWeeklyHours,
-                websiteUrl = "https://museumsvictoria.com.au/melbournemuseum/",
-                photoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Melbourne_Museum_exterior.jpg/1280px-Melbourne_Museum_exterior.jpg",
-                imageSymbol = "M",
-            )
-
-            "State Library Victoria", "State Library" -> AttractionDetail(
-                name = "State Library Victoria",
-                distanceText = "1.1 km",
-                environmentLabel = "Indoor",
-                weatherTag = "Good for rain",
-                todayHours = AttractionOpeningHours("Today", "10:00 am - 6:00 pm"),
-                weeklyHours = defaultWeeklyHours.map { hours ->
-                    hours.copy(timeRange = "10:00 am - 6:00 pm")
-                },
-                websiteUrl = "https://www.slv.vic.gov.au/",
-                imageSymbol = "S",
-            )
-
-            "ACMI" -> AttractionDetail(
-                name = "ACMI",
-                distanceText = "1.0 km",
-                environmentLabel = "Indoor",
-                weatherTag = "Good for rain",
-                todayHours = AttractionOpeningHours("Today", "10:00 am - 5:00 pm"),
-                weeklyHours = defaultWeeklyHours,
-                websiteUrl = "https://www.acmi.net.au/",
-                imageSymbol = "A",
-            )
-
-            "Royal Botanic Gardens" -> AttractionDetail(
-                name = "Royal Botanic Gardens",
-                distanceText = "2.4 km",
-                environmentLabel = "Outdoor",
-                weatherTag = "Best on sunny days",
-                todayHours = AttractionOpeningHours("Today", "7:30 am - 5:30 pm"),
-                weeklyHours = defaultWeeklyHours.map { hours ->
-                    hours.copy(timeRange = "7:30 am - 5:30 pm")
-                },
-                websiteUrl = "https://www.rbg.vic.gov.au/melbourne-gardens/",
-                imageSymbol = "R",
-            )
-
-            "Pidapipo Gelato" -> AttractionDetail(
-                name = "Pidapipo Gelato",
-                distanceText = "0.3 km",
-                environmentLabel = "Indoor",
-                weatherTag = "Hidden gem",
-                // Leyan 不一定每个地点都有营业时间；这里用 null 演示 UI fallback。
-                todayHours = null,
-                weeklyHours = emptyList(),
-                websiteUrl = "https://pidapipo.com/",
-                imageSymbol = "P",
-            )
-
-            else -> AttractionDetail(
-                name = name,
-                distanceText = "1.0 km",
-                environmentLabel = "Indoor",
-                weatherTag = null,
-                todayHours = null,
-                weeklyHours = emptyList(),
-                websiteUrl = null,
-                imageSymbol = name.firstOrNull()?.uppercase() ?: "A",
-            )
+    private fun Place.toAttractionDetail(): AttractionDetail {
+        val hours = operatingHours.let { value ->
+            if (value.openTime.isBlank() || value.closeTime.isBlank()) {
+                null
+            } else {
+                "${value.openTime} - ${value.closeTime}"
+            }
         }
+        val environmentText = environment.name
+            .lowercase()
+            .replaceFirstChar { it.uppercase() }
+        val weatherText = when (environment.name) {
+            "INDOOR" -> "Good for rain"
+            "OUTDOOR" -> "Best in dry weather"
+            else -> "Indoor and outdoor areas"
+        }
+
+        return AttractionDetail(
+            name = name,
+            distanceText = "",
+            environmentLabel = environmentText,
+            weatherTag = weatherText,
+            todayHours = hours?.let { AttractionOpeningHours("Today", it) },
+            weeklyHours = hours?.let { range ->
+                listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+                    .map { day -> AttractionOpeningHours(day, range) }
+            }.orEmpty(),
+            websiteUrl = website,
+            photoUrl = photoUrl,
+            phoneNumber = phone,
+            imageSymbol = name.firstOrNull()?.uppercase() ?: "A",
+        )
     }
 
     private fun sampleAdjustedItineraryPlans(): List<AdjustItineraryPlan> {
@@ -3247,17 +3205,49 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openExternalWebsite(websiteUrl: String?) {
-        if (websiteUrl == null) {
+        val cleanedUrl = websiteUrl?.trim()?.takeIf(String::isNotEmpty)
+        if (cleanedUrl == null) {
             Toast.makeText(this, "Official website is not available", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val websiteIntent = Intent(Intent.ACTION_VIEW, Uri.parse(websiteUrl))
+        val normalizedUrl = if (
+            cleanedUrl.startsWith("https://", ignoreCase = true) ||
+            cleanedUrl.startsWith("http://", ignoreCase = true)
+        ) {
+            cleanedUrl
+        } else {
+            "https://$cleanedUrl"
+        }
+        val websiteUri = Uri.parse(normalizedUrl)
+        if (websiteUri.host.isNullOrBlank()) {
+            Toast.makeText(this, "Official website address is invalid", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val websiteIntent = Intent(Intent.ACTION_VIEW, websiteUri)
 
         runCatching {
             startActivity(websiteIntent)
         }.onFailure {
             Toast.makeText(this, "No browser app available", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun openExternalPhone(phoneNumber: String?) {
+        val cleanedNumber = phoneNumber?.trim()?.takeIf(String::isNotEmpty)
+        if (cleanedNumber == null) {
+            Toast.makeText(this, "Phone number is not available", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val dialIntent = Intent(
+            Intent.ACTION_DIAL,
+            Uri.fromParts("tel", cleanedNumber, null),
+        )
+        runCatching {
+            startActivity(dialIntent)
+        }.onFailure {
+            Toast.makeText(this, "No phone app available", Toast.LENGTH_SHORT).show()
         }
     }
 }

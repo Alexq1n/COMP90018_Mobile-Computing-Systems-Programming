@@ -16,11 +16,25 @@ public final class PoiData {
     public final String city;
     public final String address;
     public final String description;
+    public final String photoUrl;
+    public final String website;
+    public final String phone;
 
+    /** Backward-compatible constructor for modules that do not provide enrichment fields. */
     public PoiData(String id, String name, double baseScore, String category, String environment,
                    double latitude, double longitude, int recommendedVisitDuration,
                    String openTime, String closeTime, boolean filler, String city,
                    String address, String description) {
+        this(id, name, baseScore, category, environment, latitude, longitude,
+                recommendedVisitDuration, openTime, closeTime, filler, city, address,
+                description, "", "", "");
+    }
+
+    public PoiData(String id, String name, double baseScore, String category, String environment,
+                   double latitude, double longitude, int recommendedVisitDuration,
+                   String openTime, String closeTime, boolean filler, String city,
+                   String address, String description, String photoUrl, String website,
+                   String phone) {
         this.id = id;
         this.name = name;
         this.baseScore = baseScore;
@@ -35,5 +49,8 @@ public final class PoiData {
         this.city = city;
         this.address = address;
         this.description = description;
+        this.photoUrl = photoUrl;
+        this.website = website;
+        this.phone = phone;
     }
 }

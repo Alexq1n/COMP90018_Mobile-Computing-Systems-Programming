@@ -33,7 +33,7 @@ Use this guide when connecting backend, Firebase, sensor, weather, search, pet, 
 | `uiObserveShakeEvents` | Alex | ShakeDetector | Explore, Add stop, Trip | Sensor connected |
 | `uiSearchPlacesByName` | Alex | Leyan POI data | Add stop | Mock/search hook |
 | `uiExploreNearbyPlaces` | Alex | Leyan POI data + GPS | Explore | Mock/search hook |
-| `uiLoadAttractionDetail` | Leyan | Yuxiang database if needed | Attraction detail | Mock in `MainActivity` |
+| `uiLoadAttractionDetail` | Leyan | Yuxiang SQLite database | Attraction detail | SQLite connected |
 | `uiGenerateItinerary` | Zewen | Plan request | Plan My Trip | Mock in `MainActivity` |
 | `uiLoadTripSummary` | Zewen | Itinerary result | Trip | Mock in `MainActivity` |
 | `uiUpdateItineraryAfterEdit` | Zewen | Yuxiang save after update | Edit itinerary | Mock in `MainActivity` |
@@ -115,6 +115,7 @@ data class AttractionDetail(
     val weeklyHours: List<AttractionOpeningHours>,
     val websiteUrl: String?,
     val photoUrl: String?,
+    val phoneNumber: String?,
     val imageSymbol: String,
 )
 
@@ -135,11 +136,13 @@ UI shows:
 | `weeklyHours` | Expanded opening hours |
 | `websiteUrl` | Official website action |
 | `photoUrl` | Attraction photo if available |
+| `phoneNumber` | Phone number and system dialler action |
 
 Notes:
 
 - Exact distance is hidden from the detail UI.
 - If `todayHours == null`, UI should show unavailable.
+- Blank or null website, photo, and phone values use the unavailable/fallback UI.
 
 ### Plan My Trip
 
@@ -277,6 +280,8 @@ Notes:
 ### `uiLoadAttractionDetail`
 
 Owner: Leyan
+
+Data source: Yuxiang local SQLite POI database. The lookup accepts either a POI ID or an exact POI name and returns stored hours, environment, website and photo URL.
 
 Used by: `AttractionDetailScreen`
 

@@ -11,18 +11,16 @@ class DatabasePOI(
         PoiRepository(context.applicationContext)
 
     override fun getPlaces(): List<Place> {
-
-        // Only import bundled POIs if SQLite is empty
-        if (repository.count() == 0) {
-            repository.importBundledPois()
-        }
-
+        ensureBundledPoisAreCurrent()
 
         return repository.getAllPois().map { poi ->
 
             Place(
                 id = poi.id,
                 name = poi.name,
+                photoUrl = poi.photoUrl.takeIf(String::isNotBlank),
+                website = poi.website.takeIf(String::isNotBlank),
+                phone = poi.phone.takeIf(String::isNotBlank),
 
                 baseScore = poi.baseScore,
 
@@ -52,5 +50,24 @@ class DatabasePOI(
                 description = poi.description
             )
         }
+    }
+
+    private fun ensureBundledPoisAreCurrent() {
+        if (bundledPoisSynced) return
+        synchronized(importLock) {
+            if (!bundledPoisSynced) {
+                // Upsert once per app process so asset updates and schema migrations
+                // populate every field without duplicating records.
+                repository.importBundledPois()
+                bundledPoisSynced = true
+            }
+        }
+    }
+
+    private companion object {
+        private val importLock = Any()
+
+        @Volatile
+        private var bundledPoisSynced = false
     }
 }

@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.group5.roammate.ui.theme.RoamMateTheme
 import java.net.URL
+import java.net.HttpURLConnection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -70,6 +71,7 @@ data class AttractionDetail(
     val weeklyHours: List<AttractionOpeningHours>,
     val websiteUrl: String?,
     val photoUrl: String? = null,
+    val phoneNumber: String? = null,
     val imageSymbol: String = "M",
 )
 
@@ -85,6 +87,7 @@ fun AttractionDetailScreen(
     onBackClick: () -> Unit,
     onNavigateClick: (AttractionDetail) -> Unit,
     onWebsiteClick: (AttractionDetail) -> Unit,
+    onPhoneClick: (AttractionDetail) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -112,6 +115,7 @@ fun AttractionDetailScreen(
             AttractionBody(
                 attraction = attraction,
                 onWebsiteClick = { onWebsiteClick(attraction) },
+                onPhoneClick = { onPhoneClick(attraction) },
             )
         }
     }
@@ -172,23 +176,42 @@ private fun AttractionHeroPhoto(
     fallbackText: String,
     modifier: Modifier = Modifier,
 ) {
-    var photoBitmap by remember(photoUrl) {
+    val usablePhotoUrl = remember(photoUrl) {
+        photoUrl
+            ?.trim()
+            ?.takeIf { value ->
+                value.startsWith("https://", ignoreCase = true) ||
+                    value.startsWith("http://", ignoreCase = true)
+            }
+    }
+    var photoBitmap by remember(usablePhotoUrl) {
         mutableStateOf<Bitmap?>(null)
     }
-    var hasPhotoError by remember(photoUrl) {
+    var hasPhotoError by remember(usablePhotoUrl) {
         mutableStateOf(false)
     }
 
     // load photo
-    LaunchedEffect(photoUrl) {
+    LaunchedEffect(usablePhotoUrl) {
         photoBitmap = null
         hasPhotoError = false
 
-        if (photoUrl != null) {
+        if (usablePhotoUrl != null) {
             val loadedBitmap = runCatching {
                 withContext(Dispatchers.IO) {
-                    URL(photoUrl).openStream().use { stream ->
-                        BitmapFactory.decodeStream(stream)
+                    val connection = URL(usablePhotoUrl).openConnection() as HttpURLConnection
+                    try {
+                        connection.connectTimeout = 10_000
+                        connection.readTimeout = 15_000
+                        connection.instanceFollowRedirects = true
+                        connection.setRequestProperty("User-Agent", "RoamMate Android")
+                        connection.connect()
+                        check(connection.responseCode in 200..299) {
+                            "Photo request failed with HTTP ${connection.responseCode}"
+                        }
+                        connection.inputStream.use(BitmapFactory::decodeStream)
+                    } finally {
+                        connection.disconnect()
                     }
                 }
             }.getOrNull()
@@ -210,7 +233,7 @@ private fun AttractionHeroPhoto(
     } else {
         AttractionHeroPhotoFallback(
             fallbackText = fallbackText,
-            isLoading = photoUrl != null && !hasPhotoError,
+            isLoading = usablePhotoUrl != null && !hasPhotoError,
             modifier = modifier,
         )
     }
@@ -279,6 +302,7 @@ private fun BackCircleButton(
 private fun AttractionBody(
     attraction: AttractionDetail,
     onWebsiteClick: () -> Unit,
+    onPhoneClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -308,6 +332,13 @@ private fun AttractionBody(
         OfficialWebsiteRow(
             websiteUrl = attraction.websiteUrl,
             onClick = onWebsiteClick,
+        )
+
+        DividerLine()
+
+        OfficialPhoneRow(
+            phoneNumber = attraction.phoneNumber,
+            onClick = onPhoneClick,
         )
 
         Spacer(modifier = Modifier.height(36.dp))
@@ -474,6 +505,56 @@ private fun OfficialWebsiteRow(
     }
 }
 
+// ---- phone ----
+@Composable
+private fun OfficialPhoneRow(
+    phoneNumber: String?,
+    onClick: () -> Unit,
+) {
+    val displayNumber = phoneNumber?.trim()?.takeIf(String::isNotEmpty)
+    val enabled = displayNumber != null
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(vertical = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        InfoIcon(text = "☎")
+
+        Spacer(modifier = Modifier.width(14.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = if (enabled) "Call attraction" else "Phone unavailable",
+                color = if (enabled) RoamMateText else RoamMateMutedText,
+                fontSize = 17.sp,
+                lineHeight = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+            if (displayNumber != null) {
+                Text(
+                    text = displayNumber,
+                    color = RoamMateMutedText,
+                    fontSize = 14.sp,
+                    lineHeight = 18.sp,
+                )
+            }
+        }
+
+        if (enabled) {
+            Text(
+                text = "›",
+                color = RoamMateTeal,
+                fontSize = 28.sp,
+                lineHeight = 28.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+    }
+}
+
 @Composable
 private fun InfoIcon(
     text: String,
@@ -560,11 +641,13 @@ private fun AttractionDetailScreenPreview() {
                 ),
                 websiteUrl = "https://museumsvictoria.com.au/melbournemuseum/",
                 photoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Melbourne_Museum_exterior.jpg/1280px-Melbourne_Museum_exterior.jpg",
+                phoneNumber = "+61 3 8341 7777",
                 imageSymbol = "M",
             ),
             onBackClick = {},
             onNavigateClick = {},
             onWebsiteClick = {},
+            onPhoneClick = {},
             modifier = Modifier.fillMaxSize(),
         )
     }

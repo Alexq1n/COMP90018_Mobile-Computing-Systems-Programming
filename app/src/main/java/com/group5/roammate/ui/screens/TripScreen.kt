@@ -23,8 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -34,14 +32,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.group5.roammate.R
 import com.group5.roammate.ui.theme.RoamMateTheme
 
 // on-screen -> code:
@@ -111,7 +107,6 @@ fun TripScreen(
     onStopClick: (TripTimelineStop) -> Unit,
     onEndTripClick: () -> Unit,
     onStartNavigationClick: () -> Unit,
-    onEditDayClick: (TripDayPlan) -> Unit,
     onTabClick: (RoamMateMainTab) -> Unit,
     canStartNavigation: Boolean = true,
     modifier: Modifier = Modifier,
@@ -172,7 +167,6 @@ fun TripScreen(
             TripMultiDayItinerary(
                 tripDays = visibleTripDays,
                 onStopClick = onStopClick,
-                onEditDayClick = onEditDayClick,
             )
 
             Spacer(modifier = Modifier.height(28.dp))
@@ -246,7 +240,6 @@ private fun WeatherPill(
 private fun TripMultiDayItinerary(
     tripDays: List<TripDayPlan>,
     onStopClick: (TripTimelineStop) -> Unit,
-    onEditDayClick: (TripDayPlan) -> Unit,
 ) {
     if (tripDays.isEmpty()) {
         EmptyTripTimeline()
@@ -259,7 +252,6 @@ private fun TripMultiDayItinerary(
                 TripDaySection(
                     dayPlan = dayPlan,
                     onStopClick = onStopClick,
-                    onEditClick = { onEditDayClick(dayPlan) },
                 )
             }
         }
@@ -271,11 +263,7 @@ private fun TripMultiDayItinerary(
 private fun TripDaySection(
     dayPlan: TripDayPlan,
     onStopClick: (TripTimelineStop) -> Unit,
-    onEditClick: () -> Unit,
 ) {
-    val canEdit = dayPlan.stops.isEmpty() || dayPlan.stops.any {
-        it.status != TripStopStatus.Done
-    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -309,18 +297,6 @@ private fun TripDaySection(
                     )
                 }
 
-                IconButton(
-                    onClick = onEditClick,
-                    enabled = canEdit,
-                    modifier = Modifier.size(48.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_edit_itinerary),
-                        contentDescription = "Edit ${dayPlan.dayTitle}",
-                        tint = if (canEdit) RoamMateTeal else RoamMateMutedText,
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -622,7 +598,6 @@ private fun TripScreenPreview() {
             onStopClick = {},
             onEndTripClick = {},
             onStartNavigationClick = {},
-            onEditDayClick = {},
             onTabClick = {},
             modifier = Modifier.fillMaxSize(),
         )

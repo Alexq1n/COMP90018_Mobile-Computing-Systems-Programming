@@ -69,23 +69,3 @@ internal fun List<TripTimelineStop>.replaceTripDayStops(
     val otherDays = filterNot { it.date == date }
     return (otherDays + replacements.map { it.copy(date = date) }).sortedBy { it.date }
 }
-
-internal fun List<TripTimelineStop>.applyTripDayEdits(
-    date: String,
-    editedStops: List<TripTimelineStop>,
-    today: LocalDate = LocalDate.now(),
-): List<TripTimelineStop> {
-    val completedStops = filter { it.date == date && it.status == TripStopStatus.Done }
-    val remainingStops = editedStops.filter { it.status != TripStopStatus.Done }
-        .mapIndexed { index, stop ->
-            stop.copy(
-                date = date,
-                status = if (date == today.toString() && index == 0) {
-                    TripStopStatus.Current
-                } else {
-                    TripStopStatus.Upcoming
-                },
-            )
-        }
-    return replaceTripDayStops(date, completedStops + remainingStops)
-}

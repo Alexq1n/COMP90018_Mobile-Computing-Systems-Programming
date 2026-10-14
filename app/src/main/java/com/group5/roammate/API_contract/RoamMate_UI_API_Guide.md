@@ -11,6 +11,7 @@ Use this guide when connecting backend, Firebase, sensor, weather, search, pet, 
 - UI can use `name` as the place key for the current demo.
 - If backend/database needs a stable `id`, keep it inside the backend/database layer.
 - Add Stop does not display distance for now.
+- Generated itineraries are read-only for users: no addition, deletion, manual time editing or reordering. Add Stop is used only before generation to select must-visit places.
 - Explore and Attraction Detail also hide exact distance from the UI.
 - Distance/GPS can still be used internally for ranking or sorting.
 - Empty result should return an empty list.
@@ -36,10 +37,9 @@ Use this guide when connecting backend, Firebase, sensor, weather, search, pet, 
 | `uiSearchPlacesByName` | Alex | Leyan POI data | Add stop | Mock/search hook |
 | `uiExploreNearbyPlaces` | Alex | Leyan POI data + GPS | Explore | Mock/search hook |
 | `uiLoadAttractionDetail` | Leyan | Enriched POI resource + SQLite | Attraction detail | Actual source fields connected; missing metadata stays null |
-| `uiGenerateItinerary` | Zewen | Plan request + GPS | Plan My Trip | Planner and GPS connected; per-day weather input pending |
-| `uiLoadTripSummary` | Zewen | Itinerary result + shared UI timeline | Trip | Connected to generated trip and saved UI edits |
-| `uiUpdateItineraryAfterEdit` | Zewen | Yuxiang save after update | Reserved for edit integration | Route recalculation and cloud saving pending |
-| `uiAdjustItineraryForWeather` | Zewen | LeYan weather + current generated context | Adjust itinerary | Today's day, request profile, clock, GPS and completed IDs connected; edited/restored context pending |
+| `uiGenerateItinerary` | Zewen | Plan request + destination POIs | Plan My Trip | Destination-local origin independent of GPS; optional forecast; per-day weather input pending |
+| `uiLoadTripSummary` | Zewen | Itinerary result + shared UI timeline | Trip | Connected to generated trip and system-adjusted timeline |
+| `uiAdjustItineraryForWeather` | Zewen | LeYan weather + current generated context | Adjust itinerary | Today's day, request profile, clock, GPS and completed IDs connected; restored context pending |
 | `uiLoadWeatherSummary` | LeYan | Weather API | Home, Trip | Mock in `MainActivity` |
 | `uiIsWeatherAvailableForDate` | LeYan | Weather API | Plan My Trip | Mock in `MainActivity` |
 | `uiPetStatusCard` | Xiajie | Pet module | Home, Pet | In progress |
@@ -192,13 +192,13 @@ data class TripDayPlan(
     val dayTitle: String,
     val dateText: String,
     val stops: List<TripTimelineStop>,
-    val date: String? = null, // yyyy-MM-dd, used to select the day being edited
+    val date: String? = null, // yyyy-MM-dd, used to select today's stops
 )
 ```
 
 Trip displays the complete generated itinerary, including future days. Without a generated itinerary, it displays an empty state. Treasure stops remain in the timeline, but their tags are not rendered. Home's Today's trip selects only stops whose `date` matches today; it never falls back to the first day.
 
-Each day has an edit action. `MainActivity` owns the shared timeline and a separate draft for the selected day. `EditItineraryScreen.onStopsChanged` updates the draft, including drag order; Add Stop updates the same draft. Save commits only that day, preserving completed stops and all other days. Back discards the draft. Trip, Home and navigation all read the committed timeline. These changes do not introduce a backend API; route/time recalculation and cloud persistence remain separate integration work.
+Generated trips are read-only. There is no Add stop action, edit screen, save-edit action, delete control, time editor or drag gesture. `MainActivity` has no post-generation add-stop route or draft. Trip, Home and navigation read the same timeline without modifying the plan. `AddStopScreen` remains available only from Plan My Trip, before generation, to select must-visit places. System-proposed weather adjustments, viewing attraction details, navigation and ending a trip remain available.
 
 Navigation prefers today's current stop, then today's next unfinished stop, then the earliest future day with an unfinished stop. Past and completed stops are excluded. If no destination remains, the navigation button is disabled.
 
@@ -341,29 +341,6 @@ Notes:
 
 - `specificPlaces` are must-visit places added from Add Stop.
 - `interests` are current-trip interests only.
-
-### `uiUpdateItineraryAfterEdit`
-
-Owner: Zewen
-
-Reserved for backend integration after the frontend edit is saved.
-
-Input:
-
-```kotlin
-editedStops: List<TripTimelineStop>
-```
-
-Output:
-
-```kotlin
-List<TripTimelineStop>
-```
-
-Notes:
-
-- The current frontend commits edits with `applyTripDayEdits`; this placeholder is not called by the Save callback.
-- Backend recalculation of visit times/routes and cloud persistence are not connected yet.
 
 ### `uiAdjustItineraryForWeather`
 
@@ -569,7 +546,6 @@ Notes:
 
 - `uiGenerateItinerary`: create itinerary from `PlanMyTripRequest`.
 - `uiLoadTripSummary`: short summary for Trip screen.
-- `uiUpdateItineraryAfterEdit`: recalculate after add/delete/reorder.
 - `uiAdjustItineraryForWeather`: regenerate plan for weather changes.
 
 ### Yuxiang
@@ -582,8 +558,8 @@ Notes:
 
 ## Remaining Integration Boundaries
 
-- `uiUpdateItineraryAfterEdit` still needs a backend result that preserves the selected day, manual POI order and completed stops while recalculating visit/route times. Update the backend snapshot before saving edited plans to the cloud.
-- `weatherForecasts` is fetched but the generator accepts a single weather status. Zewen and LeYan must connect date-specific weather and define the unavailable-forecast policy.
+- Generated trips do not support user modifications, so no post-generation add/edit/reorder integration is required. Weather-adjusted plans still need cloud persistence via the existing saveTrip API.
+- `weatherForecasts` is fetched but the generator accepts a single weather status. Zewen and LeYan must connect date-specific weather. Missing forecasts do not block initial planning and use the neutral CLOUDY fallback.
 - GPS is available, but arrival/completion thresholds and deduplication are not defined. Shake-to-advance and the automatic fake-rain injection are disabled.
 - Stored Itinerary JSON does not contain the original request profile or actual progress. Restored plans can be viewed and navigated; personalized replanning requires restoring that context. The UI does not invent a replacement profile.
 - Display names are stored in Firebase Authentication. Firestore registration keeps its existing three-field payload. Auth names take precedence over legacy stored display names on sign-in.

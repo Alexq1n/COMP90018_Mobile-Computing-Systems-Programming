@@ -5,7 +5,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -54,7 +53,6 @@ import com.group5.roammate.ui.screens.AttractionDetailScreen
 import com.group5.roammate.ui.screens.AttractionOpeningHours
 import com.group5.roammate.ui.screens.CreateAccountScreen
 import com.group5.roammate.ui.screens.EditProfileScreen
-import com.group5.roammate.ui.screens.EditItineraryScreen
 import com.group5.roammate.ui.screens.ExplorePlace
 import com.group5.roammate.ui.screens.ExplorePlaceCategory
 import com.group5.roammate.ui.screens.ExploreScreen
@@ -78,7 +76,6 @@ import com.group5.roammate.ui.screens.TripDayPlan
 import com.group5.roammate.ui.screens.TripSummary
 import com.group5.roammate.ui.screens.TripTimelineStop
 import com.group5.roammate.ui.screens.TripWeatherSummary
-import com.group5.roammate.ui.screens.applyTripDayEdits
 import com.group5.roammate.ui.screens.matchesTimeline
 import com.group5.roammate.ui.screens.nextNavigationStop
 import com.group5.roammate.ui.screens.replaceTripDayStops
@@ -575,8 +572,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         AuthScreen.PlanMyTrip,
-                        AuthScreen.PlanAddStop,
-                        AuthScreen.EditAddStop -> {
+                        AuthScreen.PlanAddStop -> {
                             // Planning/search: shake can suggest one nearby place.
                             addStopShakeRefreshCount += 1
                             Toast.makeText(this, "Nearby stop suggestions refreshed", Toast.LENGTH_SHORT).show()
@@ -642,7 +638,7 @@ class MainActivity : ComponentActivity() {
 
                 // Add stop list
                 // function: uiSearchPlacesByName; owner: Alex
-                // Used by Plan Add Stop and Edit Add Stop.
+                // Used only to choose must-visit places before generating a trip.
                 // Shake refreshes this default suggestion list.
                 var addStopResultPlaces by remember(
                     addStopShakeRefreshCount,
@@ -681,7 +677,6 @@ class MainActivity : ComponentActivity() {
                 var tripTimelineStops by remember {
                     mutableStateOf(emptyList<TripTimelineStop>())
                 }
-                var editedTripDay by remember { mutableStateOf<TripDayPlan?>(null) }
 
                 // Adjust itinerary 弹窗当前显示第几个候选方案。
                 var adjustPlanIndex by rememberSaveable { mutableStateOf(0) }
@@ -950,17 +945,8 @@ class MainActivity : ComponentActivity() {
                             // input provider: Alex GPS location.
                             stops = if (currentItinerary == null) emptyList() else tripTimelineStops,
 
-                            // Read saved edits and progress from the shared UI timeline.
+                            // Generated trips are read-only; system adjustments update this timeline.
                             tripDays = uiLoadTripDays(tripTimelineStops),
-
-                            onEditDayClick = { day ->
-                                if (day.date != null) {
-                                    editedTripDay = day.copy(
-                                        stops = day.stops.filter { it.status != TripStopStatus.Done },
-                                    )
-                                    currentScreen = AuthScreen.EditItinerary
-                                }
-                            },
 
                             // TODO(Leyan, function: uiLoadAttractionDetail): Open detail with real attraction id.
                             // storage provider: Yuxiang database if needed.
@@ -974,7 +960,6 @@ class MainActivity : ComponentActivity() {
                             onEndTripClick = {
                                 currentItinerary = null
                                 tripTimelineStops = emptyList()
-                                editedTripDay = null
                                 weatherAdjustmentOptions = null
                                 weatherAdjustmentDate = null
                                 weatherSuggestionState.value = null
@@ -1097,39 +1082,6 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    AuthScreen.EditItinerary -> {
-                        val draft = editedTripDay
-                        if (draft == null || draft.date == null) {
-                            LaunchedEffect(Unit) { currentScreen = AuthScreen.Trip }
-                        } else {
-                            EditItineraryScreen(
-                                modifier = Modifier.fillMaxSize(),
-                                stops = draft.stops,
-                                dayLabel = listOf(draft.dayTitle, draft.dateText)
-                                    .filter { it.isNotBlank() }.joinToString(" - "),
-                                onBackClick = {
-                                    editedTripDay = null
-                                    currentScreen = AuthScreen.Trip
-                                },
-                                onStopsChanged = { stops ->
-                                    editedTripDay = draft.copy(stops = stops)
-                                },
-                                onAddStopClick = {
-                                    currentScreen = AuthScreen.EditAddStop
-                                },
-                                onSaveClick = { reorderedStops ->
-                                    tripTimelineStops = tripTimelineStops.applyTripDayEdits(
-                                        date = draft.date,
-                                        editedStops = reorderedStops,
-                                    )
-                                    editedTripDay = null
-                                    Toast.makeText(this, "Itinerary saved", Toast.LENGTH_SHORT).show()
-                                    currentScreen = AuthScreen.Trip
-                                },
-                            )
-                        }
-                    }
-
                     AuthScreen.PlanMyTrip -> {
                         // Log the current state of planRequiredPlaces
                         android.util.Log.d("RoamMate", "PlanMyTrip screen: planRequiredPlaces size = ${planRequiredPlaces.size}")
@@ -1224,7 +1176,6 @@ class MainActivity : ComponentActivity() {
                                     isGeneratingItinerary = false
                                     if (generatedStops == null) return@uiLoadPlannedWeather
                                     tripTimelineStops = generatedStops
-                                    editedTripDay = null
                                     weatherAdjustmentOptions = null
                                     weatherAdjustmentDate = null
 
@@ -1309,74 +1260,6 @@ class MainActivity : ComponentActivity() {
                                     Toast.LENGTH_SHORT,
                                 ).show()
                                 currentScreen = AuthScreen.PlanMyTrip
-                            },
-                        )
-                    }
-
-                    AuthScreen.EditAddStop -> {
-                        BackHandler { currentScreen = AuthScreen.EditItinerary }
-                        AddStopScreen(
-                            modifier = Modifier.fillMaxSize(),
-                            currentCity = "Melbourne",
-                            places = addStopResultPlaces,
-                            isSearching = isSearchingPlaces,
-
-                            // 从 Edit itinerary 进来，返回 Edit itinerary。
-                            onBackClick = {
-                                currentScreen = AuthScreen.EditItinerary
-                            },
-
-                            // TODO(Alex, function: uiSearchPlacesByName): Send query only after confirm button; name match first.
-                            // 输入框中间修改不传；只有按确认搜索按钮后才会走到这里。
-                            onSearchConfirmClick = { query ->
-                                val location = currentSensorLocation.value
-                                isSearchingPlaces = true
-                                addStopResultPlaces = uiSearchPlacesByName(
-                                    context = this@MainActivity,
-                                    query = query,
-                                    currentCity = "Melbourne",
-                                    userLatitude = location.latitude,
-                                    userLongitude = location.longitude,
-                                    limit = 8,
-                                )
-                                Toast.makeText(
-                                    this,
-                                    "Search results updated",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
-                                // TODO(Alex, function: uiSearchPlacesByName): Set false after search results return.
-                                // data provider: Leyan attraction names.
-                                isSearchingPlaces = false
-                            },
-
-                            onClearSearchClick = {
-                                val location = currentSensorLocation.value
-                                addStopResultPlaces = uiSearchPlacesByName(
-                                    context = this@MainActivity,
-                                    query = "",
-                                    currentCity = "Melbourne",
-                                    userLatitude = location.latitude,
-                                    userLongitude = location.longitude,
-                                    limit = 8,
-                                ).rotateLeft(addStopShakeRefreshCount)
-                            },
-
-                            onAddPlaceClick = { place ->
-                                val draft = editedTripDay
-                                if (draft != null && draft.date != null) {
-                                    val updatedStops = draft.stops.withAddedTemporaryStop(place, draft.date)
-                                    editedTripDay = draft.copy(stops = updatedStops)
-                                    Toast.makeText(
-                                        this,
-                                        if (updatedStops.size > draft.stops.size) {
-                                            "${place.name} added to itinerary"
-                                        } else {
-                                            "${place.name} is already in this day"
-                                        },
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                                }
-                                currentScreen = AuthScreen.EditItinerary
                             },
                         )
                     }
@@ -1466,7 +1349,6 @@ class MainActivity : ComponentActivity() {
                                 savedTrips = emptyList()
                                 currentItinerary = null
                                 tripTimelineStops = emptyList()
-                                editedTripDay = null
                                 weatherAdjustmentOptions = null
                                 weatherAdjustmentDate = null
                                 weatherSuggestionState.value = null
@@ -1508,7 +1390,6 @@ class MainActivity : ComponentActivity() {
                                                 ) {
                                                     currentItinerary = itinerary
                                                     tripTimelineStops = convertItineraryToTimelineStops(itinerary)
-                                                    editedTripDay = null
                                                     weatherAdjustmentOptions = null
                                                     weatherAdjustmentDate = null
                                                     weatherSuggestionState.value = null
@@ -2456,36 +2337,6 @@ class MainActivity : ComponentActivity() {
         return currentItinerary.toTripDayPlans(timelineStops = stops)
     }
 
-    private fun uiUpdateItineraryAfterEdit(
-        editedStops: List<TripTimelineStop>,
-    ): List<TripTimelineStop> {
-        // function: uiUpdateItineraryAfterEdit
-        // owner: Zewen
-        // storage provider: Yuxiang saves final itinerary
-        // input: added/removed/reordered stops
-        // output: recalculated itinerary
-
-        try {
-            // If no backend itinerary exists, use frontend fallback
-            val itinerary = currentItinerary
-            if (itinerary == null || itinerary.days.isEmpty()) {
-                return rebalanceTripStopsAfterManualEdit(editedStops)
-            }
-
-            // TODO(Zewen): For now, use frontend rebalancing
-            // Full backend integration would:
-            // 1. Convert editedStops back to ItineraryPOI list
-            // 2. Call ItineraryEditService.reoptimizeDay()
-            // 3. Convert result back to TripTimelineStop list
-
-            return rebalanceTripStopsAfterManualEdit(editedStops)
-
-        } catch (e: Exception) {
-            android.util.Log.e("RoamMate", "Error updating itinerary after edit", e)
-            return rebalanceTripStopsAfterManualEdit(editedStops)
-        }
-    }
-
     private fun uiAdjustItineraryForWeather(
         reason: String,
         timelineStops: List<TripTimelineStop>,
@@ -2943,24 +2794,6 @@ class MainActivity : ComponentActivity() {
         return drop(offset) + take(offset)
     }
 
-    private fun rebalanceTripStopsAfterManualEdit(
-        stops: List<TripTimelineStop>,
-    ): List<TripTimelineStop> {
-        // TODO: 这是前端临时演示逻辑；之后删除/新增后应调用 Zewen 的后端重新生成行程。
-        var hasCurrentStop = false
-
-        return stops.map { stop ->
-            when {
-                stop.status == TripStopStatus.Done -> stop
-                !hasCurrentStop -> {
-                    hasCurrentStop = true
-                    stop.copy(status = TripStopStatus.Current)
-                }
-                else -> stop.copy(status = TripStopStatus.Upcoming)
-            }
-        }
-    }
-
     private fun List<TripTimelineStop>.toHomeTripStops(): List<HomeTripStop> {
         // Home 只显示当前附近的几个站点，避免把完整行程挤在首页。
         val currentStopIndex = indexOfFirst { stop ->
@@ -3001,54 +2834,6 @@ class MainActivity : ComponentActivity() {
         } else {
             this + place
         }
-    }
-
-    private fun List<TripTimelineStop>.withAddedTemporaryStop(
-        place: AddStopPlace,
-        date: String,
-    ): List<TripTimelineStop> {
-        // TODO: 这是前端临时添加逻辑；之后应由 Zewen 决定新地点插入位置和时间。
-        val alreadyExists = any { stop ->
-            stop.title == place.name
-        }
-        if (alreadyExists) return this
-
-        return this + TripTimelineStop(
-            time = nextTemporaryStopTime(lastOrNull()?.time),
-            title = place.name,
-            status = TripStopStatus.Upcoming,
-            date = date,
-            poiId = place.poiId,
-        )
-    }
-
-    private fun List<TripTimelineStop>.withAddedTemporaryAttraction(
-        attraction: AttractionDetail,
-    ): List<TripTimelineStop> {
-        // TODO: 这是前端临时添加逻辑；之后由 Zewen 根据位置/时间/营业时间插入合适位置。
-        val alreadyExists = any { stop ->
-            stop.title == attraction.name
-        }
-        if (alreadyExists) return this
-
-        return this + TripTimelineStop(
-            time = nextTemporaryStopTime(lastOrNull()?.time),
-            title = attraction.name,
-            status = TripStopStatus.Upcoming,
-            date = lastOrNull()?.date,
-        )
-    }
-
-    private fun nextTemporaryStopTime(
-        lastStopTime: String?,
-    ): String {
-        val nextHour = lastStopTime
-            ?.substringBefore(":")
-            ?.toIntOrNull()
-            ?.plus(2)
-            ?: 10
-
-        return "%02d:00".format(nextHour.coerceAtMost(22))
     }
 
     private fun melbournePopularAddStopPlaces(): List<AddStopPlace> {
@@ -3398,9 +3183,7 @@ private enum class AuthScreen {
     Explore,
     AttractionDetail,
     AdjustItinerary,
-    EditItinerary,
     PlanAddStop,
-    EditAddStop,
     PlanMyTrip,
     PlanTripInterests,
     Pet,

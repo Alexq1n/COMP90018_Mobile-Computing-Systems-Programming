@@ -74,55 +74,51 @@ class TripItineraryMapperTest {
     }
 
     @Test
-    fun savedEditsAgreeAcrossTripTodayAndNavigationWithoutChangingOtherDays() {
+    fun readOnlyTripTodayAndNavigationUseTheSameTimelineWithoutChangingStops() {
         val itinerary = itinerary(day(1, "2026-10-14"), day(2, "2026-10-15"))
         val completed = TripTimelineStop("08:00", "Completed", TripStopStatus.Done, date = today.toString())
         val museum = TripTimelineStop("10:00", "Museum", TripStopStatus.Current, date = today.toString())
         val garden = TripTimelineStop("12:00", "Garden", TripStopStatus.Upcoming, date = today.toString())
         val tomorrowMuseum = museum.copy(date = "2026-10-15", status = TripStopStatus.Upcoming)
         val source = listOf(completed, museum, garden, tomorrowMuseum)
-        val added = TripTimelineStop("14:00", "Added stop", TripStopStatus.Upcoming)
+        val tripDays = itinerary.toTripDayPlans(today, timelineStops = source)
+        val homeStops = source.stopsOnDate(today)
 
-        val saved = source.applyTripDayEdits(today.toString(), listOf(garden, added), today)
-        val tripDays = itinerary.toTripDayPlans(today, timelineStops = saved)
-        val homeStops = saved.stopsOnDate(today)
-
-        assertEquals(listOf("Completed", "Garden", "Added stop"), homeStops.map { it.title })
+        assertEquals(listOf("Completed", "Museum", "Garden"), homeStops.map { it.title })
         assertEquals(homeStops, tripDays.first().stops)
         assertEquals(listOf(tomorrowMuseum), tripDays[1].stops)
-        assertEquals(TripStopStatus.Done, homeStops.first().status)
-        assertEquals(TripStopStatus.Current, homeStops[1].status)
-        assertEquals("Garden", saved.nextNavigationStop(today)?.title)
+        assertEquals(listOf(completed, museum, garden), homeStops.take(3))
+        assertEquals("Museum", source.nextNavigationStop(today)?.title)
         assertEquals(today.toString(), homeStops.last().date)
+        assertEquals(listOf("08:00", "10:00", "12:00"), homeStops.map { it.time })
+        assertEquals(listOf(completed, museum, garden, tomorrowMuseum), source)
     }
 
     @Test
-    fun deletingEveryStopLeavesAnEmptyDayWithoutRestoringGeneratedStops() {
-        val itinerary = itinerary(day(1, "2026-10-14"), day(2, "2026-10-15"))
+    fun anEmptyGeneratedDayStaysEmptyWhileOtherDaysRemainVisible() {
+        val itinerary = itinerary(day(1, "2026-10-14").copy(pois = emptyList()), day(2, "2026-10-15"))
         val generated = itinerary.toTripDayPlans(today).flatMap { it.stops }
-        val saved = generated.applyTripDayEdits(today.toString(), emptyList(), today)
-        val tripDays = itinerary.toTripDayPlans(today, timelineStops = saved)
+        val tripDays = itinerary.toTripDayPlans(today, timelineStops = generated)
 
         assertEquals(2, tripDays.size)
         assertTrue(tripDays.first().stops.isEmpty())
-        assertTrue(saved.stopsOnDate(today).isEmpty())
+        assertTrue(generated.stopsOnDate(today).isEmpty())
         assertEquals(listOf("Stop 2"), tripDays[1].stops.map { it.title })
-        assertEquals("Stop 2", saved.nextNavigationStop(today)?.title)
+        assertEquals("Stop 2", generated.nextNavigationStop(today)?.title)
     }
 
     @Test
-    fun futureDayEditsKeepTheirDateAndOrderWithoutBecomingCurrentToday() {
+    fun aFutureDayRetainsItsExistingTimesAndOrderWithoutBecomingCurrentToday() {
         val first = TripTimelineStop("09:00", "First", TripStopStatus.Upcoming, date = "2026-10-15")
         val second = first.copy(time = "11:00", title = "Second")
-        val saved = listOf(first, second).applyTripDayEdits(
-            "2026-10-15",
-            listOf(second, first),
-            today,
-        )
+        val source = listOf(first, second)
+        val displayed = itinerary(day(1, "2026-10-15"))
+            .toTripDayPlans(today, timelineStops = source).single().stops
 
-        assertEquals(listOf("Second", "First"), saved.map { it.title })
-        assertTrue(saved.all { it.date == "2026-10-15" && it.status == TripStopStatus.Upcoming })
-        assertTrue(saved.stopsOnDate(today).isEmpty())
+        assertEquals(source, displayed)
+        assertEquals(listOf("09:00", "11:00"), displayed.map { it.time })
+        assertTrue(displayed.all { it.date == "2026-10-15" && it.status == TripStopStatus.Upcoming })
+        assertTrue(displayed.stopsOnDate(today).isEmpty())
     }
 
     @Test
@@ -162,13 +158,13 @@ class TripItineraryMapperTest {
     }
 
     @Test
-    fun replacingOneDaysStopsPreservesEditsMadeToAnotherDay() {
+    fun weatherReplacementForOneDayPreservesThePlanForOtherDays() {
         val original = TripTimelineStop("09:00", "Original", TripStopStatus.Current, date = today.toString())
-        val tomorrowEdit = original.copy(title = "Tomorrow edited", date = "2026-10-15", status = TripStopStatus.Upcoming)
+        val tomorrowStop = original.copy(title = "Tomorrow planned", date = "2026-10-15", status = TripStopStatus.Upcoming)
         val replacement = original.copy(title = "Updated")
-        val updated = listOf(original, tomorrowEdit).replaceTripDayStops(today.toString(), listOf(replacement))
+        val updated = listOf(original, tomorrowStop).replaceTripDayStops(today.toString(), listOf(replacement))
 
-        assertEquals(listOf(replacement, tomorrowEdit), updated)
+        assertEquals(listOf(replacement, tomorrowStop), updated)
     }
 
     @Test

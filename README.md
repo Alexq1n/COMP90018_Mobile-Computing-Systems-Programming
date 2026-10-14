@@ -28,7 +28,6 @@ Completed:
 - Interests
 - Trip
 - Adjust Itinerary
-- Edit Itinerary
 - Add a Stop
 - Explore
 - Attraction Detail
@@ -70,7 +69,6 @@ app/src/main/java/com/group5/roammate/
 │   ├── InterestsScreen.kt
 │   ├── TripScreen.kt
 │   ├── AdjustItineraryScreen.kt
-│   ├── EditItineraryScreen.kt
 │   ├── AddStopScreen.kt
 │   ├── ExploreScreen.kt
 │   ├── AttractionDetailScreen.kt
@@ -141,15 +139,15 @@ app/src/main/java/com/group5/roammate/
 
 ### Trip
 
-- Today's trip timeline.
+- Complete generated trip timeline, grouped by date.
 - Weather summary.
 - Stop status dots: done / current / upcoming.
-- Optional hidden-gem tag.
-- Edit itinerary button.
+- Treasure stops remain, but their tags are hidden.
+- Generated trips are read-only: no Add stop, deletion, time editing or reordering.
 - Start navigation button.
 - Bottom navigation.
-- Current behavior: itinerary is temporary mock data in `MainActivity`.
-- Future integration: itinerary from Zewen, progress/location from Sitao, weather from Yan.
+- Current behavior: the generated itinerary is shared with Home and navigation. System-proposed weather adjustments remain available.
+- Future integration: actual GPS progress, per-day weather planning and cloud persistence of weather-adjusted plans.
 
 ### Adjust Itinerary
 
@@ -164,26 +162,15 @@ app/src/main/java/com/group5/roammate/
 - Current behavior: two mock regenerated plans.
 - Future integration: generated alternatives from Zewen, weather trigger from Yan.
 
-### Edit Itinerary
-
-- Shows current itinerary stops.
-- Remove stop button.
-- Add a stop button.
-- Save button.
-- Current behavior: updates temporary front-end itinerary.
-- Future integration: add/remove operations should trigger Zewen re-generation or re-ordering.
-
 ### Add a Stop
 
-- Shared page for:
-  - Plan My Trip search places to add.
-  - Edit Itinerary add a stop.
+- Used only before generation, from Plan My Trip, to choose must-visit places.
 - Search field.
 - Confirm search button.
 - Popular places in current city.
 - Not found state.
 - Add button on each result.
-- Current behavior: filters local mock results.
+- Selecting a result updates the planning request and returns to Plan My Trip. Already generated trips do not expose this page.
 - Future integration: search data from Alex/Yan, place details from Leyan/Yan, distance from Sitao, placement from Zewen.
 
 ### Explore
@@ -299,7 +286,6 @@ Interests
 
 Trip
 ├── Timeline stop -> Attraction Detail
-├── Edit itinerary -> Edit Itinerary
 ├── Start navigation -> external map
 └── Bottom tabs -> Home / Trip / Explore / Pet / Profile
 
@@ -309,16 +295,10 @@ Adjust Itinerary
 ├── Back to previous plan -> previous generated plan
 └── Keep current plan -> Trip
 
-Edit Itinerary
-├── Back -> Trip
-├── Remove stop -> update temporary itinerary
-├── + Add a stop -> Add a Stop
-└── Save -> Trip
-
 Add a Stop
-├── Back -> Plan My Trip or Edit Itinerary
+├── Back -> Plan My Trip
 ├── Search confirm -> search results
-└── Add result -> return to previous flow
+└── Add result -> add a must-visit place and return to Plan My Trip
 
 Explore
 ├── Filter chips -> refresh nearby list
@@ -863,28 +843,6 @@ Example:
 }
 ```
 
-### Edit Itinerary
-
-Zewen: editItineraryRequest
-
-```kotlin
-data class EditItineraryRequest(
-    val tripId: String,
-    val removedStopIds: List<String>,
-    val addedPlaceIds: List<String>,
-)
-```
-
-Example:
-
-```json
-{
-  "tripId": "trip_001",
-  "removedStopIds": ["stop_003"],
-  "addedPlaceIds": ["place_state_library"]
-}
-```
-
 ### Explore
 
 Alex/Sitao: currentLocation
@@ -992,7 +950,7 @@ Example:
 
 Yuxiang: authentication, user profile, default interests, saved trips, save edited profile, save itinerary.
 
-Zewen: itinerary generation, itinerary stops, add/remove stop re-planning, adjust itinerary alternatives, hidden-gem insertion.
+Zewen: itinerary generation, itinerary stops, adjust itinerary alternatives, hidden-gem insertion.
 
 Yan: weather data, weather alerts, weather suitability tags, place category/type data.
 

@@ -96,7 +96,9 @@ fun AnimatedWeatherBackdrop(
             )
 
             when (sceneCondition) {
-                PetWeatherCondition.Clear -> if (weather.isDay) {
+                PetWeatherCondition.Clear -> if (!weather.daylightKnown) {
+                    drawCloudyScene(drift = drift)
+                } else if (weather.isDay) {
                     drawClearScene(drift = drift, pulse = pulse, temperature = temperature)
                 } else {
                     drawRect(Brush.verticalGradient(listOf(Color(0xFF253B59), Color(0xFF7899A7))))

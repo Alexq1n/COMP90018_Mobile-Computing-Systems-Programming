@@ -100,13 +100,13 @@ object PetBehaviorEngine {
             weather.condition == PetWeatherCondition.Rain ->
                 "Rain is around ${weather.locationLabel}—take an umbrella and choose a covered route." +
                     itineraryEnding
-            weather.windSpeedKmh >= 25.0 ->
+            weather.windSpeedKmh.isFinite() && weather.windSpeedKmh >= 25.0 ->
                 "Winds are near ${weather.windSpeedKmh.toInt()} km/h—secure loose items and check transport." +
                     itineraryEnding
             weather.condition == PetWeatherCondition.Fog ->
                 "Visibility may be low—slow down and leave earlier for your next stop." +
                     itineraryEnding
-            weather.isDay && weather.condition == PetWeatherCondition.Clear && weather.temperatureC >= 25.0 ->
+            weather.condition == PetWeatherCondition.Clear && weather.temperatureC >= 25.0 ->
                 "It is warm and sunny—bring water, sunscreen and a shady break." +
                     itineraryEnding
             variation % 2 == 0 ->

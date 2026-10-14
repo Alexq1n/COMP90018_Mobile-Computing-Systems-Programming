@@ -900,23 +900,30 @@ Example:
 Leyan/Yan: attractionDetail
 
 ```kotlin
-data class AttractionDetail(
-    val placeId: String,
+data class POI(
+    val id: String,
     val name: String,
-    val distanceText: String,
-    val environmentLabel: String,
-    val weatherTag: String?,
-    val todayHours: AttractionOpeningHours?,
-    val weeklyHours: List<AttractionOpeningHours>,
-    val websiteUrl: String?,
-    val imageUrl: String?,
-    val latitude: Double?,
-    val longitude: Double?,
+
+    // Optional enrichment fields. Null means the source did not provide a value.
+    val photoUrl: String? = null,
+    val website: String? = null,
+    val phone: String? = null,
+
+    val baseScore: Double? = null,
+    val category: POICategory,
+    val environment: Environment,
+    val coordinates: Coordinates,
+    val recommendedVisitDuration: Int,
+    val operatingHours: OperatingHours,
+    val isFiller: Boolean,
+    val city: String,
+    val address: String?,
+    val description: String?
 )
 
-data class AttractionOpeningHours(
-    val dayLabel: String,
-    val timeRange: String,
+data class OperatingHours(
+    val openTime: String,
+    val closeTime: String
 )
 ```
 
@@ -924,26 +931,28 @@ Example:
 
 ```json
 {
-  "placeId": "place_melbourne_museum",
-  "name": "Melbourne Museum",
-  "distanceText": "0.8 km away",
-  "environmentLabel": "Indoor",
-  "weatherTag": "Good for rain",
-  "todayHours": {
-    "dayLabel": "Today",
-    "timeRange": "10:00 am - 5:00 pm"
+    "id": "51002a0b15d21e624059f9f884ecbce742c0f00103f9012693de300300000092031153686f7420546f776572204d757365756d",
+    "name": "Shot Tower Museum",
+    "photoUrl": "https://www.onlymelbourne.com.au/image/ico-shottm.jpg",
+    "website": null,
+    "phone": null,
+    "baseScore": 7,
+    "category": "MUSEUM",
+    "environment": "INDOOR",
+    "coordinates": {
+      "latitude": -37.810453,
+      "longitude": 144.9631448
+    },
+    "recommendedVisitDuration": 120,
+    "operatingHours": {
+      "openTime": "09:00",
+      "closeTime": "18:00"
+    },
+    "isFiller": false,
+    "city": "Melbourne",
+    "address": "McIntyre Alley, Melbourne Victoria 3000, Australia",
+    "description": "Small museum covering the ΓÇ£shot towerΓÇ¥ structure and more general history of Melbourne. Entrance is located inside the R.M. Williams shop."
   },
-  "weeklyHours": [
-    {
-      "dayLabel": "Mon",
-      "timeRange": "10:00 am - 5:00 pm"
-    }
-  ],
-  "websiteUrl": "https://museumsvictoria.com.au/melbournemuseum/",
-  "imageUrl": null,
-  "latitude": -37.8033,
-  "longitude": 144.9717
-}
 ```
 
 ## Member Data Summary

@@ -571,9 +571,8 @@ class MainActivity : ComponentActivity() {
                             Toast.makeText(this, "Nearby places refreshed", Toast.LENGTH_SHORT).show()
                         }
 
-                        AuthScreen.PlanMyTrip,
                         AuthScreen.PlanAddStop -> {
-                            // Planning/search: shake can suggest one nearby place.
+                            // search: shake can suggest one nearby place.
                             addStopShakeRefreshCount += 1
                             Toast.makeText(this, "Nearby stop suggestions refreshed", Toast.LENGTH_SHORT).show()
                         }
@@ -1472,21 +1471,15 @@ class MainActivity : ComponentActivity() {
                             },
 
                             onDoneClick = { updatedInterests ->
-                                if (!isCloudRequestRunning) {
-                                    isCloudRequestRunning = true
-                                    uiSaveProfileInterests(
-                                        interests = updatedInterests,
-                                        onSuccess = { savedInterests ->
-                                            isCloudRequestRunning = false
-                                            profileDefaultInterests = savedInterests
-                                            currentScreen = AuthScreen.Profile
-                                        },
-                                        onError = { error ->
-                                            isCloudRequestRunning = false
-                                            showCloudError(error)
-                                        },
-                                    )
-                                }
+                                // 先本地更新并立即返回,保证 Done 一定有反应
+                                profileDefaultInterests = updatedInterests
+                                currentScreen = AuthScreen.Profile
+                                // 云端保存放后台,成功失败都不挡 UI
+                                uiSaveProfileInterests(
+                                    interests = updatedInterests,
+                                    onSuccess = { },
+                                    onError = { error -> showCloudError(error) },
+                                )
                             },
                         )
                     }

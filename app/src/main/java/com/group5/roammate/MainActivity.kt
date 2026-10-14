@@ -80,6 +80,8 @@ import com.group5.roammate.weather.context.WeatherContextDetector
 import com.group5.roammate.weather.context.WeatherContextEvent
 import com.group5.roammate.weather.data.WeatherRepository
 import com.group5.roammate.weather.model.DailyWeatherForecast
+import com.group5.roammate.poi.data.geoapify.GeoapifyRepository
+import com.group5.roammate.poi.data.geoapify.PoiDatabaseStore
 
 import java.text.SimpleDateFormat
 import java.time.LocalDate
@@ -136,6 +138,12 @@ Keep each owner in a small function below, then connect the screen callbacks to 
 
 
 class MainActivity : ComponentActivity() {
+    // POI Database
+    private val geoapifyPoiRepository by lazy {
+        GeoapifyRepository(
+            poiDatabaseStore = PoiDatabaseStore(applicationContext)
+        )
+    }
 
 // ==================== Leyan Weather ====================
 
@@ -303,6 +311,32 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // ==================== Fetch POIs and save to database ====================
+
+        lifecycleScope.launch {
+            try {
+                val pois = geoapifyPoiRepository.fetchAllCategories(
+                    city = "Melbourne",
+                    latitude = -37.8136,
+                    longitude = 144.9631,
+                    enrichWithDetails = false
+                )
+
+                android.util.Log.d(
+                    "POI_DATABASE",
+                    "Fetched and saved ${pois.size} POIs"
+                )
+
+            } catch (e: Exception) {
+                android.util.Log.e(
+                    "POI_DATABASE",
+                    "Failed to fetch/save POIs",
+                    e
+                )
+            }
+        }
+
 
         // Weather context-awareness wiring.
         // Current weather is still refreshed every 10 minutes. The same result

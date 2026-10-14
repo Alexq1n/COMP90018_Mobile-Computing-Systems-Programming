@@ -142,6 +142,7 @@ public class LocalDataStoreTest {
     private static PoiData poi(String id, String name, String category, double score,
                                double latitude, double longitude) {
         return new PoiData(id, name, score, category, "MIXED", latitude, longitude,
-                60, "09:00", "17:00", false, "Melbourne", "Test address", "");
+                60, "09:00", "17:00", false, "Melbourne", "Test address", "","",
+                "", "");
     }
 }

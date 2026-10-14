@@ -16,11 +16,14 @@ public final class PoiData {
     public final String city;
     public final String address;
     public final String description;
+    public final String photoUrl;
+    public final String website;
+    public final String phone;
 
     public PoiData(String id, String name, double baseScore, String category, String environment,
                    double latitude, double longitude, int recommendedVisitDuration,
                    String openTime, String closeTime, boolean filler, String city,
-                   String address, String description) {
+                   String address, String description, String photoUrl, String website, String phone) {
         this.id = id;
         this.name = name;
         this.baseScore = baseScore;
@@ -35,5 +38,8 @@ public final class PoiData {
         this.city = city;
         this.address = address;
         this.description = description;
+        this.photoUrl = photoUrl;
+        this.website = website;
+        this.phone = phone;
     }
 }

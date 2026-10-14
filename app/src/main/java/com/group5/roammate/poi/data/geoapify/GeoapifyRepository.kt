@@ -11,7 +11,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 
 class GeoapifyRepository(
-    private val client: OkHttpClient = OkHttpClient()
+    private val client: OkHttpClient = OkHttpClient(),
+    private val poiDatabaseStore: PoiDatabaseStore? = null
 ) {
 
     private val apiKey = "d314c90db3df40408b80296b56a0a5ae"
@@ -211,7 +212,12 @@ class GeoapifyRepository(
                 )
         }
 
-        return removeDuplicatePois(result)
+        val finalPois = removeDuplicatePois(result)
+
+        // Save all fetched POIs into local database
+        poiDatabaseStore?.save(finalPois)
+
+        return finalPois
     }
 
     fun toJson(

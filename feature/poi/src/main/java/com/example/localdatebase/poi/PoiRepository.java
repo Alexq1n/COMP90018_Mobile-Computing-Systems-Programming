@@ -88,7 +88,10 @@ public final class PoiRepository {
                         item.optBoolean("isFiller", false),
                         item.optString("city", ""),
                         item.optString("address", ""),
-                        item.isNull("description") ? "" : item.optString("description", "")
+                        item.isNull("description") ? "" : item.optString("description", ""),
+                        item.isNull("photoUrl") ? "" : item.optString("photoUrl", ""),
+                        item.isNull("website") ? "" : item.optString("website", ""),
+                        item.isNull("phone") ? "" : item.optString("phone", "")
                 ));
             }
             return result;

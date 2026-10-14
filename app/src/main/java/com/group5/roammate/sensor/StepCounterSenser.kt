@@ -116,7 +116,7 @@ class StepCounterSensor(
 
 
         // Multiply estimated steps by 10
-        val boostedSteps = estimatedSteps * 10f
+        val boostedSteps = estimatedSteps * 100f
 
         return boostedSteps.toInt()
     }

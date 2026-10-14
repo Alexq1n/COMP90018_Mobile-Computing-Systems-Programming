@@ -2411,26 +2411,28 @@ class MainActivity : ComponentActivity() {
             val displayedStops = timelineStops.filter { it.date == today }
             if (!currentDay.matchesTimeline(displayedStops)) return emptyList()
             val userProfile = currentPlanningProfile ?: return emptyList()
-            val currentTime = LocalDateTime.now()
-            val lastEndTime = currentDay.pois.maxOf { java.time.LocalTime.parse(it.endTime) }
-            val availableTimeMinutes = java.time.Duration.between(currentTime.toLocalTime(), lastEndTime)
+            // Replan the whole day using its original start and the planning end time.
+            val firstStop = currentDay.pois.first()
+            val replanStart = LocalDate.parse(currentDay.date)
+                .atTime(LocalTime.parse(firstStop.startTime))
+            val dayEndTime = LocalTime.of(18, 0)
+            val availableTimeMinutes = java.time.Duration.between(replanStart.toLocalTime(), dayEndTime)
                 .toMinutes().coerceAtLeast(0).toInt()
             if (availableTimeMinutes == 0) return emptyList()
-            val location = sensorRepository.getCurrentLocation()?.let {
-                com.group5.roammate.logic.models.Coordinates(it.latitude, it.longitude)
-            } ?: currentDay.pois.first().poi.coordinates
-            val completedIds = displayedStops.filter { it.status == TripStopStatus.Done }.mapNotNull { stop ->
-                stop.poiId ?: currentDay.pois.firstOrNull { it.poi.name == stop.title }?.poi?.id
-            }
+            val location = firstStop.poi.coordinates
+            android.util.Log.d(
+                "WeatherAdjust",
+                "Full-day replanning: start=$replanStart, end=$dayEndTime, availableMinutes=$availableTimeMinutes"
+            )
 
             // Create context payload for rainy weather
             val contextPayload = com.group5.roammate.logic.models.ContextPayload(
                 currentLocation = location,
-                currentTime = currentTime.toString(),
+                currentTime = replanStart.toString(),
                 weatherStatus = com.group5.roammate.logic.models.WeatherStatus.RAINY,
                 currentWeather = com.group5.roammate.logic.models.WeatherStatus.RAINY,
                 itineraryProgress = com.group5.roammate.logic.models.ItineraryProgress(
-                    completedPOIs = completedIds,
+                    completedPOIs = emptyList(),
                     delayMinutes = 0
                 )
             )

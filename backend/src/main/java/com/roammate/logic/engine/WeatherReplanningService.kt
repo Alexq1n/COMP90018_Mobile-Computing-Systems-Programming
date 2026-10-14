@@ -84,8 +84,9 @@ class WeatherReplanningService(
         val originalOption = currentItinerary
 
         // Get indoor POIs only (apply strong outdoor penalty)
+        // Include filler POIs for weather adjustment scenarios to maximize indoor options
         val indoorPOIs = allPOIs.filter {
-            it.environment == Environment.INDOOR && !it.isFiller
+            it.environment == Environment.INDOOR
         }
 
         // Calculate EV for indoor POIs with rainy weather context
@@ -253,6 +254,7 @@ class WeatherReplanningService(
 
         while (remaining.isNotEmpty() && remainingTime > 0) {
             // Calculate EV/Cost ratio for each remaining POI
+            // Cost = total time (travel + visit duration)
             val candidates = remaining.mapNotNull { (poi, ev) ->
                 val travelTime = calculateTravelTime(
                     currentLocation,
@@ -260,10 +262,11 @@ class WeatherReplanningService(
                     currentLocationPoiId,
                     poi.id
                 )
-                val totalRequired = travelTime + poi.recommendedVisitDuration
+                val totalCost = travelTime + poi.recommendedVisitDuration
 
-                if (totalRequired <= remainingTime) {
-                    val ratio = if (travelTime > 0) ev / travelTime else ev * 100
+                if (totalCost <= remainingTime) {
+                    // Efficiency ratio: EV per minute of total time cost
+                    val ratio = ev / totalCost.toDouble()
                     Triple(poi, ev, Pair(travelTime, ratio))
                 } else {
                     null

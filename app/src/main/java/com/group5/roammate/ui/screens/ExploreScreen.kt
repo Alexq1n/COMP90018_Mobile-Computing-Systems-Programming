@@ -347,21 +347,48 @@ private fun NearbyPlaceCard(
                 )
 
                 // hidden-gem tag (only shows when tagText is not empty)
+                // Tired tag (only shows when detecting that user is tired)
                 if (place.tagText.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = RoamMateLightTeal,
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(top = 6.dp)
                     ) {
-                        Text(
-                            text = place.tagText,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            color = RoamMateTeal,
-                            fontSize = 12.sp,
-                            lineHeight = 14.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            maxLines = 1,
-                        )
+
+                        val tags = when (place.tagText) {
+                            "Hidden gem" -> listOf("Hidden gem")
+                            "Hidden gem, tired" -> listOf("Hidden gem", "Tired")
+                            else -> listOf(place.tagText)
+                        }
+
+                        tags.forEach { tag ->
+
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (tag == "Locked - Tired") {
+                                    Color(0xFFFFE4E4)
+                                } else {
+                                    RoamMateLightTeal
+                                }
+                            ) {
+                                Text(
+                                    text = tag,
+                                    modifier = Modifier.padding(
+                                        horizontal = 10.dp,
+                                        vertical = 4.dp
+                                    ),
+                                    color = if (tag == "Tired") {
+                                        Color(0xFFD32F2F)
+                                    } else {
+                                        RoamMateTeal
+                                    },
+                                    fontSize = 12.sp,
+                                    lineHeight = 14.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    maxLines = 1
+                                )
+                            }
+                        }
                     }
                 }
             }

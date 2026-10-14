@@ -113,7 +113,12 @@ class StepCounterSensor(
         }
         val estimatedSteps = stepDifference * (1f + multiplier * (60f / t - 1f))
         Log.d("STEP_SENSOR", "EstimatedSteps=$estimatedSteps")
-        return estimatedSteps.toInt()
+
+
+        // Multiply estimated steps by 10
+        val boostedSteps = estimatedSteps * 100f
+
+        return boostedSteps.toInt()
     }
 
     fun disableStepCounter() {
